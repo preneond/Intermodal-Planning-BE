@@ -77,7 +77,6 @@ public class JSONUtils {
         coords.put(lon);
         coords.put(lat);
         point.put("coordinates", coords);
-
         return point;
     }
 }

@@ -1,28 +1,24 @@
-import adapters.GoogleMapsRouteAdapter;
-import com.google.maps.model.DirectionsResult;
-import com.google.maps.model.DirectionsRoute;
-import com.google.maps.model.TravelMode;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-
+import adapters.GMapsPlannerAdapter;
+import model.Address;
+import model.Leg;
+import model.Route;
+import model.TransportMode;
 import java.sql.Timestamp;
 
 public class Main {
     public static void main(String[] args) {
+
+        GMapsPlannerAdapter adapter = new GMapsPlannerAdapter();
+
         // + 1 hour
         int delay = 3600000;
-        Timestamp departureTimestamp = new Timestamp(System.currentTimeMillis() + delay);
-        DateTime dt = new DateTime(departureTimestamp, DateTimeZone.getDefault());
+        Timestamp arrival = new Timestamp(System.currentTimeMillis() + delay);
 
-        GoogleMapsRouteAdapter adapter = new GoogleMapsRouteAdapter();
-        String origin = "75 9th Ave New York, NY";
-        String destination = "80 9th Ave New York, NY";
-        TravelMode mode = TravelMode.TRANSIT;
+        Address prague = new Address(50.099260,14.383054);
+        Address boleslav = new Address(50.409845,14.915914);
+        TransportMode mode = TransportMode.UNKNOWN;
 
-        DirectionsResult directionsResult = adapter.sendNewRequest(origin, destination, mode, dt);
-
-        for (DirectionsRoute route : directionsResult.routes) {
-            System.out.println(route.summary);
-        }
+        Route bestRoute = adapter.findBestRoute(boleslav,prague,mode,arrival);
+        System.out.println(bestRoute);
     }
 }

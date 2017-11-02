@@ -4,21 +4,15 @@ import java.sql.Timestamp;
 import java.util.List;
 
 public class Leg {
-    private TransportMode mode;
-    private List<Coordinate> coordinates;
-    private Timestamp departureTime;
-    private Timestamp arrivalTime;
+    public TransportMode mode;
+    public Address startLocation,endLocation;
+    public List<Address> steps;
+    public Timestamp departure;
+    public Timestamp arrival;
+    public long distance; //in meters
+    public long duration;
 
-    public Leg(TransportMode mode, List<Coordinate> coordinates) {
-        this.mode = mode;
-        this.coordinates = coordinates;
+    public Leg() {
     }
 
-    public TransportMode getMode() {
-        return mode;
-    }
-
-    public List<Coordinate> getCoordinates() {
-        return coordinates;
-    }
 }

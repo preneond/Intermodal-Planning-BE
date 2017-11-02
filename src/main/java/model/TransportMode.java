@@ -1,5 +1,5 @@
 package model;
 
 public enum TransportMode {
-    WALK,CAR,BUS,TRAIN,SUBWAY,BOAT;
+    WALK,BIKE,TRANSIT,CAR, UNKNOWN
 }
