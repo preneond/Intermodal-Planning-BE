@@ -3,6 +3,10 @@ package adapters;
 import client.GMapsApiClient;
 import com.google.maps.model.*;
 import model.*;
+import model.planner.Leg;
+import model.planner.Route;
+import model.planner.Step;
+import model.planner.TransportMode;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
@@ -14,69 +18,107 @@ import java.util.List;
 public class GMapsPlannerAdapter extends PlannerAdapter {
     private DirectionsResult result;
 
-    public Route findBestRoute(Address origin, Address destination, TransportMode mode, Timestamp arrival) {
+    @Override
+    public List<Route> findRoutes(Location origin, Location destination, TransportMode mode, Timestamp arrival) {
         DateTime dt = getDateTime(arrival);
-        TravelMode travelMode = getTravelMode(
-                mode);
 
-        if (origin.address == null || destination.address == null ) {
-            LatLng originLatLng = new LatLng(origin.latitude, origin.longitude);
-            LatLng destinationLatLng = new LatLng(destination.latitude, destination.longitude);
-            result = GMapsApiClient.getInstance().sendNewRequest(originLatLng, destinationLatLng, travelMode, getDateTime(arrival), true);
-        } else {
-            result = GMapsApiClient.getInstance().sendNewRequest(origin.address, destination.address, travelMode, getDateTime(arrival), true);
-        }
+        TravelMode travelMode = getTravelMode(mode);
+        LatLng originLatLng = new LatLng(origin.latitude, origin.longitude);
+        LatLng destinationLatLng = new LatLng(destination.latitude, destination.longitude);
+
+        result = GMapsApiClient.getInstance().sendNewRequest(originLatLng, destinationLatLng, travelMode, getDateTime(arrival), true);
 
         try {
-            return getRouteList(result).get(0);
+            return getRouteList(result);
         } catch (ArrayIndexOutOfBoundsException e) {
             e.printStackTrace();
-            return null;
+            return new ArrayList<>();
         }
     }
 
+    @Override
+    public List<Route> findRoutes(Location origin, Location destination, TransportMode mode) {
+        TravelMode travelMode = getTravelMode(mode);
+        LatLng originLatLng = new LatLng(origin.latitude, origin.longitude);
+        LatLng destinationLatLng = new LatLng(destination.latitude, destination.longitude);
+
+        result = GMapsApiClient.getInstance().sendNewRequest(originLatLng, destinationLatLng, travelMode);
+
+        try {
+            return getRouteList(result);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+
+    @Override
+    public List<Route> findRoutes(Location origin, Location destination) {
+        return null;
+    }
+
+    @Override
+    public Route findBestRoute(Location origin, Location destination, TransportMode mode, Timestamp arrival) {
+        List<Route> routes = findRoutes(origin, destination, mode, arrival);
+
+        return routes.size() == 0 ? null : routes.get(0);
+    }
+
+    @Override
+    public Route findBestRoute(Location origin, Location destination, TransportMode mode) {
+        List<Route> routes = findRoutes(origin, destination, mode);
+
+        return routes.size() == 0 ? null : routes.get(0);
+    }
+
+    @Override
+    public Route findBestRoute(Location origin, Location destination) {
+        List<Route> routes = findRoutes(origin, destination);
+
+        return routes.size() == 0 ? null : routes.get(0);
+    }
+
     private List<Route> getRouteList(DirectionsResult directions) {
-        legList = new ArrayList<>();
-        routeList = new ArrayList<>();
+        legs = new ArrayList<>();
+        routes = new ArrayList<>();
         Route tmpRoute;
         Step tmpStep;
         Leg tmpLeg;
 
         for (DirectionsRoute directionsRoute : directions.routes) {
             tmpRoute = new Route();
-            legList = new ArrayList<>();
+            legs = new ArrayList<>();
 
             for (DirectionsLeg leg : directionsRoute.legs) {
-                stepList = new ArrayList<>();
+                steps = new ArrayList<>();
                 for (DirectionsStep step: leg.steps){
                     tmpStep = new Step();
                     tmpStep.distance = step.distance.inMeters;
                     tmpStep.duration = step.duration.inSeconds;
-                    tmpStep.startLocation = getAddress(step.startLocation);
-                    tmpStep.endLocation = getAddress(step.endLocation);
+                    tmpStep.startLocation = getLocation(step.startLocation);
+                    tmpStep.endLocation = getLocation(step.endLocation);
                     tmpStep.transportMode = getTransportMode(step.travelMode);
 
-                    stepList.add(tmpStep);
+                    steps.add(tmpStep);
                 }
 
                 tmpLeg = new Leg();
-                startLocation = getAddress(leg.startLocation);
-                startLocation.address = leg.startAddress;
+                startLocation = getLocation(leg.startLocation);
 
-                endLocation = getAddress(leg.endLocation);
-                endLocation.address = leg.endAddress;
+                endLocation = getLocation(leg.endLocation);
 
                 tmpLeg.duration = leg.duration.inSeconds;
                 tmpLeg.distance = leg.distance.inMeters;
                 tmpLeg.startLocation = startLocation;
                 tmpLeg.endLocation = endLocation;
+                tmpLeg.steps = steps;
 
-                legList.add(tmpLeg);
+                legs.add(tmpLeg);
             }
-            tmpRoute.legList = legList;
-            routeList.add(tmpRoute);
+            tmpRoute.legList = legs;
+            routes.add(tmpRoute);
         }
-        return routeList;
+        return routes;
     }
 
     private TravelMode getTravelMode(TransportMode mode) {
@@ -123,12 +165,8 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
         return travelMode;
     }
 
-    private Address getAddress(String address){
-        return new Address(address);
-    }
-
-    private Address getAddress(LatLng location){
-        return new Address(location.lat,location.lng);
+    private Location getLocation(LatLng location){
+        return new Location(location.lat,location.lng);
     }
 
 

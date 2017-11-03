@@ -6,11 +6,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import model.planner.Route;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.List;
 
 public class JSONUtils {
 
@@ -78,5 +80,9 @@ public class JSONUtils {
         coords.put(lat);
         point.put("coordinates", coords);
         return point;
+    }
+
+    public static String javaObjectToGeoJSON(List<Route> routeList) {
+        return "";
     }
 }

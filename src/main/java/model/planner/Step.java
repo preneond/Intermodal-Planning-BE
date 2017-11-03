@@ -1,7 +1,9 @@
-package model;
+package model.planner;
+
+import model.Location;
 
 public class Step {
-    public Address startLocation,endLocation;
+    public Location startLocation,endLocation;
     // in meters
     public long distance;
     // in seconds

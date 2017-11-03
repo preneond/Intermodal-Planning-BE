@@ -71,5 +71,19 @@ public class GMapsApiClient {
         }
         return null;
     }
+
+    public DirectionsResult sendNewRequest(LatLng origin, LatLng destination, TravelMode mode) {
+        try {
+                return DirectionsApi.newRequest(context)
+                        .origin(origin)
+                        .destination(destination)
+                        .mode(mode)
+                        .await();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 }
 
