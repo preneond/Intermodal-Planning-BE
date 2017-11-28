@@ -57,6 +57,12 @@
             <artifactId>geojson-jackson</artifactId>
             <version>1.8</version>
         </dependency>
+        <!-- ~/m2/com/umotional/base-structures/1.2/-->
+        <dependency>
+        <groupId>com.umotional</groupId>
+        <artifactId>base-structures</artifactId>
+        <version>1.2</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -74,7 +80,6 @@
                     <target>1.8</target>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>

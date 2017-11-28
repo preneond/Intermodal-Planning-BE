@@ -1,10 +1,10 @@
 import adapters.GMapsPlannerAdapter;
 import adapters.PlannerAdapter;
-import model.Location;
+import model.graph.GraphMaker;
+import model.planner.Location;
 import model.planner.Route;
 import model.planner.TransportMode;
 import utils.GeoJSONBuilder;
-import utils.JSONUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,16 +22,17 @@ public class RoutePlanner {
         TransportMode mode = TransportMode.CAR;
         List<Route> routes = new ArrayList<>();
 
-        List<Route> tmpList;
+        List<Route> routeList = new ArrayList<>();
         for (PlannerAdapter plannerAdapter : plannerAdapters) {
-            tmpList = plannerAdapter.findRoutes(prague, boleslav, mode);
-            routes.addAll(tmpList);
+            routeList = plannerAdapter.findRoutes(prague, boleslav, mode);
+            routes.addAll(routeList);
         }
+
+        GraphMaker graphMaker = GraphMaker.getInstance();
+        graphMaker.createGraph(routeList);
 
         GeoJSONBuilder geoJSONBuilder = new GeoJSONBuilder();
         geoJSONBuilder.addPolylines(routes);
-
-
 
         System.out.println(geoJSONBuilder.buildJSONString());
     }

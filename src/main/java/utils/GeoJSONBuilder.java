@@ -2,10 +2,6 @@ package utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.awt.Point;
-
-import model.Location;
 import model.planner.Leg;
 import model.planner.Route;
 import model.planner.Step;
@@ -33,8 +29,8 @@ public class GeoJSONBuilder {
             List<LngLatAlt> tt = new ArrayList<>();
             for (Leg leg : route.legList){
                 for (Step step: leg.steps){
-                    LngLatAlt origin = new LngLatAlt(step.startLocation.longitude,step.startLocation.latitude);
-                    LngLatAlt destination = new LngLatAlt(step.endLocation.longitude,step.endLocation.latitude);
+                    LngLatAlt origin = new LngLatAlt(step.startLocation.lon,step.startLocation.lat);
+                    LngLatAlt destination = new LngLatAlt(step.endLocation.lon,step.endLocation.lat);
                     tt.add(origin);
                     tt.add(destination);
                 }

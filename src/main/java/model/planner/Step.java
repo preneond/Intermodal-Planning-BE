@@ -1,12 +1,10 @@
 package model.planner;
 
-import model.Location;
-
 public class Step {
     public Location startLocation,endLocation;
     // in meters
-    public long distance;
+    public long distanceInMeters;
     // in seconds
-    public long duration;
+    public long durationInSeconds;
     public TransportMode transportMode;
 }

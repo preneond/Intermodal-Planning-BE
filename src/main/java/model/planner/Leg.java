@@ -1,7 +1,5 @@
 package model.planner;
 
-import model.Location;
-
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -10,15 +8,15 @@ public class Leg {
     public List<Step> steps;
     public Timestamp departure;
     public Timestamp arrival;
-    public long distance; //in meters
-    public long duration;
+    public long distanceInMeters; //in meters
+    public long durationInSeconds;
 
     public Leg() {
     }
 
     @Override
     public String toString() {
-        String out = "distance: " + distance + ", duration: " + duration + '\n';
+        String out = "distanceInMeters: " + distanceInMeters + ", durationInSeconds: " + durationInSeconds + '\n';
         return  out;
     }
 }

@@ -1,10 +1,6 @@
 package adapters;
 
-import model.*;
-import model.planner.Leg;
-import model.planner.Route;
-import model.planner.Step;
-import model.planner.TransportMode;
+import model.planner.*;
 
 import java.sql.Timestamp;
 import java.util.List;

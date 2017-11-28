@@ -2,11 +2,7 @@ package adapters;
 
 import client.GMapsApiClient;
 import com.google.maps.model.*;
-import model.*;
-import model.planner.Leg;
-import model.planner.Route;
-import model.planner.Step;
-import model.planner.TransportMode;
+import model.planner.*;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
@@ -23,8 +19,8 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
         DateTime dt = getDateTime(arrival);
 
         TravelMode travelMode = getTravelMode(mode);
-        LatLng originLatLng = new LatLng(origin.latitude, origin.longitude);
-        LatLng destinationLatLng = new LatLng(destination.latitude, destination.longitude);
+        LatLng originLatLng = new LatLng(origin.lat, origin.lon);
+        LatLng destinationLatLng = new LatLng(destination.lat, destination.lon);
 
         result = GMapsApiClient.getInstance().sendNewRequest(originLatLng, destinationLatLng, travelMode, getDateTime(arrival), true);
 
@@ -39,8 +35,8 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
     @Override
     public List<Route> findRoutes(Location origin, Location destination, TransportMode mode) {
         TravelMode travelMode = getTravelMode(mode);
-        LatLng originLatLng = new LatLng(origin.latitude, origin.longitude);
-        LatLng destinationLatLng = new LatLng(destination.latitude, destination.longitude);
+        LatLng originLatLng = new LatLng(origin.lat, origin.lon);
+        LatLng destinationLatLng = new LatLng(destination.lat, destination.lon);
 
         result = GMapsApiClient.getInstance().sendNewRequest(originLatLng, destinationLatLng, travelMode);
 
@@ -93,12 +89,11 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
                 steps = new ArrayList<>();
                 for (DirectionsStep step: leg.steps){
                     tmpStep = new Step();
-                    tmpStep.distance = step.distance.inMeters;
-                    tmpStep.duration = step.duration.inSeconds;
+                    tmpStep.distanceInMeters = step.distance.inMeters;
+                    tmpStep.durationInSeconds = step.duration.inSeconds;
                     tmpStep.startLocation = getLocation(step.startLocation);
                     tmpStep.endLocation = getLocation(step.endLocation);
                     tmpStep.transportMode = getTransportMode(step.travelMode);
-
                     steps.add(tmpStep);
                 }
 
@@ -107,8 +102,8 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
 
                 endLocation = getLocation(leg.endLocation);
 
-                tmpLeg.duration = leg.duration.inSeconds;
-                tmpLeg.distance = leg.distance.inMeters;
+                tmpLeg.durationInSeconds = leg.duration.inSeconds;
+                tmpLeg.distanceInMeters = leg.distance.inMeters;
                 tmpLeg.startLocation = startLocation;
                 tmpLeg.endLocation = endLocation;
                 tmpLeg.steps = steps;
