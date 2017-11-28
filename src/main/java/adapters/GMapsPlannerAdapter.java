@@ -50,7 +50,12 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
 
     @Override
     public List<Route> findRoutes(Location origin, Location destination) {
-        return null;
+        List<Route> routeList= new ArrayList<>();
+
+        for(TransportMode transportMode: TransportMode.values()){
+            routeList.addAll(findRoutes(origin,destination,transportMode));
+        }
+        return routeList;
     }
 
     @Override
