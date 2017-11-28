@@ -1,15 +1,15 @@
-package model.graph;
+
 
 import com.umotional.basestructures.Edge;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.GraphBuilder;
 import com.umotional.basestructures.Node;
+import model.graph.GraphEdge;
 import model.planner.Leg;
 import model.planner.Location;
 import model.planner.Route;
 import model.planner.Step;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -21,6 +21,7 @@ import java.util.List;
 public class GraphMaker extends GraphBuilder {
     private static GraphMaker sharedInstance;
     private Graph<Node, GraphEdge> graph;
+    private int nodeCounter = 0;
 
     public static GraphMaker getInstance() {
         if (sharedInstance == null)
@@ -39,34 +40,11 @@ public class GraphMaker extends GraphBuilder {
     }
 
     private void fillGraph(List<Route> routeList) {
-        int nodeCounter = 0;
-        int startId = 0;
-        int endId = 0;
         for (Route route : routeList) {
             for (Leg leg : route.legList) {
                 for (Step step : leg.steps) {
-
-                    Location startLoc = step.startLocation;
-                    //noinspection Duplicates
-                    try {
-                        startId = getIntIdForSourceId(generateIdFor(startLoc));
-                    } catch (NullPointerException e) {
-                        startId = nodeCounter;
-                        Node startNode = new Node(nodeCounter, generateIdFor(startLoc), startLoc.lat, startLoc.lon, startLoc.latE3, startLoc.lonE3, 0);
-                        addNode(startNode);
-                        nodeCounter++;
-                    }
-
-                    Location endLoc = step.endLocation;
-                    //noinspection Duplicates
-                    try {
-                        endId = getIntIdForSourceId(generateIdFor(endLoc));
-                    } catch (NullPointerException e) {
-                        endId = nodeCounter;
-                        Node endNode = new Node(nodeCounter, generateIdFor(endLoc), startLoc.lat, startLoc.lon, startLoc.latE3, startLoc.lonE3, 0);
-                        addNode(endNode);
-                        nodeCounter++;
-                    }
+                    int startId = getIdFor(step.startLocation);
+                    int endId = getIdFor(step.endLocation);
 
                     Edge edge = new GraphEdge(startId, endId, (int) step.distanceInMeters);
                     addEdge(edge);
@@ -100,11 +78,32 @@ public class GraphMaker extends GraphBuilder {
 
     }
 
+    /**
+     * Method which return id for current location and create node whether ain't exists.
+     *
+     * @param location - location which is unique for each node
+     * @return id for node on given location
+     */
+    private int getIdFor(Location location) {
+        int id;
+        try {
+            id = getIntIdForSourceId(generateSourceIdFor(location));
+        } catch (NullPointerException e) {
+            id = nodeCounter;
+            Node startNode = new Node(nodeCounter, generateSourceIdFor(location), location.lat, location.lon, location.latE3(), location.lonE3(), 0);
+            addNode(startNode);
+            nodeCounter++;
+        }
+        return id;
+    }
 
     /**
-     * Create unique Node id based on location
+     * Create unique Node source id based on location
+     *
+     * @param location - location which is unique for each node
+     * @return unique sourceId for given location
      */
-    public int generateIdFor(Location location) {
-        return location.latE3+location.lonE3;
+    private int generateSourceIdFor(Location location) {
+        return location.latE6()+location.lonE6();
     }
 }

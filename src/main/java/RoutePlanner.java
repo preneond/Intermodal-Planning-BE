@@ -1,6 +1,5 @@
 import adapters.GMapsPlannerAdapter;
 import adapters.PlannerAdapter;
-import model.graph.GraphMaker;
 import model.planner.Location;
 import model.planner.Route;
 import model.planner.TransportMode;

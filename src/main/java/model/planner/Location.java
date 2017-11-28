@@ -2,18 +2,23 @@ package model.planner;
 
 public class Location {
     public double lat;
-    public int latE3;
     public double lon;
-    public int lonE3;
-
-    public Location(double lat, double lon, int latE3, int lonE3) {
-        this.lat = lat;
-        this.latE3 = latE3;
-        this.lon = lon;
-        this.lonE3 = lonE3;
-    }
 
     public Location(double lat, double lon) {
-        this(lat,lon,(int) (lat*1E3),(int) (lon*1E3));
+        this.lat = lat;
+        this.lon = lon;
+    }
+
+    public int latE3(){
+        return (int) (lat*1E3);
+    }
+    public int latE6(){
+        return (int) (lat*1E6);
+    }
+    public int lonE3(){
+        return (int) (lon*1E3);
+    }
+    public int lonE6(){
+        return (int) (lon*1E6);
     }
 }
