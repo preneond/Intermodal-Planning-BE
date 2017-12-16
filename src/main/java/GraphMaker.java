@@ -5,10 +5,7 @@ import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.GraphBuilder;
 import com.umotional.basestructures.Node;
 import model.graph.GraphEdge;
-import model.planner.Leg;
-import model.planner.Location;
-import model.planner.Route;
-import model.planner.Step;
+import model.planner.*;
 
 import java.util.Collection;
 import java.util.List;
@@ -31,7 +28,7 @@ public class GraphMaker extends GraphBuilder {
 
     public Graph createGraph(List<Route> routeList) {
         System.out.println("Creating graph...");
-        fillGraph(routeList);
+        addRoutes(routeList);
         graph = createGraph();
         System.out.println("Graph created.");
         getGraphDescription();
@@ -39,19 +36,36 @@ public class GraphMaker extends GraphBuilder {
         return graph;
     }
 
-    private void fillGraph(List<Route> routeList) {
-        for (Route route : routeList) {
-            for (Leg leg : route.legList) {
-                for (Step step : leg.steps) {
-                    int startId = getIdFor(step.startLocation);
-                    int endId = getIdFor(step.endLocation);
-
-                    Edge edge = new GraphEdge(startId, endId, (int) step.distanceInMeters);
-                    addEdge(edge);
-                }
-            }
+    private void addRoutes(List<Route> routes) {
+        for (Route route : routes) {
+            addLegs(route.legList);
         }
     }
+
+    private void addLegs(List<Leg> legs) {
+        for (Leg leg : legs) {
+            addSteps(leg.steps);
+        }
+    }
+
+    private void addSteps(List<Step> steps) {
+        for (Step step : steps) {
+            if (step.steps != null) {
+                this.addSteps(step.steps);
+                return;
+            }
+            int startId = getIdFor(step.startLocation);
+            int endId = getIdFor(step.endLocation);
+            if (!containsEdge(startId, endId)) {
+                Edge edge = new GraphEdge(startId, endId, (int) step.distanceInMeters);
+                Edge reverEdge = new GraphEdge(endId, startId, (int) step.distanceInMeters);
+                addEdge(edge);
+                addEdge(reverEdge);
+            }
+        }
+
+    }
+
 
     private void getGraphDescription() {
         graph.getAllEdges();
@@ -104,6 +118,6 @@ public class GraphMaker extends GraphBuilder {
      * @return unique sourceId for given location
      */
     private int generateSourceIdFor(Location location) {
-        return location.latE6()+location.lonE6();
+        return location.latE6() + location.lonE6();
     }
 }

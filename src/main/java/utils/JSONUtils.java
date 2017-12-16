@@ -49,7 +49,7 @@ public class JSONUtils {
      * @return Java object as JSON
      */
     public static String javaObjectToOneLineJSON(Object object) {
-
+        // JAVA -> JSON
         try {
             return mapper.writeValueAsString(object);
         } catch (JsonProcessingException e) {

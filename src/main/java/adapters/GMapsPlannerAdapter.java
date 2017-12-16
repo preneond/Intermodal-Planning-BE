@@ -83,7 +83,7 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
         legs = new ArrayList<>();
         routes = new ArrayList<>();
         Route tmpRoute;
-        Step tmpStep;
+        Step tmpStep, tmpStep2;
         Leg tmpLeg;
 
         for (DirectionsRoute directionsRoute : directions.routes) {
@@ -99,6 +99,20 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
                     tmpStep.startLocation = getLocation(step.startLocation);
                     tmpStep.endLocation = getLocation(step.endLocation);
                     tmpStep.transportMode = getTransportMode(step.travelMode);
+
+                    if (tmpStep.transportMode == TransportMode.TRANSIT) {
+                        tmpStep.steps = new ArrayList<>();
+                        for (DirectionsStep step2: step.steps){
+                            tmpStep2 = new Step();
+                            tmpStep2.distanceInMeters = step2.distance.inMeters;
+                            tmpStep2.durationInSeconds = step2.duration.inSeconds;
+                            tmpStep2.startLocation = getLocation(step.startLocation);
+                            tmpStep2.endLocation = getLocation(step.endLocation);
+                            tmpStep2.transportMode = TransportMode.TRANSIT;
+                            tmpStep.steps.add(tmpStep2);
+                        }
+                    }
+
                     steps.add(tmpStep);
                 }
 

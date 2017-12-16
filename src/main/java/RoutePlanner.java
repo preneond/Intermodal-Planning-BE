@@ -4,6 +4,7 @@ import model.planner.Location;
 import model.planner.Route;
 import model.planner.TransportMode;
 import utils.GeoJSONBuilder;
+import utils.RandomLocationGenerator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,13 +17,7 @@ public class RoutePlanner {
     }
 
     public void findRoute() {
-        Location dejviceByt = new Location(50.099394, 14.383089);
-        Location dejviceSkola = new Location(50.102551, 14.393202);
-        Location anickaByt = new Location(50.073639, 14.455722);
-        Location karlakSkola = new Location(50.076334, 14.418704);
-        Location anickaSkola = new Location(50.074115, 14.474012);
-
-        Location[] locArray = new Location[]{dejviceByt,dejviceSkola,anickaByt,anickaSkola,karlakSkola};
+        Location[] locArray = RandomLocationGenerator.getInstance().generateLocationsInPrague(5);
         TransportMode mode = TransportMode.CAR;
         List<Route> routes = new ArrayList<>();
 
@@ -40,7 +35,7 @@ public class RoutePlanner {
         graphMaker.createGraph(routeList);
 
         GeoJSONBuilder geoJSONBuilder = new GeoJSONBuilder();
-        geoJSONBuilder.addPolylines(routes);
+        geoJSONBuilder.addPolylinesFromRoutes(routes);
 
         System.out.println(geoJSONBuilder.buildJSONString());
     }
