@@ -1,8 +1,9 @@
 package model.planner;
 
 import java.awt.*;
+import java.io.Serializable;
 
-public enum TransportMode {
+public enum TransportMode implements Serializable{
     WALK,BIKE,TRANSIT,CAR, UNKNOWN;
 
     public Color modeColor(){

@@ -1,6 +1,8 @@
 package model.planner;
 
-public class Location {
+import java.io.Serializable;
+
+public class Location implements Serializable {
     public double lat;
     public double lon;
 
@@ -20,5 +22,10 @@ public class Location {
     }
     public int lonE6(){
         return (int) (lon*1E6);
+    }
+
+    @Override
+    public String toString() {
+        return "("+lat+", "+lon+")";
     }
 }

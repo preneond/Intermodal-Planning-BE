@@ -1,42 +1,40 @@
 import adapters.GMapsPlannerAdapter;
 import adapters.PlannerAdapter;
+import com.umotional.basestructures.Graph;
+import com.umotional.basestructures.Node;
+import model.graph.GraphEdge;
 import model.planner.Location;
 import model.planner.Route;
-import model.planner.TransportMode;
-import utils.GeoJSONBuilder;
 import utils.RandomLocationGenerator;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class RoutePlanner {
-    PlannerAdapter[] plannerAdapters;
+    private PlannerAdapter[] plannerAdapters;
 
     public RoutePlanner() {
+        // add more planner adapters if they exist
         plannerAdapters = new PlannerAdapter[]{new GMapsPlannerAdapter()};
     }
 
     public void findRoute() {
-        Location[] locArray = RandomLocationGenerator.getInstance().generateLocationsInPrague(5);
-        TransportMode mode = TransportMode.CAR;
+        Location[] locArray;
         List<Route> routes = new ArrayList<>();
+        List<Route> routeList;
 
-        List<Route> routeList = new ArrayList<>();
         for (PlannerAdapter plannerAdapter : plannerAdapters) {
-            for (int i=0; i< locArray.length-1;i++) {
-                for (int j = i + 1; j < locArray.length; j++) {
-                    routeList = plannerAdapter.findRoutes(locArray[i], locArray[j]);
-                    routes.addAll(routeList);
-                }
-            }
+            // Uncomment for loop for generating more routes
+//            for (int i = 0; i < 100; i++) {
+                locArray = RandomLocationGenerator.getInstance().generateLocationsInPrague(2);
+                routeList = plannerAdapter.findRoutes(locArray[0], locArray[1]);
+                routes.addAll(routeList);
+                routeList = plannerAdapter.findRoutes(locArray[1], locArray[0]);
+                routes.addAll(routeList);
+//            }
         }
 
         GraphMaker graphMaker = GraphMaker.getInstance();
-        graphMaker.createGraph(routeList);
-
-        GeoJSONBuilder geoJSONBuilder = new GeoJSONBuilder();
-        geoJSONBuilder.addPolylinesFromRoutes(routes);
-
-        System.out.println(geoJSONBuilder.buildJSONString());
+        graphMaker.createGraph(routes);
     }
 }

@@ -6,9 +6,13 @@ import com.umotional.basestructures.GraphBuilder;
 import com.umotional.basestructures.Node;
 import model.graph.GraphEdge;
 import model.planner.*;
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by Ondrej Prenek on 27/07/2017.
@@ -20,20 +24,29 @@ public class GraphMaker extends GraphBuilder {
     private Graph<Node, GraphEdge> graph;
     private int nodeCounter = 0;
 
+    private static final Logger logger = LogManager.getLogger(GraphMaker.class);
+
     public static GraphMaker getInstance() {
-        if (sharedInstance == null)
+        if (sharedInstance == null) {
             sharedInstance = new GraphMaker();
+        }
         return sharedInstance;
     }
 
-    public Graph createGraph(List<Route> routeList) {
-        System.out.println("Creating graph...");
-        addRoutes(routeList);
-        graph = createGraph();
-        System.out.println("Graph created.");
-        getGraphDescription();
-
+    public Graph<Node, GraphEdge> getGraph() {
         return graph;
+    }
+
+    public void createGraph(List<Route> routeList) {
+        Collection<GraphEdge> list = getAllEdges();
+        long a = list.stream().filter(graphEdge -> graphEdge.mode == TransportMode.TRANSIT).count();
+        logger.info("Pocet transit hran: " + a);
+        addRoutes(routeList);
+        logger.info("Creating graph...");
+        graph = createGraph();
+        logger.info("Graph created.");
+
+        getGraphDescription();
     }
 
     private void addRoutes(List<Route> routes) {
@@ -52,29 +65,29 @@ public class GraphMaker extends GraphBuilder {
         for (Step step : steps) {
             if (step.steps != null) {
                 this.addSteps(step.steps);
-                return;
+                continue;
             }
             int startId = getIdFor(step.startLocation);
             int endId = getIdFor(step.endLocation);
             if (!containsEdge(startId, endId)) {
-                Edge edge = new GraphEdge(startId, endId, (int) step.distanceInMeters);
-                Edge reverEdge = new GraphEdge(endId, startId, (int) step.distanceInMeters);
+                GraphEdge edge = new GraphEdge(startId, endId, (int) step.distanceInMeters);
+                edge.mode = step.transportMode;
+                edge.polyline = step.polyline;
+                edge.durationInSeconds = step.durationInSeconds;
                 addEdge(edge);
-                addEdge(reverEdge);
             }
         }
-
     }
 
 
     private void getGraphDescription() {
-        graph.getAllEdges();
-
         Collection<Node> nodeList = graph.getAllNodes();
-        System.out.println("Number of nodes:" + nodeList.size());
-
         Collection<GraphEdge> edgeList = graph.getAllEdges();
-        System.out.println("Number of edges:" + edgeList.size());
+
+
+        List carList = edgeList.stream().filter(graphEdge -> graphEdge.mode == TransportMode.CAR).collect(Collectors.toList());
+        List walkingList = edgeList.stream().filter(graphEdge -> graphEdge.mode == TransportMode.WALK).collect(Collectors.toList());
+        List transitList = edgeList.stream().filter(graphEdge -> graphEdge.mode == TransportMode.TRANSIT).collect(Collectors.toList());
 
         int inputLevel = 0;
         int outputLevel = 0;
@@ -87,9 +100,13 @@ public class GraphMaker extends GraphBuilder {
         double avgInputLevel = inputLevel / (double) nodeList.size();
         double avgOutputLevel = outputLevel / (double) nodeList.size();
 
-        System.out.println("Average input level:  " + avgInputLevel);
-        System.out.println("Average output level: " + avgOutputLevel);
-
+        logger.info("Number of edges: " + edgeList.size() + "\n" +
+                "Number of nodes: " + nodeList.size() + "\n" +
+                "Number of edges for car: " + carList.size() + "\n" +
+                "Number of edges for walking: " + walkingList.size() + "\n" +
+                "Number of edges for public transport: " + transitList.size() + "\n" +
+                "Average input level:  " + avgInputLevel + "\n" +
+                "Average output level: " + avgOutputLevel);
     }
 
     /**
@@ -119,5 +136,13 @@ public class GraphMaker extends GraphBuilder {
      */
     private int generateSourceIdFor(Location location) {
         return location.latE6() + location.lonE6();
+    }
+
+    public void setGraph(Graph<Node, GraphEdge> graph) {
+        Collection<Node> nodeList = graph.getAllNodes();
+        Collection<GraphEdge> edgeList = graph.getAllEdges();
+        addNodes(nodeList);
+        addEdges(edgeList);
+        nodeCounter = nodeList.size();
     }
 }

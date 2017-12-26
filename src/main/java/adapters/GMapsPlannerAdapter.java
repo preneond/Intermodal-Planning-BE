@@ -6,9 +6,11 @@ import model.planner.*;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
+import java.lang.reflect.Array;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 public class GMapsPlannerAdapter extends PlannerAdapter {
@@ -16,8 +18,6 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
 
     @Override
     public List<Route> findRoutes(Location origin, Location destination, TransportMode mode, Timestamp arrival) {
-        DateTime dt = getDateTime(arrival);
-
         TravelMode travelMode = getTravelMode(mode);
         LatLng originLatLng = new LatLng(origin.lat, origin.lon);
         LatLng destinationLatLng = new LatLng(destination.lat, destination.lon);
@@ -42,7 +42,7 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
 
         try {
             return getRouteList(result);
-        } catch (ArrayIndexOutOfBoundsException e) {
+        } catch (ArrayIndexOutOfBoundsException | NullPointerException e) {
             e.printStackTrace();
             return new ArrayList<>();
         }
@@ -50,12 +50,28 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
 
     @Override
     public List<Route> findRoutes(Location origin, Location destination) {
-        List<Route> routeList= new ArrayList<>();
+        LatLng originLatLng = new LatLng(origin.lat, origin.lon);
+        LatLng destinationLatLng = new LatLng(destination.lat, destination.lon);
+        DirectionsResult result = new DirectionsResult();
+        DirectionsResult tmpResult;
 
-        for(TransportMode transportMode: TransportMode.values()){
-            routeList.addAll(findRoutes(origin,destination,transportMode));
+        // Comment this block of code and uncomment code under to call only transit travel mode
+        // Snippet to comment
+        for(TravelMode travelMode: TravelMode.values()) {
+            tmpResult = GMapsApiClient.getInstance().sendNewRequest(originLatLng, destinationLatLng,travelMode);
+            result.routes = concatenate(result.routes,tmpResult.routes);
         }
-        return routeList;
+
+// Snippet to uncomment
+//        tmpResult = GMapsApiClient.getInstance().sendNewRequest(originLatLng, destinationLatLng,TravelMode.TRANSIT);
+//        result.routes = concatenate(result.routes,tmpResult.routes);
+
+        try {
+            return getRouteList(result);
+        } catch (ArrayIndexOutOfBoundsException | NullPointerException e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
     }
 
     @Override
@@ -99,20 +115,21 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
                     tmpStep.startLocation = getLocation(step.startLocation);
                     tmpStep.endLocation = getLocation(step.endLocation);
                     tmpStep.transportMode = getTransportMode(step.travelMode);
+                    tmpStep.polyline = getPolyline(step.polyline);
 
-                    if (tmpStep.transportMode == TransportMode.TRANSIT) {
+                    if (step.steps != null) {
                         tmpStep.steps = new ArrayList<>();
                         for (DirectionsStep step2: step.steps){
                             tmpStep2 = new Step();
                             tmpStep2.distanceInMeters = step2.distance.inMeters;
                             tmpStep2.durationInSeconds = step2.duration.inSeconds;
-                            tmpStep2.startLocation = getLocation(step.startLocation);
-                            tmpStep2.endLocation = getLocation(step.endLocation);
-                            tmpStep2.transportMode = TransportMode.TRANSIT;
+                            tmpStep2.startLocation = getLocation(step2.startLocation);
+                            tmpStep2.endLocation = getLocation(step2.endLocation);
+                            tmpStep2.transportMode = getTransportMode(step2.travelMode);
+                            tmpStep2.polyline = getPolyline(step2.polyline);
                             tmpStep.steps.add(tmpStep2);
                         }
                     }
-
                     steps.add(tmpStep);
                 }
 
@@ -135,48 +152,44 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
         return routes;
     }
 
+    private List<Location> getPolyline(EncodedPolyline polyline) {
+        List<Location> points= new ArrayList<>();
+        Location tmp;
+        for(LatLng point: polyline.decodePath()){
+            tmp = new Location(point.lat,point.lng);
+            points.add(tmp);
+        }
+        return points;
+    }
+
     private TravelMode getTravelMode(TransportMode mode) {
-        TravelMode travelMode;
         switch (mode) {
             case WALK:
-                travelMode = TravelMode.WALKING;
-                break;
+                return TravelMode.WALKING;
             case BIKE:
-                travelMode = TravelMode.BICYCLING;
-                break;
+                return TravelMode.BICYCLING;
             case TRANSIT:
-                travelMode = TravelMode.TRANSIT;
-                break;
+                return TravelMode.TRANSIT;
             case CAR:
-                travelMode = TravelMode.DRIVING;
-                break;
+                return TravelMode.DRIVING;
             default:
-                travelMode = TravelMode.UNKNOWN;
-                break;
+                return TravelMode.UNKNOWN;
         }
-        return travelMode;
     }
 
     private TransportMode getTransportMode(TravelMode mode) {
-        TransportMode travelMode;
         switch (mode) {
             case WALKING:
-                travelMode = TransportMode.WALK;
-                break;
+                return TransportMode.WALK;
             case BICYCLING:
-                travelMode = TransportMode.BIKE;
-                break;
+                return TransportMode.BIKE;
             case TRANSIT:
-                travelMode = TransportMode.TRANSIT;
-                break;
+                return TransportMode.TRANSIT;
             case DRIVING:
-                travelMode = TransportMode.CAR;
-                break;
+                return TransportMode.CAR;
             default:
-                travelMode = TransportMode.UNKNOWN;
-                break;
+                return TransportMode.UNKNOWN;
         }
-        return travelMode;
     }
 
     private Location getLocation(LatLng location){
@@ -186,5 +199,20 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
 
     private DateTime getDateTime(Timestamp dt) {
         return new DateTime(dt, DateTimeZone.getDefault());
+    }
+
+    private  <T> T[] concatenate(T[] a, T[] b) {
+        if (b == null) return a;
+        if (a == null) return b;
+
+        int aLen = a.length;
+        int bLen = b.length;
+
+        @SuppressWarnings("unchecked")
+        T[] c = (T[]) Array.newInstance(a.getClass().getComponentType(), aLen + bLen);
+        System.arraycopy(a, 0, c, 0, aLen);
+        System.arraycopy(b, 0, c, aLen, bLen);
+
+        return c;
     }
 }

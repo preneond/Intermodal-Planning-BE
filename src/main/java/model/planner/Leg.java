@@ -16,7 +16,6 @@ public class Leg {
 
     @Override
     public String toString() {
-        String out = "distanceInMeters: " + distanceInMeters + ", durationInSeconds: " + durationInSeconds + '\n';
-        return  out;
+        return  "("+startLocation + "-->" + endLocation+")";
     }
 }

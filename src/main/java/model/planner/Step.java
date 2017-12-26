@@ -9,4 +9,5 @@ public class Step {
     public long durationInSeconds;
     public TransportMode transportMode;
     public List<Step> steps;
+    public List<Location> polyline;
 }

@@ -2,19 +2,28 @@ package utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import model.planner.Leg;
-import model.planner.Route;
-import model.planner.Step;
-import model.planner.TransportMode;
+import com.umotional.basestructures.Graph;
+import com.umotional.basestructures.Node;
+import model.graph.GraphEdge;
+import model.planner.*;
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.geojson.*;
 
 import java.awt.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class GeoJSONBuilder {
+
+    private static final Logger logger = LogManager.getLogger(GeoJSONBuilder.class);
+
 
     private FeatureCollection featureCollection;
 
@@ -29,7 +38,7 @@ public class GeoJSONBuilder {
 
 
     public void addPolylinesFromRoutes(List<Route> routes) {
-        for (Route route: routes){
+        for (Route route : routes) {
             List<LngLatAlt> tt = new ArrayList<>();
             for (Leg leg : route.legList) {
                 addPolylinesFromSteps(leg.steps);
@@ -37,40 +46,60 @@ public class GeoJSONBuilder {
         }
     }
 
-    public void addPolylinesFromLegs(List<Leg> legs){
-        for (Leg leg : legs){
+    public void addPolylinesFromGraph(Graph<Node, GraphEdge> graph) {
+        Location loc;
+        List<Location> polyline;
+        LngLatAlt[] lngLatAltArr;
+        if (graph.getAllEdges().stream().filter(graphEdge -> graphEdge.mode.equals(TransportMode.TRANSIT)).count() > 0){
+            logger.info("polyline has transit edge!!!");
+        }
+        for (GraphEdge edge : graph.getAllEdges().stream().filter(graphEdge -> graphEdge.mode == TransportMode.CAR).collect(Collectors.toList())) {
+            polyline = edge.polyline;
+            lngLatAltArr = new LngLatAlt[polyline.size()];
+            for (int i = 0; i < polyline.size(); i++) {
+                loc = polyline.get(i);
+                lngLatAltArr[i] = new LngLatAlt(loc.lon, loc.lat);
+            }
+            feature = new Feature();
+            geoJsonObject = new LineString(lngLatAltArr);
+            feature.setGeometry(geoJsonObject);
+            featureCollection.add(feature);
+
+            Color tmpColor = edge.mode.modeColor();
+            feature.setProperty("stroke", toHexString(tmpColor));
+        }
+    }
+
+    public void addPolylinesFromLegs(List<Leg> legs) {
+        for (Leg leg : legs) {
             addPolylinesFromSteps(leg.steps);
         }
     }
 
     private void addPolylinesFromSteps(List<Step> steps) {
-        List<LngLatAlt> tt = new ArrayList<>();
-        for (Step step: steps){
-            if (step.steps != null){
+        for (Step step : steps) {
+            if (step.steps != null) {
                 this.addPolylinesFromSteps(step.steps);
                 return;
             }
-            LngLatAlt origin = new LngLatAlt(step.startLocation.lon,step.startLocation.lat);
-            LngLatAlt destination = new LngLatAlt(step.endLocation.lon,step.endLocation.lat);
-            tt.add(origin);
-            tt.add(destination);
-        }
-        Map<String,Object> properties = new HashMap<>();
-        if (steps.size() > 0){
-            Color tmpColor = steps.get(0).transportMode.modeColor();
-            properties.put("stroke", toHexString(tmpColor));
-        }
+            LngLatAlt origin = new LngLatAlt(step.startLocation.lon, step.startLocation.lat);
+            LngLatAlt destination = new LngLatAlt(step.endLocation.lon, step.endLocation.lat);
 
-        LngLatAlt[] locArr = new LngLatAlt[tt.size()];
-        tt.toArray(locArr);
-        addStringLine(properties,locArr);
+            feature = new Feature();
+            geoJsonObject = new LineString(origin, destination);
+
+            Color tmpColor = step.transportMode.modeColor();
+            feature.setProperty("stroke", toHexString(tmpColor));
+            feature.setGeometry(geoJsonObject);
+            featureCollection.add(feature);
+        }
     }
 
-    public void addStringLine(Map<String,Object> properties, LngLatAlt... points) {
+    public void addStringLine(Map<String, Object> properties, LngLatAlt... points) {
         feature = new Feature();
         geoJsonObject = new LineString(points);
 
-        if (properties != null){
+        if (properties != null) {
             feature.setProperties(properties);
         }
         feature.setGeometry(geoJsonObject);
@@ -86,8 +115,15 @@ public class GeoJSONBuilder {
         }
     }
 
-    public final static String toHexString(Color colour) throws NullPointerException {
-        String hexColour = Integer.toHexString(colour.getRGB() & 0xffffff);
+    public void buildJSONFile(String path) throws IOException {
+        File file = new File(path);
+        FileWriter writer = new FileWriter(file, false);
+        writer.write(buildJSONString());
+        writer.close();
+    }
+
+    public final static String toHexString(Color color) throws NullPointerException {
+        String hexColour = Integer.toHexString(color.getRGB() & 0xffffff);
         if (hexColour.length() < 6) {
             hexColour = "000000".substring(0, 6 - hexColour.length()) + hexColour;
         }
