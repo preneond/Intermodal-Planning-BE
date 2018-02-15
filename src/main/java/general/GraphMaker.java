@@ -1,12 +1,10 @@
+package general;
 
-
-import com.umotional.basestructures.Edge;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.GraphBuilder;
 import com.umotional.basestructures.Node;
 import model.graph.GraphEdge;
 import model.planner.*;
-import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -39,8 +37,6 @@ public class GraphMaker extends GraphBuilder {
 
     public void createGraph(List<Route> routeList) {
         Collection<GraphEdge> list = getAllEdges();
-        long a = list.stream().filter(graphEdge -> graphEdge.mode == TransportMode.TRANSIT).count();
-        logger.info("Pocet transit hran: " + a);
         addRoutes(routeList);
         logger.info("Creating graph...");
         graph = createGraph();
@@ -100,7 +96,9 @@ public class GraphMaker extends GraphBuilder {
         double avgInputLevel = inputLevel / (double) nodeList.size();
         double avgOutputLevel = outputLevel / (double) nodeList.size();
 
-        logger.info("Number of edges: " + edgeList.size() + "\n" +
+        logger.info("\n"+
+                "Number of requests: " + Main.numOfRequests + "\n" +
+                "Number of edges: " + edgeList.size() + "\n" +
                 "Number of nodes: " + nodeList.size() + "\n" +
                 "Number of edges for car: " + carList.size() + "\n" +
                 "Number of edges for walking: " + walkingList.size() + "\n" +
@@ -135,7 +133,7 @@ public class GraphMaker extends GraphBuilder {
      * @return unique sourceId for given location
      */
     private int generateSourceIdFor(Location location) {
-        return location.latE6() + location.lonE6();
+        return location.latE3() + location.lonE3();
     }
 
     public void setGraph(Graph<Node, GraphEdge> graph) {

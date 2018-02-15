@@ -47,13 +47,18 @@ public class GeoJSONBuilder {
     }
 
     public void addPolylinesFromGraph(Graph<Node, GraphEdge> graph) {
+        for (TransportMode mode: TransportMode.values()){
+            addPolylinesFromGraph(graph,mode);
+        }
+    }
+
+    public void addPolylinesFromGraph(Graph<Node, GraphEdge> graph, TransportMode mode) {
+        featureCollection = new FeatureCollection();
+
         Location loc;
         List<Location> polyline;
         LngLatAlt[] lngLatAltArr;
-        if (graph.getAllEdges().stream().filter(graphEdge -> graphEdge.mode.equals(TransportMode.TRANSIT)).count() > 0){
-            logger.info("polyline has transit edge!!!");
-        }
-        for (GraphEdge edge : graph.getAllEdges().stream().filter(graphEdge -> graphEdge.mode == TransportMode.CAR).collect(Collectors.toList())) {
+        for (GraphEdge edge : graph.getAllEdges().stream().filter(graphEdge -> graphEdge.mode == mode).collect(Collectors.toList())) {
             polyline = edge.polyline;
             lngLatAltArr = new LngLatAlt[polyline.size()];
             for (int i = 0; i < polyline.size(); i++) {
@@ -62,11 +67,20 @@ public class GeoJSONBuilder {
             }
             feature = new Feature();
             geoJsonObject = new LineString(lngLatAltArr);
+//
+//            Node from = graph.getNode(edge.fromId);
+//            Node to = graph.getNode(edge.toId);
+//            LngLatAlt origin = new LngLatAlt(from.getLongitude(),from.getLatitude());
+//            LngLatAlt destination = new LngLatAlt(to.getLongitude(),to.getLatitude());
+//
+//            feature = new Feature();
+//            geoJsonObject = new LineString(origin, destination);
             feature.setGeometry(geoJsonObject);
-            featureCollection.add(feature);
 
             Color tmpColor = edge.mode.modeColor();
             feature.setProperty("stroke", toHexString(tmpColor));
+
+            featureCollection.add(feature);
         }
     }
 

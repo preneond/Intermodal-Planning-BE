@@ -1,8 +1,7 @@
+package general;
+
 import adapters.GMapsPlannerAdapter;
 import adapters.PlannerAdapter;
-import com.umotional.basestructures.Graph;
-import com.umotional.basestructures.Node;
-import model.graph.GraphEdge;
 import model.planner.Location;
 import model.planner.Route;
 import utils.RandomLocationGenerator;
@@ -25,13 +24,13 @@ public class RoutePlanner {
 
         for (PlannerAdapter plannerAdapter : plannerAdapters) {
             // Uncomment for loop for generating more routes
-//            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 50; i++) {
                 locArray = RandomLocationGenerator.getInstance().generateLocationsInPrague(2);
                 routeList = plannerAdapter.findRoutes(locArray[0], locArray[1]);
                 routes.addAll(routeList);
                 routeList = plannerAdapter.findRoutes(locArray[1], locArray[0]);
                 routes.addAll(routeList);
-//            }
+            }
         }
 
         GraphMaker graphMaker = GraphMaker.getInstance();

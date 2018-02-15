@@ -57,7 +57,7 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
 
         // Comment this block of code and uncomment code under to call only transit travel mode
         // Snippet to comment
-        for(TravelMode travelMode: TravelMode.values()) {
+        for(TravelMode travelMode: new TravelMode[]{TravelMode.TRANSIT, TravelMode.DRIVING, TravelMode.WALKING}) {
             tmpResult = GMapsApiClient.getInstance().sendNewRequest(originLatLng, destinationLatLng,travelMode);
             result.routes = concatenate(result.routes,tmpResult.routes);
         }
