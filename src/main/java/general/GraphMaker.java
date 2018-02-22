@@ -1,5 +1,6 @@
 package general;
 
+import com.umotional.basestructures.Edge;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.GraphBuilder;
 import com.umotional.basestructures.Node;
@@ -36,13 +37,20 @@ public class GraphMaker extends GraphBuilder {
     }
 
     public void createGraph(List<Route> routeList) {
-        Collection<GraphEdge> list = getAllEdges();
         addRoutes(routeList);
-        logger.info("Creating graph...");
-        graph = createGraph();
-        logger.info("Graph created.");
 
+        graph = createGraph();
         getGraphDescription();
+        nodeCounter = 0;
+    }
+
+    public void setGraph(Graph<Node, GraphEdge> graph) {
+        addNodes(graph.getAllNodes());
+        addEdges(graph.getAllEdges());
+
+        this.graph = createGraph();
+        getGraphDescription();
+        nodeCounter = 0;
     }
 
     private void addRoutes(List<Route> routes) {
@@ -68,7 +76,7 @@ public class GraphMaker extends GraphBuilder {
             if (!containsEdge(startId, endId)) {
                 GraphEdge edge = new GraphEdge(startId, endId, (int) step.distanceInMeters);
                 edge.mode = step.transportMode;
-                edge.polyline = step.polyline;
+//                edge.polyline = step.polyline;
                 edge.durationInSeconds = step.durationInSeconds;
                 addEdge(edge);
             }
@@ -79,7 +87,6 @@ public class GraphMaker extends GraphBuilder {
     private void getGraphDescription() {
         Collection<Node> nodeList = graph.getAllNodes();
         Collection<GraphEdge> edgeList = graph.getAllEdges();
-
 
         List carList = edgeList.stream().filter(graphEdge -> graphEdge.mode == TransportMode.CAR).collect(Collectors.toList());
         List walkingList = edgeList.stream().filter(graphEdge -> graphEdge.mode == TransportMode.WALK).collect(Collectors.toList());
@@ -132,15 +139,8 @@ public class GraphMaker extends GraphBuilder {
      * @param location - location which is unique for each node
      * @return unique sourceId for given location
      */
-    private int generateSourceIdFor(Location location) {
+    public static int generateSourceIdFor(Location location) {
         return location.latE3() + location.lonE3();
     }
 
-    public void setGraph(Graph<Node, GraphEdge> graph) {
-        Collection<Node> nodeList = graph.getAllNodes();
-        Collection<GraphEdge> edgeList = graph.getAllEdges();
-        addNodes(nodeList);
-        addEdges(edgeList);
-        nodeCounter = nodeList.size();
-    }
 }

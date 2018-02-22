@@ -1,4 +1,4 @@
-package model.pathfinding;
+package pathfinding;
 
 import com.umotional.basestructures.Edge;
 import com.umotional.basestructures.Graph;

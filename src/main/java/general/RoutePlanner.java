@@ -1,6 +1,7 @@
 package general;
 
 import adapters.GMapsPlannerAdapter;
+import adapters.HereMapsPlannerAdapter;
 import adapters.PlannerAdapter;
 import model.planner.Location;
 import model.planner.Route;
@@ -14,7 +15,7 @@ public class RoutePlanner {
 
     public RoutePlanner() {
         // add more planner adapters if they exist
-        plannerAdapters = new PlannerAdapter[]{new GMapsPlannerAdapter()};
+        plannerAdapters = new PlannerAdapter[]{new GMapsPlannerAdapter(), new HereMapsPlannerAdapter()};
     }
 
     public void findRoute() {
@@ -32,7 +33,6 @@ public class RoutePlanner {
                 routes.addAll(routeList);
             }
         }
-
         GraphMaker graphMaker = GraphMaker.getInstance();
         graphMaker.createGraph(routes);
     }

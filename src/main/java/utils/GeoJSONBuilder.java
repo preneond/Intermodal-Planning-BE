@@ -22,105 +22,58 @@ import java.util.stream.Collectors;
 
 public class GeoJSONBuilder {
 
+    public static GeoJSONBuilder sharedInstance;
+
     private static final Logger logger = LogManager.getLogger(GeoJSONBuilder.class);
 
-
     private FeatureCollection featureCollection;
-
-    private Feature feature;
-    private GeoJsonObject geoJsonObject;
     private ObjectMapper objectMapper;
 
-    public GeoJSONBuilder() {
+    private GeoJSONBuilder() {
         featureCollection = new FeatureCollection();
         objectMapper = new ObjectMapper();
     }
 
-
-    public void addPolylinesFromRoutes(List<Route> routes) {
-        for (Route route : routes) {
-            List<LngLatAlt> tt = new ArrayList<>();
-            for (Leg leg : route.legList) {
-                addPolylinesFromSteps(leg.steps);
-            }
+    public static GeoJSONBuilder getInstance() {
+        if (sharedInstance == null) {
+            sharedInstance = new GeoJSONBuilder();
         }
+        return sharedInstance;
     }
 
-    public void addPolylinesFromGraph(Graph<Node, GraphEdge> graph) {
-        for (TransportMode mode: TransportMode.values()){
-            addPolylinesFromGraph(graph,mode);
-        }
-    }
-
-    public void addPolylinesFromGraph(Graph<Node, GraphEdge> graph, TransportMode mode) {
+    private void addPolylinesFromGraph(Graph<Node, GraphEdge> graph) {
         featureCollection = new FeatureCollection();
 
-        Location loc;
-        List<Location> polyline;
-        LngLatAlt[] lngLatAltArr;
+        for (TransportMode mode : TransportMode.values()) {
+            addPolylinesFromGraph(graph, mode);
+        }
+    }
+
+    private void addPolylinesFromGraph(Graph<Node, GraphEdge> graph, TransportMode mode) {
+        Feature feature;
+        GeoJsonObject geoJsonObject;
+
         for (GraphEdge edge : graph.getAllEdges().stream().filter(graphEdge -> graphEdge.mode == mode).collect(Collectors.toList())) {
-            polyline = edge.polyline;
-            lngLatAltArr = new LngLatAlt[polyline.size()];
-            for (int i = 0; i < polyline.size(); i++) {
-                loc = polyline.get(i);
-                lngLatAltArr[i] = new LngLatAlt(loc.lon, loc.lat);
-            }
-            feature = new Feature();
-            geoJsonObject = new LineString(lngLatAltArr);
-//
-//            Node from = graph.getNode(edge.fromId);
-//            Node to = graph.getNode(edge.toId);
-//            LngLatAlt origin = new LngLatAlt(from.getLongitude(),from.getLatitude());
-//            LngLatAlt destination = new LngLatAlt(to.getLongitude(),to.getLatitude());
-//
-//            feature = new Feature();
-//            geoJsonObject = new LineString(origin, destination);
-            feature.setGeometry(geoJsonObject);
-
-            Color tmpColor = edge.mode.modeColor();
-            feature.setProperty("stroke", toHexString(tmpColor));
-
-            featureCollection.add(feature);
-        }
-    }
-
-    public void addPolylinesFromLegs(List<Leg> legs) {
-        for (Leg leg : legs) {
-            addPolylinesFromSteps(leg.steps);
-        }
-    }
-
-    private void addPolylinesFromSteps(List<Step> steps) {
-        for (Step step : steps) {
-            if (step.steps != null) {
-                this.addPolylinesFromSteps(step.steps);
-                return;
-            }
-            LngLatAlt origin = new LngLatAlt(step.startLocation.lon, step.startLocation.lat);
-            LngLatAlt destination = new LngLatAlt(step.endLocation.lon, step.endLocation.lat);
+            Node from = graph.getNode(edge.fromId);
+            Node to = graph.getNode(edge.toId);
+            LngLatAlt origin = new LngLatAlt(from.getLongitude(), from.getLatitude());
+            LngLatAlt destination = new LngLatAlt(to.getLongitude(), to.getLatitude());
 
             feature = new Feature();
             geoJsonObject = new LineString(origin, destination);
 
-            Color tmpColor = step.transportMode.modeColor();
-            feature.setProperty("stroke", toHexString(tmpColor));
             feature.setGeometry(geoJsonObject);
+            feature.setProperty("mode", edge.mode);
+            feature.setProperty("length", edge.length);
+            feature.setProperty("duration", edge.durationInSeconds);
+
             featureCollection.add(feature);
         }
     }
 
-    public void addStringLine(Map<String, Object> properties, LngLatAlt... points) {
-        feature = new Feature();
-        geoJsonObject = new LineString(points);
+    public String buildGeoJSONString(Graph<Node, GraphEdge> graph) {
+        addPolylinesFromGraph(graph);
 
-        if (properties != null) {
-            feature.setProperties(properties);
-        }
-        feature.setGeometry(geoJsonObject);
-        featureCollection.add(feature);
-    }
-
-    public String buildJSONString() {
         try {
             return objectMapper.writeValueAsString(featureCollection);
         } catch (JsonProcessingException e) {
@@ -129,19 +82,39 @@ public class GeoJSONBuilder {
         }
     }
 
-    public void buildJSONFile(String path) throws IOException {
-        File file = new File(path);
-        FileWriter writer = new FileWriter(file, false);
-        writer.write(buildJSONString());
-        writer.close();
+    public String buildGeoJSONString(Graph<Node, GraphEdge> graph, TransportMode mode) {
+        addPolylinesFromGraph(graph, mode);
+
+        try {
+            return objectMapper.writeValueAsString(featureCollection);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return "{}";
+        }
     }
 
-    public final static String toHexString(Color color) throws NullPointerException {
-        String hexColour = Integer.toHexString(color.getRGB() & 0xffffff);
-        if (hexColour.length() < 6) {
-            hexColour = "000000".substring(0, 6 - hexColour.length()) + hexColour;
+    public File buildGeoJSONFile(Graph<Node, GraphEdge> graph, String filePath) throws IOException{
+        File file = new File(filePath);
+
+        try {
+            FileWriter writer = new FileWriter(file, false);
+            writer.write(buildGeoJSONString(graph));
+            writer.close();
+            logger.debug("GeoJSON has been written into file successfully");
+        } catch (IOException e) {
+            logger.error(e.getMessage());
         }
-        return "#" + hexColour;
+        return file;
+    }
+
+    public File buildGeoJSONFile(Graph<Node, GraphEdge> graph, TransportMode mode, String filePath) throws IOException {
+        File file = new File(filePath);
+        FileWriter writer = new FileWriter(file, false);
+        writer.write(buildGeoJSONString(graph, mode));
+        writer.close();
+        logger.debug("GeoJSON for " + mode.toString() + " has been written into file successfully");
+
+        return file;
     }
 }
 

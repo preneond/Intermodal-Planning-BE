@@ -8,12 +8,10 @@ import java.util.concurrent.ThreadLocalRandom;
 public class RandomLocationGenerator {
 
     public static RandomLocationGenerator sharedInstance;
-    private static Random random;
 
     public static RandomLocationGenerator getInstance() {
         if (sharedInstance == null) {
             sharedInstance = new RandomLocationGenerator();
-            random = new Random();
         }
         return sharedInstance;
     }

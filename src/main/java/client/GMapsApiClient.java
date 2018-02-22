@@ -26,7 +26,6 @@ public class GMapsApiClient {
 //        context.setApiKey("AIzaSyBUQP_eNwggd5cJ4BAahPzM VzsL0F5vNm8");
     }
 
-    @SuppressWarnings("Duplicates")
     public DirectionsResult sendNewRequest(LatLng origin, LatLng destination, TravelMode mode, DateTime dt, Boolean isArrival) {
         try {
             Main.numOfRequests++;

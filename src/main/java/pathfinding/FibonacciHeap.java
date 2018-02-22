@@ -1,4 +1,4 @@
-package model.pathfinding;
+package pathfinding;
 
 import java.util.*; // For ArrayList
 /***********************************************************************
