@@ -32,16 +32,18 @@ public class GraphMaker extends GraphBuilder {
         return sharedInstance;
     }
 
-    public Graph<Node, GraphEdge> getGraph() {
+    public Graph getGraph() {
         return graph;
     }
 
-    public void createGraph(List<Route> routeList) {
+    public Graph createGraph(List<Route> routeList) {
         addRoutes(routeList);
 
         graph = createGraph();
         getGraphDescription();
         nodeCounter = 0;
+
+        return graph;
     }
 
     public void setGraph(Graph<Node, GraphEdge> graph) {

@@ -26,24 +26,15 @@ public class GMapsApiClient {
 //        context.setApiKey("AIzaSyBUQP_eNwggd5cJ4BAahPzM VzsL0F5vNm8");
     }
 
-    public DirectionsResult sendNewRequest(LatLng origin, LatLng destination, TravelMode mode, DateTime dt, Boolean isArrival) {
+    public DirectionsResult sendNewRequest(LatLng origin, LatLng destination, TravelMode mode, DateTime departure) {
         try {
             Main.numOfRequests++;
-            if (isArrival) {
                 return DirectionsApi.newRequest(context)
                         .origin(origin)
                         .destination(destination)
                         .mode(mode)
-                        .arrivalTime(dt)
+                        .departureTime(departure)
                         .await();
-            } else {
-                return DirectionsApi.newRequest(context)
-                        .origin(origin)
-                        .destination(destination)
-                        .mode(mode)
-                        .departureTime(dt)
-                        .await();
-            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -51,7 +42,7 @@ public class GMapsApiClient {
     }
 
     public DirectionsResult sendNewRequest(LatLng origin, LatLng destination, TravelMode mode) {
-        DateTime time = new DateTime(DateTime.now()).plusMinutes(20);
+        DateTime time = new DateTime(DateTime.now());
         try {
                 Main.numOfRequests++;
                 return DirectionsApi.newRequest(context)

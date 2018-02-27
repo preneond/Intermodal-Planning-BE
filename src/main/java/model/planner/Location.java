@@ -25,5 +25,5 @@ public class Location implements Serializable {
     }
 
     @Override
-    public String toString() { return lat+","+lon; }
+    public String toString() { return lat+", "+lon; }
 }

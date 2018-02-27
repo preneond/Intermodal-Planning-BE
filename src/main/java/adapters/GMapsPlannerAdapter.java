@@ -17,19 +17,8 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
     private DirectionsResult result;
 
     @Override
-    public List<Route> findRoutes(Location origin, Location destination, TransportMode mode, Timestamp arrival) {
-        TravelMode travelMode = getTravelMode(mode);
-        LatLng originLatLng = new LatLng(origin.lat, origin.lon);
-        LatLng destinationLatLng = new LatLng(destination.lat, destination.lon);
-
-        result = GMapsApiClient.getInstance().sendNewRequest(originLatLng, destinationLatLng, travelMode, getDateTime(arrival), true);
-
-        try {
-            return getRouteList(result);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            e.printStackTrace();
-            return new ArrayList<>();
-        }
+    public List<Route> findRoutes(Location origin, Location destination, TransportMode mode, Timestamp departure) {
+        return null;
     }
 
     @Override
@@ -47,6 +36,13 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
             return new ArrayList<>();
         }
     }
+
+    @Override
+    public List<Route> findRoutes(Location origin, Location destination, Timestamp departure) {
+        return null;
+    }
+
+
 
     @Override
     public List<Route> findRoutes(Location origin, Location destination) {
@@ -72,27 +68,6 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
             e.printStackTrace();
             return new ArrayList<>();
         }
-    }
-
-    @Override
-    public Route findBestRoute(Location origin, Location destination, TransportMode mode, Timestamp arrival) {
-        List<Route> routes = findRoutes(origin, destination, mode, arrival);
-
-        return routes.size() == 0 ? null : routes.get(0);
-    }
-
-    @Override
-    public Route findBestRoute(Location origin, Location destination, TransportMode mode) {
-        List<Route> routes = findRoutes(origin, destination, mode);
-
-        return routes.size() == 0 ? null : routes.get(0);
-    }
-
-    @Override
-    public Route findBestRoute(Location origin, Location destination) {
-        List<Route> routes = findRoutes(origin, destination);
-
-        return routes.size() == 0 ? null : routes.get(0);
     }
 
     private List<Route> getRouteList(DirectionsResult directions) {
@@ -194,11 +169,6 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
 
     private Location getLocation(LatLng location){
         return new Location(location.lat,location.lng);
-    }
-
-
-    private DateTime getDateTime(Timestamp dt) {
-        return new DateTime(dt, DateTimeZone.getDefault());
     }
 
     private  <T> T[] concatenate(T[] a, T[] b) {

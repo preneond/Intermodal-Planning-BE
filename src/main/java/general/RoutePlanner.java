@@ -1,7 +1,6 @@
 package general;
 
-import adapters.GMapsPlannerAdapter;
-import adapters.HereMapsPlannerAdapter;
+import adapters.OpenTripPlannerAdapter;
 import adapters.PlannerAdapter;
 import model.planner.Location;
 import model.planner.Route;
@@ -15,7 +14,7 @@ public class RoutePlanner {
 
     public RoutePlanner() {
         // add more planner adapters if they exist
-        plannerAdapters = new PlannerAdapter[]{new GMapsPlannerAdapter(), new HereMapsPlannerAdapter()};
+        plannerAdapters = new PlannerAdapter[]{new OpenTripPlannerAdapter()};
     }
 
     public void findRoute() {

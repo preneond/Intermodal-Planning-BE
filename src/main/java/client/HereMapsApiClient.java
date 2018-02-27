@@ -7,6 +7,7 @@ import model.planner.TransportMode;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
+import java.sql.Timestamp;
 import java.util.Map;
 
 public class HereMapsApiClient {
@@ -19,7 +20,7 @@ public class HereMapsApiClient {
 //    private static final String TRANSIT_ENDPOINT = "https://transit.cit.api.here.com/v3/route.json";
     private static final String ROUTING_ENDPOINT = "https://route.cit.api.here.com/routing/7.2/calculateroute.json";
 
-    public static Map<String, Object> sendNewRequest(String origin, String destination, TransportMode mode) {
+    public static Map<String, Object> sendNewRequest(String origin, String destination, TransportMode mode, Timestamp departure) {
         Client client = Client.create();
         WebResource webResource = client
                     .resource(ROUTING_ENDPOINT)
@@ -28,28 +29,38 @@ public class HereMapsApiClient {
                     .queryParam("waypoint0", origin)
                     .queryParam("waypoint1", destination)
                     .queryParam("departure", "now")
-                    .queryParam("mode","fastest;" + (mode == TransportMode.TRANSIT ? "publicTransport" : "car"))
-                    .queryParam("combineChange","true");
+                    .queryParam("combineChange","true")
+                    .queryParam("mode","fastest;publicTransport");
 
-        try {
-            ClientResponse response = webResource.accept("application/json")
-                    .get(ClientResponse.class);
-
-            if (response.getStatus() != 200) {
-                throw new RuntimeException("Failed : HTTP error code : "
-                        + response.getStatus());
-            }
-
-            String output = response.getEntity(String.class);
-
-            logger.debug("Output from Server: \n" + output);
-
-            return response.getProperties();
-
-        } catch (Exception e) {
-            logger.error(e);
+        switch (mode) {
+            case TRANSIT:
+                webResource.queryParam("mode","fastest;publicTransport");
+            case CAR:
+                webResource.queryParam("mode","fastest;car");
+            default:
+                webResource.queryParam("mode","fastest;car");
         }
+
+//        try {
+//            ClientResponse response = webResource.accept("application/json")
+//                    .get(ClientResponse.class);
+//
+//            if (response.getStatus() != 200) {
+//                throw new RuntimeException("Failed : HTTP error code : "
+//                        + response.getStatus());
+//            }
+//
+//            String output = response.getEntity(String.class);
+//
+//            logger.debug("Output from Server: \n" + output);
+//
+//            return response.getProperties();
+//
+//        } catch (Exception e) {
+//            logger.error(e);
+//        }
         return null;
 
     }
+
 }
