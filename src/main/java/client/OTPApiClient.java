@@ -3,9 +3,9 @@ package client;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
-import general.Main;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.json.JSONObject;
 
 import java.util.Map;
 
@@ -27,11 +27,11 @@ public class OTPApiClient {
         return sharedInstance;
     }
 
-    public Map<String,Object> sendNewRequest(String origin, String destination) {
+    public JSONObject sendNewRequest(String origin, String destination) {
         Client client = Client.create();
         WebResource webResource = client
                 .resource(PLANNER_ENDPOINT)
-                .queryParam("fromPlace",origin)
+                .queryParam("fromPlace", origin)
                 .queryParam("toPlace", destination)
                 .queryParam("showIntermediateStops", Boolean.toString(showIntermediateStops));
 
@@ -43,11 +43,12 @@ public class OTPApiClient {
                 throw new RuntimeException("Failed : HTTP error code : "
                         + response.getStatus());
             }
-            String output = response.getEntity(String.class);
+            String stringOutput = response.getEntity(String.class);
 
-            logger.debug("Output from Server: \n" + output);
+            logger.debug("Output from Server: \n" + stringOutput);
 
-            return response.getProperties();
+            JSONObject output = new JSONObject(stringOutput);
+            return output;
 
         } catch (Exception e) {
             logger.error(e);

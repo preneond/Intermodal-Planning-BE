@@ -24,7 +24,7 @@ public class RoutePlanner {
 
         for (PlannerAdapter plannerAdapter : plannerAdapters) {
             // Uncomment for loop for generating more routes
-            for (int i = 0; i < 50; i++) {
+            for (int i = 0; i < 100; i++) {
                 locArray = RandomLocationGenerator.getInstance().generateLocationsInPrague(2);
                 routeList = plannerAdapter.findRoutes(locArray[0], locArray[1]);
                 routes.addAll(routeList);

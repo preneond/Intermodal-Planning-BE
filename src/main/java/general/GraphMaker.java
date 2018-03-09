@@ -63,7 +63,17 @@ public class GraphMaker extends GraphBuilder {
 
     private void addLegs(List<Leg> legs) {
         for (Leg leg : legs) {
-            addSteps(leg.steps);
+            if (leg.steps.isEmpty()) {
+                int startId = getIdFor(leg.startLocation);
+                int endId = getIdFor(leg.endLocation);
+                if (!containsEdge(startId, endId)) {
+                    GraphEdge edge = new GraphEdge(startId, endId, (int) leg.distanceInMeters);
+                    edge.mode = leg.mode;
+//                edge.polyline = step.polyline;
+                    edge.durationInSeconds = leg.durationInSeconds;
+                    addEdge(edge);
+                }
+            } else addSteps(leg.steps);
         }
     }
 
@@ -105,7 +115,7 @@ public class GraphMaker extends GraphBuilder {
         double avgInputLevel = inputLevel / (double) nodeList.size();
         double avgOutputLevel = outputLevel / (double) nodeList.size();
 
-        logger.info("\n"+
+        logger.info("\n" +
                 "Number of requests: " + Main.numOfRequests + "\n" +
                 "Number of edges: " + edgeList.size() + "\n" +
                 "Number of nodes: " + nodeList.size() + "\n" +

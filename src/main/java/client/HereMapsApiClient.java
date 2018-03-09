@@ -6,6 +6,7 @@ import com.sun.jersey.api.client.WebResource;
 import model.planner.TransportMode;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.json.JSONObject;
 
 import java.sql.Timestamp;
 import java.util.Map;
@@ -20,7 +21,7 @@ public class HereMapsApiClient {
 //    private static final String TRANSIT_ENDPOINT = "https://transit.cit.api.here.com/v3/route.json";
     private static final String ROUTING_ENDPOINT = "https://route.cit.api.here.com/routing/7.2/calculateroute.json";
 
-    public static Map<String, Object> sendNewRequest(String origin, String destination, TransportMode mode, Timestamp departure) {
+    public static JSONObject sendNewRequest(String origin, String destination, TransportMode mode, Timestamp departure) {
         Client client = Client.create();
         WebResource webResource = client
                     .resource(ROUTING_ENDPOINT)

@@ -2,11 +2,11 @@ package adapters;
 
 import client.OTPApiClient;
 import model.planner.*;
-
+import org.json.JSONArray;
+import org.json.JSONObject;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class OpenTripPlannerAdapter extends PlannerAdapter {
     @Override
@@ -26,93 +26,101 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
 
     @Override
     public List<Route> findRoutes(Location origin, Location destination) {
-        Map<String, Object> response = OTPApiClient.getInstance().sendNewRequest(origin.toString(), destination.toString());
+        JSONObject response = OTPApiClient.getInstance().sendNewRequest(origin.toString(),
+                destination.toString());
 
         return getRouteList(response);
     }
 
-    private List<Route> getRouteList(Map<String, Object> response) {
-
+    private List<Route> getRouteList(JSONObject response) {
         List<Route> routeList = new ArrayList<>();
 
-        Map<String, Object>[] routeArr = (Map<String, Object>[]) ((Map<String, Object>) response.get("plan")).get("itineraries");
+        if (response.has("error")) return routeList;
 
+        JSONObject obj = response.getJSONObject("plan");
+        JSONArray routeArr = obj.getJSONArray("itineraries");
 
-        for (Map<String, Object> route : routeArr) {
+        for (Object route : routeArr) {
             Route tmpRoute = new Route();
-            tmpRoute.legList = getLegList(route);
+            tmpRoute.legList = getLegList((JSONObject) route);
 
             routeList.add(tmpRoute);
         }
-
-
         return routeList;
     }
 
-    private List<Leg> getLegList(Map<String, Object> route) {
+    private List<Leg> getLegList(JSONObject route) {
         List<Leg> legList = new ArrayList<>();
-
-        Map<String, Object>[] legs = (Map<String, Object>[]) route.get("legs");
-
+        JSONArray legs = route.getJSONArray("legs");
         Leg tmpLeg;
-        for (Map<String, Object> leg : legs) {
+        boolean isTransitLeg;
+
+        for (Object leg : legs) {
+            JSONObject jsonLeg = (JSONObject) leg;
             tmpLeg = new Leg();
 
-            tmpLeg.durationInSeconds = getDuration(leg);
+            isTransitLeg = jsonLeg.getBoolean("transitLeg");
 
-            if (leg.get("distance") instanceof Long) {
-                tmpLeg.distanceInMeters = (Long) leg.get("distance");
-            }
-            tmpLeg.startLocation = getLocation((Map<String, Object>) leg.get("from"));
-            tmpLeg.endLocation = getLocation((Map<String, Object>) leg.get("to"));
-            tmpLeg.steps = getStepList((Map<String, Object>[]) leg.get("steps"),startLocation,endLocation);
+            if (!isTransitLeg) continue;
+
+            long startTime = jsonLeg.getLong("startTime");
+            long endTime = jsonLeg.getLong("endTime");
+
+            tmpLeg.startLocation = getLocation(jsonLeg.getJSONObject("from"));
+            tmpLeg.endLocation = getLocation(jsonLeg.getJSONObject("to"));
+            tmpLeg.durationInSeconds = (endTime - startTime) / 1000;
+
+            tmpLeg.steps = getStepList(jsonLeg.getJSONArray("intermediateStops"), tmpLeg.startLocation,
+                    tmpLeg.endLocation, startTime, endTime);
+            tmpLeg.steps.forEach(step -> step.transportMode = TransportMode.TRANSIT);
 
             legList.add(tmpLeg);
         }
-        return null;
+        return legList;
     }
 
-    private List<Step> getStepList(Map<String, Object>[] steps, Location startLocation, Location endLocation) {
+    private List<Step> getStepList(JSONArray steps, Location startLocation, Location endLocation,
+                                   long startTime, long endTime) {
         List<Step> stepList = new ArrayList<>();
 
-        if (steps.length == 0) return stepList;
+        if (steps.length() == 0) return stepList;
 
         Step tmpStep = new Step();
         tmpStep.startLocation = startLocation;
-        tmpStep.endLocation = getLocation(steps[0]);
-        tmpStep.distanceInMeters = (Long) steps[0].get("distance");
-
+        tmpStep.endLocation = getLocation(steps.getJSONObject(0));
+        tmpStep.durationInSeconds = steps.getJSONObject(0).getLong("arrival") - startTime;
         stepList.add(tmpStep);
 
-        int i;
-        for (i = 1; i < steps.length; i++) {
+        for (int i = 1; i < steps.length(); i++) {
             tmpStep = new Step();
-            tmpStep.startLocation = stepList.get(i-1).endLocation;
-            tmpStep.endLocation = getLocation(steps[i]);
-            tmpStep.transportMode = TransportMode.WALK;
-            tmpStep.distanceInMeters = (Long) steps[i].get("distance");
+            tmpStep.startLocation = stepList.get(i - 1).endLocation;
+            tmpStep.endLocation = getLocation(steps.getJSONObject(i));
+            tmpStep.durationInSeconds = steps.getJSONObject(i).getLong("departure") - steps.getJSONObject(i - 1).getLong("arrival");
 
             stepList.add(tmpStep);
         }
 
         tmpStep = new Step();
-        tmpStep.startLocation = stepList.get(i-1).endLocation;
+        tmpStep.startLocation = stepList.get(steps.length() - 1).endLocation;
         tmpStep.endLocation = endLocation;
-        tmpStep.distanceInMeters = 0;
-        
+        tmpStep.transportMode = TransportMode.TRANSIT;
+        tmpStep.durationInSeconds = endTime - steps.getJSONObject(steps.length() - 1).getLong("arrival");
+
+        stepList.add(tmpStep);
+
         return stepList;
     }
 
-    private Location getLocation(Map<String, Object> place) {
-        double lat = (Double) place.get("lat");
-        double lon = (Double) place.get("lon");
+    private Location getLocation(JSONObject place) {
+        double lat = place.getDouble("lat");
+        double lon = place.getDouble("lon");
 
-        return new Location(lat,lon);
+        return new Location(lat, lon);
     }
 
-    private long getDuration(Map<String, Object> leg) {
-        long startTime = (Long) leg.get("startTime");
-        long endTime = (Long) leg.get("endTime");
+    private long getDuration(JSONObject leg) {
+        long startTime = leg.getLong("startTime");
+        long endTime = leg.getLong("endTime");
 
         return (endTime - startTime) / 1000;
     }
