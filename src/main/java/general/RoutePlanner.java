@@ -1,5 +1,6 @@
 package general;
 
+import adapters.GMapsPlannerAdapter;
 import adapters.OpenTripPlannerAdapter;
 import adapters.PlannerAdapter;
 import model.planner.Location;
@@ -12,9 +13,11 @@ import java.util.List;
 public class RoutePlanner {
     private PlannerAdapter[] plannerAdapters;
 
+    public static final short NUM_OF_PATHS = 50;
+    
     public RoutePlanner() {
         // add more planner adapters if they exist
-        plannerAdapters = new PlannerAdapter[]{new OpenTripPlannerAdapter()};
+        plannerAdapters = new PlannerAdapter[]{new GMapsPlannerAdapter(), new OpenTripPlannerAdapter()};
     }
 
     public void findRoute() {
@@ -24,7 +27,7 @@ public class RoutePlanner {
 
         for (PlannerAdapter plannerAdapter : plannerAdapters) {
             // Uncomment for loop for generating more routes
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < NUM_OF_PATHS; i++) {
                 locArray = RandomLocationGenerator.getInstance().generateLocationsInPrague(2);
                 routeList = plannerAdapter.findRoutes(locArray[0], locArray[1]);
                 routes.addAll(routeList);

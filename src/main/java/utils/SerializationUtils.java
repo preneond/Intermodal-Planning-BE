@@ -48,13 +48,13 @@ public class SerializationUtils {
     }
 
 
-    public static File writeGraphToGeoJSONFile(Graph<Node, GraphEdge> graph, String filePath) throws IOException {
-        return GeoJSONBuilder.getInstance().buildGeoJSONFile(graph, filePath);
+    public static File writeGraphToGeoJSONFile(Graph<Node, GraphEdge> graph, File file) throws IOException {
+        return GeoJSONBuilder.getInstance().buildGeoJSONFile(graph, file);
     }
 
     public static File writeGraphToGeoJSONFile(Graph<Node, GraphEdge> graph, TransportMode mode,
-                                               String filePath) throws IOException {
-        return GeoJSONBuilder.getInstance().buildGeoJSONFile(graph, mode, filePath);
+                                               File file) throws IOException {
+        return GeoJSONBuilder.getInstance().buildGeoJSONFile(graph, mode, file);
     }
 
     public static String writeGraphToGeoJSONString(Graph<Node, GraphEdge> graph) {
@@ -78,9 +78,11 @@ public class SerializationUtils {
                     step = new Step();
                     step.startLocation = lngLatAltToLocation(coords.get(0));
                     step.endLocation = lngLatAltToLocation(coords.get(1));
-                    step.transportMode = (TransportMode) properties.get("mode");
-                    step.distanceInMeters = (long) properties.get("distance");
-                    step.durationInSeconds = (long) properties.get("duration");
+                    step.transportMode = TransportMode.valueOf((String) properties.get("mode"));
+//                    step.distanceInMeters = (long) properties.get("distance");
+
+                    System.out.println(properties.get("duration"));
+                    step.durationInSeconds = ((Number) properties.get("duration")).longValue();
 
                     stepList.add(step);
                 }

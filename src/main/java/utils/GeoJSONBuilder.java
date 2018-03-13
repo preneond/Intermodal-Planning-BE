@@ -63,7 +63,7 @@ public class GeoJSONBuilder {
             geoJsonObject = new LineString(origin, destination);
 
             feature.setGeometry(geoJsonObject);
-            feature.setProperty("mode", edge.mode);
+            feature.setProperty("mode", edge.mode.name());
             feature.setProperty("length", edge.length);
             feature.setProperty("duration", edge.durationInSeconds);
 
@@ -93,9 +93,7 @@ public class GeoJSONBuilder {
         }
     }
 
-    public File buildGeoJSONFile(Graph<Node, GraphEdge> graph, String filePath) throws IOException{
-        File file = new File(filePath);
-
+    public File buildGeoJSONFile(Graph<Node, GraphEdge> graph, File file) throws IOException{
         try {
             FileWriter writer = new FileWriter(file, false);
             writer.write(buildGeoJSONString(graph));
@@ -107,8 +105,7 @@ public class GeoJSONBuilder {
         return file;
     }
 
-    public File buildGeoJSONFile(Graph<Node, GraphEdge> graph, TransportMode mode, String filePath) throws IOException {
-        File file = new File(filePath);
+    public File buildGeoJSONFile(Graph<Node, GraphEdge> graph, TransportMode mode, File file) throws IOException {
         FileWriter writer = new FileWriter(file, false);
         writer.write(buildGeoJSONString(graph, mode));
         writer.close();

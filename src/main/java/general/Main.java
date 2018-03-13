@@ -1,6 +1,5 @@
 package general;
 
-import client.HereMapsApiClient;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
 import model.graph.GraphEdge;
@@ -8,7 +7,6 @@ import model.planner.TransportMode;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import utils.GeoJSONBuilder;
 import utils.SerializationUtils;
 
 import java.io.File;
@@ -39,11 +37,13 @@ public class Main {
 
             routePlanner.findRoute();
 
-            String filePath;
             for (TransportMode mode : TransportMode.values()) {
-                filePath = "/Users/ondrejprenek/Desktop/geo_out_" + mode.toString().toLowerCase() + ".json";
-                SerializationUtils.writeGraphToGeoJSONFile(GraphMaker.getInstance().getGraph(), mode, filePath);
+                File tmpFile = new File("/Users/ondrejprenek/Desktop/geo_out_" + mode.toString().toLowerCase() + ".json");
+                SerializationUtils.writeGraphToGeoJSONFile(GraphMaker.getInstance().getGraph(), mode, tmpFile);
             }
+
+            SerializationUtils.writeGraphToGeoJSONFile(GraphMaker.getInstance().getGraph(), file);
+
         } catch (IOException | URISyntaxException e) {
             logger.error("Failure");
             e.printStackTrace();

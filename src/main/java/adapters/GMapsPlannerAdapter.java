@@ -17,11 +17,6 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
     private DirectionsResult result;
 
     @Override
-    public List<Route> findRoutes(Location origin, Location destination, TransportMode mode, Timestamp departure) {
-        return null;
-    }
-
-    @Override
     public List<Route> findRoutes(Location origin, Location destination, TransportMode mode) {
         TravelMode travelMode = getTravelMode(mode);
         LatLng originLatLng = new LatLng(origin.lat, origin.lon);
@@ -36,13 +31,6 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
             return new ArrayList<>();
         }
     }
-
-    @Override
-    public List<Route> findRoutes(Location origin, Location destination, Timestamp departure) {
-        return null;
-    }
-
-
 
     @Override
     public List<Route> findRoutes(Location origin, Location destination) {
@@ -71,11 +59,14 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
     }
 
     private List<Route> getRouteList(DirectionsResult directions) {
-        legs = new ArrayList<>();
-        routes = new ArrayList<>();
+        List<Leg> legs;
+        List<Route> routes;
+        List<Step> steps;
         Route tmpRoute;
         Step tmpStep, tmpStep2;
         Leg tmpLeg;
+
+        routes = new ArrayList<>();
 
         for (DirectionsRoute directionsRoute : directions.routes) {
             tmpRoute = new Route();
@@ -90,7 +81,7 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
                     tmpStep.startLocation = getLocation(step.startLocation);
                     tmpStep.endLocation = getLocation(step.endLocation);
                     tmpStep.transportMode = getTransportMode(step.travelMode);
-                    tmpStep.polyline = getPolyline(step.polyline);
+//                    tmpStep.polyline = getPolyline(step.polyline);
 
                     if (step.steps != null) {
                         tmpStep.steps = new ArrayList<>();
@@ -101,7 +92,7 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
                             tmpStep2.startLocation = getLocation(step2.startLocation);
                             tmpStep2.endLocation = getLocation(step2.endLocation);
                             tmpStep2.transportMode = getTransportMode(step2.travelMode);
-                            tmpStep2.polyline = getPolyline(step2.polyline);
+//                            tmpStep2.polyline = getPolyline(step2.polyline);
                             tmpStep.steps.add(tmpStep2);
                         }
                     }
@@ -109,14 +100,11 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
                 }
 
                 tmpLeg = new Leg();
-                startLocation = getLocation(leg.startLocation);
-
-                endLocation = getLocation(leg.endLocation);
 
                 tmpLeg.durationInSeconds = leg.duration.inSeconds;
                 tmpLeg.distanceInMeters = leg.distance.inMeters;
-                tmpLeg.startLocation = startLocation;
-                tmpLeg.endLocation = endLocation;
+                tmpLeg.startLocation = getLocation(leg.startLocation);
+                tmpLeg.endLocation = getLocation(leg.endLocation);
                 tmpLeg.steps = steps;
 
                 legs.add(tmpLeg);

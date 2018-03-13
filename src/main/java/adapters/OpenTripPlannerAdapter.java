@@ -10,17 +10,7 @@ import java.util.List;
 
 public class OpenTripPlannerAdapter extends PlannerAdapter {
     @Override
-    public List<Route> findRoutes(Location origin, Location destination, TransportMode mode, Timestamp departure) {
-        return null;
-    }
-
-    @Override
     public List<Route> findRoutes(Location origin, Location destination, TransportMode mode) {
-        return null;
-    }
-
-    @Override
-    public List<Route> findRoutes(Location origin, Location destination, Timestamp departure) {
         return null;
     }
 

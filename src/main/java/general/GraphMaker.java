@@ -146,13 +146,20 @@ public class GraphMaker extends GraphBuilder {
     }
 
     /**
-     * Create unique Node source id based on location
+     * Create unique Node source id based on location using Szudzik's function
+     *
+     * See https://stackoverflow.com/questions/919612/mapping-two-integers-to-one-in-a-unique-and-deterministic-way
      *
      * @param location - location which is unique for each node
      * @return unique sourceId for given location
      */
     public static int generateSourceIdFor(Location location) {
-        return location.latE3() + location.lonE3();
+        int a = location.latE3();
+        int b = location.lonE3();
+        int A = a >= 0 ? 2 * a : -2 * a - 1;
+        int B = b >= 0 ? 2 * b : -2 * b - 1;
+
+        return A >= B ? A * A + A + B : A + B * B;
     }
 
 }
