@@ -58,6 +58,25 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
         }
     }
 
+    @Override
+    public Route findRoute(Location origin, Location destination, TransportMode mode) {
+        List<Route> routeList = findRoutes(origin, destination, mode);
+
+        if (routeList.isEmpty()) return null;
+
+        return routeList.get(0);
+
+    }
+
+    @Override
+    public Route findRoute(Location origin, Location destination) {
+        List<Route> routeList = findRoutes(origin, destination);
+
+        if (routeList.isEmpty()) return null;
+
+        return routeList.get(0);
+    }
+
     private List<Route> getRouteList(DirectionsResult directions) {
         List<Leg> legs;
         List<Route> routes;

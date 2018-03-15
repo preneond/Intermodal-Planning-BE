@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 public class GeoJSONBuilder {
 
-    public static GeoJSONBuilder sharedInstance;
+    private static GeoJSONBuilder sharedInstance;
 
     private static final Logger logger = LogManager.getLogger(GeoJSONBuilder.class);
 
@@ -49,6 +49,21 @@ public class GeoJSONBuilder {
         }
     }
 
+    private void addPolyline(Graph<Node, GraphEdge> graph, List<Location> path) {
+        featureCollection = new FeatureCollection();
+        Feature feature = new Feature();
+        LngLatAlt[] pointsArr = new LngLatAlt[path.size()];
+
+        for (int i = 0; i < path.size(); i++) {
+            pointsArr[i] = path.get(i).toLngLatAlt();
+        }
+
+        GeoJsonObject polyline = new LineString(pointsArr);
+        feature.setGeometry(polyline);
+
+        featureCollection.add(feature);
+    }
+
     private void addPolylinesFromGraph(Graph<Node, GraphEdge> graph, TransportMode mode) {
         Feature feature;
         GeoJsonObject geoJsonObject;
@@ -71,7 +86,7 @@ public class GeoJSONBuilder {
         }
     }
 
-    public String buildGeoJSONString(Graph<Node, GraphEdge> graph) {
+    private String buildGeoJSONString(Graph<Node, GraphEdge> graph) {
         addPolylinesFromGraph(graph);
 
         try {
@@ -82,7 +97,20 @@ public class GeoJSONBuilder {
         }
     }
 
-    public String buildGeoJSONString(Graph<Node, GraphEdge> graph, TransportMode mode) {
+
+    private String buildGeoJSONString(Graph<Node, GraphEdge> graph, List<Location> path) {
+        addPolyline(graph, path);
+
+        try {
+            return objectMapper.writeValueAsString(featureCollection);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return "{}";
+        }
+    }
+
+
+    private String buildGeoJSONString(Graph<Node, GraphEdge> graph, TransportMode mode) {
         addPolylinesFromGraph(graph, mode);
 
         try {
@@ -93,7 +121,19 @@ public class GeoJSONBuilder {
         }
     }
 
-    public File buildGeoJSONFile(Graph<Node, GraphEdge> graph, File file) throws IOException{
+    public File buildGeoJSONFile(Graph<Node, GraphEdge> graph, List<Location> path, File file) {
+        try {
+            FileWriter writer = new FileWriter(file, false);
+            writer.write(buildGeoJSONString(graph, path));
+            writer.close();
+            logger.debug("GeoJSON has been written into file successfully");
+        } catch (IOException e) {
+            logger.error(e.getMessage());
+        }
+        return file;
+    }
+
+    public File buildGeoJSONFile(Graph<Node, GraphEdge> graph, File file) {
         try {
             FileWriter writer = new FileWriter(file, false);
             writer.write(buildGeoJSONString(graph));
@@ -105,12 +145,15 @@ public class GeoJSONBuilder {
         return file;
     }
 
-    public File buildGeoJSONFile(Graph<Node, GraphEdge> graph, TransportMode mode, File file) throws IOException {
-        FileWriter writer = new FileWriter(file, false);
-        writer.write(buildGeoJSONString(graph, mode));
-        writer.close();
-        logger.debug("GeoJSON for " + mode.toString() + " has been written into file successfully");
-
+    public File buildGeoJSONFile(Graph<Node, GraphEdge> graph, TransportMode mode, File file) {
+        try {
+            FileWriter writer = new FileWriter(file, false);
+            writer.write(buildGeoJSONString(graph, mode));
+            writer.close();
+            logger.debug("GeoJSON for " + mode.toString() + " has been written into file successfully");
+        } catch (IOException e) {
+            logger.error(e.getMessage());
+        }
         return file;
     }
 }

@@ -11,6 +11,7 @@ import org.apache.log4j.Logger;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 /**
@@ -50,9 +51,7 @@ public class GraphMaker extends GraphBuilder {
         addNodes(graph.getAllNodes());
         addEdges(graph.getAllEdges());
 
-        this.graph = createGraph();
-        getGraphDescription();
-        nodeCounter = 0;
+        nodeCounter = graph.getAllNodes().size();
     }
 
     private void addRoutes(List<Route> routes) {
@@ -67,9 +66,8 @@ public class GraphMaker extends GraphBuilder {
                 int startId = getIdFor(leg.startLocation);
                 int endId = getIdFor(leg.endLocation);
                 if (!containsEdge(startId, endId)) {
-                    GraphEdge edge = new GraphEdge(startId, endId, (int) leg.distanceInMeters);
+                    GraphEdge edge = new GraphEdge(startId, endId, (int) leg.durationInSeconds);
                     edge.mode = leg.mode;
-//                edge.polyline = step.polyline;
                     edge.durationInSeconds = leg.durationInSeconds;
                     addEdge(edge);
                 }
@@ -86,7 +84,7 @@ public class GraphMaker extends GraphBuilder {
             int startId = getIdFor(step.startLocation);
             int endId = getIdFor(step.endLocation);
             if (!containsEdge(startId, endId)) {
-                GraphEdge edge = new GraphEdge(startId, endId, (int) step.distanceInMeters);
+                GraphEdge edge = new GraphEdge(startId, endId, (int) step.durationInSeconds);
                 edge.mode = step.transportMode;
 //                edge.polyline = step.polyline;
                 edge.durationInSeconds = step.durationInSeconds;
@@ -161,5 +159,4 @@ public class GraphMaker extends GraphBuilder {
 
         return A >= B ? A * A + A + B : A + B * B;
     }
-
 }

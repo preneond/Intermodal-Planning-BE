@@ -3,21 +3,22 @@ package pathfinding;
 import com.umotional.basestructures.Edge;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
+import model.graph.GraphEdge;
 import utils.LocationUtils;
 
 import java.util.*;
 
-public class AStar<TNode extends Node, TEdge extends Edge> {
+public class AStar<TNode extends Node> {
 
-    private final Graph<TNode, TEdge> graph;
+    private final Graph<TNode, GraphEdge> graph;
 
-    HashSet<Integer> closedList;
-    FibonacciHeap<TNode> openList;
-    List<TEdge> path;
-    Map<Integer, Integer> prevNodes;
+    private HashSet<Integer> closedList;
+    private FibonacciHeap<TNode> openList;
+    private List<GraphEdge> path;
+    private Map<Integer, Integer> prevNodes;
 
 
-    public AStar(Graph<TNode, TEdge> graph) {
+    public AStar(Graph<TNode, GraphEdge> graph) {
         this.graph = graph;
 
         openList = new FibonacciHeap<>();
@@ -26,12 +27,12 @@ public class AStar<TNode extends Node, TEdge extends Edge> {
         prevNodes = new HashMap<>();
     }
 
-    public List<TEdge> plan(TNode origin, TNode destination) {
+    public List<GraphEdge> plan(TNode origin, TNode destination) {
 
         FibonacciHeap.Entry<TNode> entry_from;
         FibonacciHeap.Entry<TNode> entry_old;
         TNode node_to;
-        List<TEdge> list;
+        List<GraphEdge> list;
         double edgeLength, distanceFrom, distanceTo;
         double priority_new;
 
@@ -58,7 +59,7 @@ public class AStar<TNode extends Node, TEdge extends Edge> {
                 list = graph.getOutEdges(entry_from.getValue().id);
 
                 // loop all edges from dequeued node
-                for (TEdge edge : list) {
+                for (GraphEdge edge : list) {
                     //if node is in closed list or is not allowed to ride a car then continue
                     if (closedList.contains(edge.toId)) { //|| !edge.getPermittedModes().contains(PermittedMode.CAR)) {
                         continue;
@@ -99,13 +100,13 @@ public class AStar<TNode extends Node, TEdge extends Edge> {
         return null;
     }
 
-    private List<TEdge> findPath(Graph<TNode,TEdge> graph, TNode origin, TNode destination) {
-        LinkedList<TEdge> path = new LinkedList<>();
+    private List<GraphEdge> findPath(Graph<TNode, GraphEdge> graph, TNode origin, TNode destination) {
+        LinkedList<GraphEdge> path = new LinkedList<>();
         int tmpId = destination.id;
         int originId = origin.id;
 
         while (tmpId != originId) {
-            TEdge edge = graph.getEdge(prevNodes.get(tmpId), tmpId);
+            GraphEdge edge = graph.getEdge(prevNodes.get(tmpId), tmpId);
             path.addFirst(edge);
             tmpId = prevNodes.get(tmpId);
         }

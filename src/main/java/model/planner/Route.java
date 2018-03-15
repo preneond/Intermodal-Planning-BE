@@ -1,18 +1,27 @@
 package model.planner;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Route {
     public List<Leg> legList;
 
+    public Route() {
+        legList = new ArrayList<>();
+    }
+
+    public Route(List<Leg> legList) {
+        this.legList = legList;
+    }
+
     @Override
     public String toString() {
-        String out = "{ ";
+        StringBuilder out = new StringBuilder("{ ");
         for (Leg leg : legList) {
-            out += leg + ",";
+            out.append(leg).append(",");
         }
-        out += "}";
+        out.append("}");
 
-        return out;
+        return out.toString();
     }
 }

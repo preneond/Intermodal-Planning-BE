@@ -91,7 +91,6 @@ public class SerializationUtils {
             leg.steps = stepList;
 
             Route route = new Route();
-            route.legList = new ArrayList<>();
             route.legList.add(leg);
             List<Route> routeList = new ArrayList<>();
             routeList.add(route);

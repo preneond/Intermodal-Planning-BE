@@ -16,5 +16,8 @@ public abstract class PlannerAdapter {
 
     public abstract List<Route> findRoutes(Location origin, Location destination);
 
+    public abstract Route findRoute(Location origin, Location destination, TransportMode mode);
+
+    public abstract Route findRoute(Location origin, Location destination);
 
 }

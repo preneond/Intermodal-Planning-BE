@@ -15,4 +15,9 @@ public class GraphEdge extends Edge implements Serializable {
     public GraphEdge(int fromId, int toId, int lengthInMeters) {
         super(fromId, toId, lengthInMeters);
     }
+
+    @Override
+    public String toString() {
+        return "(" + fromId + "->" + mode.name() + "->" + toId + ')';
+    }
 }

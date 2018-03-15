@@ -1,5 +1,7 @@
 package model.planner;
 
+import org.geojson.LngLatAlt;
+
 import java.io.Serializable;
 
 public class Location implements Serializable {
@@ -26,4 +28,8 @@ public class Location implements Serializable {
 
     @Override
     public String toString() { return lat+", "+lon; }
+
+    public LngLatAlt toLngLatAlt() {
+        return new LngLatAlt(lon, lat);
+    }
 }

@@ -4,6 +4,7 @@ import client.OTPApiClient;
 import model.planner.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,15 +12,34 @@ import java.util.List;
 public class OpenTripPlannerAdapter extends PlannerAdapter {
     @Override
     public List<Route> findRoutes(Location origin, Location destination, TransportMode mode) {
-        return null;
+        JSONObject response = OTPApiClient.getInstance().sendNewRequest(origin, destination, mode);
+
+        return getRouteList(response);
     }
 
     @Override
     public List<Route> findRoutes(Location origin, Location destination) {
-        JSONObject response = OTPApiClient.getInstance().sendNewRequest(origin.toString(),
-                destination.toString());
+        JSONObject response = OTPApiClient.getInstance().sendNewRequest(origin, destination);
 
         return getRouteList(response);
+    }
+
+    @Override
+    public Route findRoute(Location origin, Location destination, TransportMode mode) {
+        List<Route> routeList = findRoutes(origin, destination, mode);
+
+        if (routeList.isEmpty()) return null;
+
+        return routeList.get(0);
+    }
+
+    @Override
+    public Route findRoute(Location origin, Location destination) {
+        List<Route> routeList = findRoutes(origin, destination);
+
+        if (routeList.isEmpty()) return null;
+
+        return routeList.get(0);
     }
 
     private List<Route> getRouteList(JSONObject response) {

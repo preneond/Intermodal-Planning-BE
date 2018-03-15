@@ -3,6 +3,10 @@ package client;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
+import com.umotional.basestructures.Node;
+import general.Main;
+import model.planner.Location;
+import model.planner.TransportMode;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.json.JSONObject;
@@ -17,8 +21,6 @@ public class OTPApiClient {
 
     private static final String PLANNER_ENDPOINT = "http://127.0.0.1:8080/otp/routers/default/plan";
 
-    private static boolean showIntermediateStops = true;
-
     public static OTPApiClient getInstance() {
         if (sharedInstance == null) {
             sharedInstance = new OTPApiClient();
@@ -27,15 +29,34 @@ public class OTPApiClient {
         return sharedInstance;
     }
 
-    public JSONObject sendNewRequest(String origin, String destination) {
+    public JSONObject sendNewRequest(Location origin, Location destination) {
         Client client = Client.create();
         WebResource webResource = client
                 .resource(PLANNER_ENDPOINT)
-                .queryParam("fromPlace", origin)
-                .queryParam("toPlace", destination)
-                .queryParam("showIntermediateStops", Boolean.toString(showIntermediateStops));
+                .queryParam("fromPlace", origin.toString())
+                .queryParam("toPlace", destination.toString())
+                .queryParam("showIntermediateStops", "true");
 
+        return sendNewRequest(webResource);
+    }
+
+    // FIXME: fix query parametr of mode - see doc of otp
+    public JSONObject sendNewRequest(Location origin, Location destination, TransportMode mode) {
+        Client client = Client.create();
+        WebResource webResource = client
+                .resource(PLANNER_ENDPOINT)
+                .queryParam("fromPlace", origin.toString())
+                .queryParam("toPlace", destination.toString())
+                .queryParam("mode", mode.name())
+                .queryParam("showIntermediateStops", "true");
+
+        return sendNewRequest(webResource);
+
+    }
+
+    private JSONObject sendNewRequest(WebResource webResource) {
         try {
+            Main.numOfRequests++;
             ClientResponse response = webResource.accept("application/json")
                     .get(ClientResponse.class);
 
@@ -47,8 +68,7 @@ public class OTPApiClient {
 
             logger.debug("Output from Server: \n" + stringOutput);
 
-            JSONObject output = new JSONObject(stringOutput);
-            return output;
+            return new JSONObject(stringOutput);
 
         } catch (Exception e) {
             logger.error(e);
@@ -56,3 +76,4 @@ public class OTPApiClient {
         return null;
     }
 }
+
