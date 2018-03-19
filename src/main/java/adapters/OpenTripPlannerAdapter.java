@@ -30,6 +30,10 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
 
         if (routeList.isEmpty()) return null;
 
+//        if (routeList.get(0).legList.size() > 1) {
+//            throw new RuntimeException("findLeg plan has more than one leg");
+//        }
+
         return routeList.get(0);
     }
 
@@ -50,8 +54,13 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
         JSONObject obj = response.getJSONObject("plan");
         JSONArray routeArr = obj.getJSONArray("itineraries");
 
+        JSONObject from = obj.getJSONObject("from");
+        JSONObject to = obj.getJSONObject("to");
+
         for (Object route : routeArr) {
             Route tmpRoute = new Route();
+            tmpRoute.origin = getLocation(from);
+            tmpRoute.destination = getLocation(to);
             tmpRoute.legList = getLegList((JSONObject) route);
 
             routeList.add(tmpRoute);
@@ -63,34 +72,51 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
         List<Leg> legList = new ArrayList<>();
         JSONArray legs = route.getJSONArray("legs");
         Leg tmpLeg;
-        boolean isTransitLeg;
 
         for (Object leg : legs) {
             JSONObject jsonLeg = (JSONObject) leg;
-            tmpLeg = new Leg();
 
-            isTransitLeg = jsonLeg.getBoolean("transitLeg");
-
-            if (!isTransitLeg) continue;
-
-            long startTime = jsonLeg.getLong("startTime");
-            long endTime = jsonLeg.getLong("endTime");
-
-            tmpLeg.startLocation = getLocation(jsonLeg.getJSONObject("from"));
-            tmpLeg.endLocation = getLocation(jsonLeg.getJSONObject("to"));
-            tmpLeg.durationInSeconds = (endTime - startTime) / 1000;
-
-            tmpLeg.steps = getStepList(jsonLeg.getJSONArray("intermediateStops"), tmpLeg.startLocation,
-                    tmpLeg.endLocation, startTime, endTime);
-            tmpLeg.steps.forEach(step -> step.transportMode = TransportMode.TRANSIT);
+            tmpLeg = jsonLeg.getBoolean("transitLeg") ? parseTransitLeg(jsonLeg) : parseNonTransitLeg(jsonLeg);
 
             legList.add(tmpLeg);
         }
+
         return legList;
     }
 
+    private Leg parseNonTransitLeg(JSONObject jsonLeg) {
+        Leg leg = new Leg();
+
+        leg.mode = TransportMode.valueOf(jsonLeg.getString("mode"));
+        leg.durationInSeconds = jsonLeg.getLong("duration");
+
+        leg.startLocation = getLocation(jsonLeg.getJSONObject("from"));
+        leg.endLocation = getLocation(jsonLeg.getJSONObject("to"));
+        leg.steps = getStepList(jsonLeg.getJSONArray("intermediateStops"), leg.startLocation,
+                leg.endLocation, 0, 0, false);
+        leg.steps.forEach(step -> step.transportMode = TransportMode.WALK);
+
+        return leg;
+    }
+
+    private Leg parseTransitLeg(JSONObject jsonLeg) {
+        Leg leg = new Leg();
+        long startTime = jsonLeg.getLong("startTime");
+        long endTime = jsonLeg.getLong("endTime");
+
+        leg.startLocation = getLocation(jsonLeg.getJSONObject("from"));
+        leg.endLocation = getLocation(jsonLeg.getJSONObject("to"));
+        leg.durationInSeconds = (endTime - startTime) / 1000;
+
+        leg.steps = getStepList(jsonLeg.getJSONArray("intermediateStops"), leg.startLocation,
+                leg.endLocation, startTime, endTime, true);
+        leg.steps.forEach(step -> step.transportMode = TransportMode.TRANSIT);
+
+        return leg;
+    }
+
     private List<Step> getStepList(JSONArray steps, Location startLocation, Location endLocation,
-                                   long startTime, long endTime) {
+                                   long startTime, long endTime, boolean isTransitLeg) {
         List<Step> stepList = new ArrayList<>();
 
         if (steps.length() == 0) return stepList;
@@ -98,14 +124,27 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
         Step tmpStep = new Step();
         tmpStep.startLocation = startLocation;
         tmpStep.endLocation = getLocation(steps.getJSONObject(0));
-        tmpStep.durationInSeconds = steps.getJSONObject(0).getLong("arrival") - startTime;
+
+        if (isTransitLeg) {
+            tmpStep.durationInSeconds = steps.getJSONObject(0).getLong("arrival") - startTime;
+        } else {
+            tmpStep.distanceInMeters = steps.getJSONObject(0).getLong("distance");
+            tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / WALKING_SPEED_MPS);
+        }
         stepList.add(tmpStep);
 
         for (int i = 1; i < steps.length(); i++) {
             tmpStep = new Step();
             tmpStep.startLocation = stepList.get(i - 1).endLocation;
             tmpStep.endLocation = getLocation(steps.getJSONObject(i));
-            tmpStep.durationInSeconds = steps.getJSONObject(i).getLong("departure") - steps.getJSONObject(i - 1).getLong("arrival");
+
+            if (isTransitLeg) {
+                tmpStep.durationInSeconds = steps.getJSONObject(i).getLong("departure") -
+                        steps.getJSONObject(i - 1).getLong("arrival");
+            } else {
+                tmpStep.distanceInMeters = steps.getJSONObject(i).getLong("distance");
+                tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / WALKING_SPEED_MPS);
+            }
 
             stepList.add(tmpStep);
         }
@@ -113,9 +152,12 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
         tmpStep = new Step();
         tmpStep.startLocation = stepList.get(steps.length() - 1).endLocation;
         tmpStep.endLocation = endLocation;
-        tmpStep.transportMode = TransportMode.TRANSIT;
-        tmpStep.durationInSeconds = endTime - steps.getJSONObject(steps.length() - 1).getLong("arrival");
-
+        if (isTransitLeg) {
+            tmpStep.durationInSeconds = endTime - steps.getJSONObject(steps.length() - 1).getLong("arrival");
+        } else {
+            tmpStep.distanceInMeters = steps.getJSONObject(steps.length() - 1).getLong("distance");
+            tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / WALKING_SPEED_MPS);
+        }
         stepList.add(tmpStep);
 
         return stepList;

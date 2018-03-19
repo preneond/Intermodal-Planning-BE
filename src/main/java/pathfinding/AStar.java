@@ -33,7 +33,7 @@ public class AStar<TNode extends Node> {
         FibonacciHeap.Entry<TNode> entry_old;
         TNode node_to;
         List<GraphEdge> list;
-        double edgeLength, distanceFrom, distanceTo;
+        double edgeDuration;
         double priority_new;
 
         openList = new FibonacciHeap<>();
@@ -41,8 +41,7 @@ public class AStar<TNode extends Node> {
         path.clear();
         prevNodes.clear();
 
-        double priority = LocationUtils.distance(origin, destination);
-        openList.enqueue(origin, priority);
+        openList.enqueue(origin, 0);
 
         while (!openList.isEmpty()) {
             entry_from = openList.dequeueMin();
@@ -68,14 +67,12 @@ public class AStar<TNode extends Node> {
                     node_to = graph.getNode(edge.toId);
 
                     //edge length divided by 1000- We are workin' with kilometres
-                    edgeLength = edge.length;
+                    edgeDuration = edge.durationInSeconds;
 //                    edgeSpeed = edge.getAllowedMaxSpeedInKmph();
-                    distanceFrom = LocationUtils.distance(entry_from.getValue(), destination);
-                    distanceTo = LocationUtils.distance(node_to, destination);
 
                     // get cost of start node, we substract start-node's distance and after that we add end-node's distance
                     // and we also add edge length divided by allowed speed
-                    priority_new = entry_from.getPriority() - distanceFrom + edgeLength + distanceTo;
+                    priority_new = entry_from.getPriority() + edgeDuration;
 
 
                     entry_old = openList.getEntry(node_to);

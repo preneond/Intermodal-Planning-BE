@@ -86,7 +86,7 @@ public class GeoJSONBuilder {
         }
     }
 
-    private String buildGeoJSONString(Graph<Node, GraphEdge> graph) {
+    public String buildGeoJSONString(Graph<Node, GraphEdge> graph) {
         addPolylinesFromGraph(graph);
 
         try {

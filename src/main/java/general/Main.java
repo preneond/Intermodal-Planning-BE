@@ -38,19 +38,29 @@ public class Main {
 
             if (graph != null) GraphMaker.getInstance().setGraph(graph);
             GraphMaker.getInstance().createGraph(new ArrayList<>());
-
-
-            File pathFile = new File("/Users/ondrejprenek/Desktop/path.json");
+            routePlanner.createKDTree();
 
             List<GraphEdge> graphPath = routePlanner.findRandomPath();
 
-            List<Location> path = routePlanner.getLocationsFromEdges(routePlanner.findRandomPath());
+            logger.debug("Random path origin: " +    Location.getLocation(GraphMaker.getInstance().getGraph().getNode(graphPath.get(0).fromId)));
+            logger.debug("Random path destination: " +
+                    Location.getLocation(GraphMaker.getInstance().getGraph().getNode(graphPath.get(graphPath.size()-1).toId)));
 
+            List<Location> path = routePlanner.getLocationsFromEdges(graphPath);
+
+            logger.debug("Founded path origin: " + path.get(0));
+            logger.debug("Founded path destination: " + path.get(path.size()-1));
+
+            File pathFile = new File("/Users/ondrejprenek/Desktop/path.json");
             GeoJSONBuilder.getInstance().buildGeoJSONFile(graph, path, pathFile);
 
-            List<Location> refinedPath = routePlanner.doRefinement(graphPath);
+            List<Location> newfoundPath = routePlanner.doRefinement(graphPath);
 
-            GeoJSONBuilder.getInstance().buildGeoJSONFile(graph, refinedPath, pathFile);
+            logger.debug("New-found path origin: " + newfoundPath.get(0));
+            logger.debug("New-found path destination: " + newfoundPath.get(newfoundPath.size()-1));
+
+            File refinedPathFile = new File("/Users/ondrejprenek/Desktop/new-found_path.json");
+            GeoJSONBuilder.getInstance().buildGeoJSONFile(graph, newfoundPath, refinedPathFile);
 
 //          List<Route> routeList = routePlanner.expandGraph();
 //          GraphMaker.getInstance().createGraph(routeList);

@@ -8,6 +8,7 @@ import java.util.List;
 
 
 public abstract class PlannerAdapter {
+    public static final float WALKING_SPEED_MPS = 1.4f;
 
     public PlannerAdapter(){
     }

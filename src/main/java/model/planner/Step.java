@@ -8,6 +8,5 @@ public class Step {
     public long distanceInMeters;
     public long durationInSeconds;
     public TransportMode transportMode;
-    public List<Step> steps;
-    public List<Location> polyline;
+    public List<Step> substeps;
 }

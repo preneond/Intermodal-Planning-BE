@@ -318,7 +318,7 @@ public final class FibonacciHeap<T> {
         for (Entry<T> curr = mMin; toVisit.isEmpty() || toVisit.get(0) != curr; curr = curr.mNext)
             toVisit.add(curr);
 
-        /* Traverse this list and perform the appropriate unioning steps. */
+        /* Traverse this list and perform the appropriate unioning substeps. */
         for (Entry<T> curr : toVisit) {
             /* Keep merging until a match arises. */
             while (true) {

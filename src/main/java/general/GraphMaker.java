@@ -1,6 +1,5 @@
 package general;
 
-import com.umotional.basestructures.Edge;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.GraphBuilder;
 import com.umotional.basestructures.Node;
@@ -11,7 +10,6 @@ import org.apache.log4j.Logger;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Random;
 import java.util.stream.Collectors;
 
 /**
@@ -77,8 +75,8 @@ public class GraphMaker extends GraphBuilder {
 
     private void addSteps(List<Step> steps) {
         for (Step step : steps) {
-            if (step.steps != null) {
-                this.addSteps(step.steps);
+            if (step.substeps != null) {
+                this.addSteps(step.substeps);
                 continue;
             }
             int startId = getIdFor(step.startLocation);

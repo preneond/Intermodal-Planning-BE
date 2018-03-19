@@ -5,13 +5,10 @@ import java.util.List;
 
 public class Route {
     public List<Leg> legList;
+    public Location origin, destination;
 
     public Route() {
         legList = new ArrayList<>();
-    }
-
-    public Route(List<Leg> legList) {
-        this.legList = legList;
     }
 
     @Override

@@ -79,7 +79,6 @@ public class SerializationUtils {
                     step.startLocation = lngLatAltToLocation(coords.get(0));
                     step.endLocation = lngLatAltToLocation(coords.get(1));
                     step.transportMode = TransportMode.valueOf((String) properties.get("mode"));
-//                    step.distanceInMeters = (long) properties.get("distance");
 
                     System.out.println(properties.get("duration"));
                     step.durationInSeconds = ((Number) properties.get("duration")).longValue();

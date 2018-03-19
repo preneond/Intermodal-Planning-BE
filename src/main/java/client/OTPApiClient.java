@@ -40,14 +40,13 @@ public class OTPApiClient {
         return sendNewRequest(webResource);
     }
 
-    // FIXME: fix query parametr of mode - see doc of otp
     public JSONObject sendNewRequest(Location origin, Location destination, TransportMode mode) {
         Client client = Client.create();
         WebResource webResource = client
                 .resource(PLANNER_ENDPOINT)
                 .queryParam("fromPlace", origin.toString())
                 .queryParam("toPlace", destination.toString())
-                .queryParam("mode", mode.name())
+//                .queryParam("mode", mode.name())
                 .queryParam("showIntermediateStops", "true");
 
         return sendNewRequest(webResource);

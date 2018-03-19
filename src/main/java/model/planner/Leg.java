@@ -1,6 +1,7 @@
 package model.planner;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Leg {
@@ -11,6 +12,7 @@ public class Leg {
     public TransportMode mode;
 
     public Leg() {
+        steps = new ArrayList<>();
     }
 
     @Override

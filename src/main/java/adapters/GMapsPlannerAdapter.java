@@ -3,18 +3,13 @@ package adapters;
 import client.GMapsApiClient;
 import com.google.maps.model.*;
 import model.planner.*;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 
 import java.lang.reflect.Array;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 public class GMapsPlannerAdapter extends PlannerAdapter {
-    private DirectionsResult result;
 
     @Override
     public List<Route> findRoutes(Location origin, Location destination, TransportMode mode) {
@@ -22,7 +17,7 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
         LatLng originLatLng = new LatLng(origin.lat, origin.lon);
         LatLng destinationLatLng = new LatLng(destination.lat, destination.lon);
 
-        result = GMapsApiClient.getInstance().sendNewRequest(originLatLng, destinationLatLng, travelMode);
+        DirectionsResult result = GMapsApiClient.getInstance().sendNewRequest(originLatLng, destinationLatLng, travelMode);
 
         try {
             return getRouteList(result);
@@ -39,16 +34,10 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
         DirectionsResult result = new DirectionsResult();
         DirectionsResult tmpResult;
 
-        // Comment this block of code and uncomment code under to call only transit travel mode
-        // Snippet to comment
         for(TravelMode travelMode: new TravelMode[]{TravelMode.DRIVING, TravelMode.WALKING}) {
             tmpResult = GMapsApiClient.getInstance().sendNewRequest(originLatLng, destinationLatLng,travelMode);
             result.routes = concatenate(result.routes,tmpResult.routes);
         }
-
-// Snippet to uncomment
-//        tmpResult = GMapsApiClient.getInstance().sendNewRequest(originLatLng, destinationLatLng,TravelMode.TRANSIT);
-//        result.routes = concatenate(result.routes,tmpResult.routes);
 
         try {
             return getRouteList(result);
@@ -63,6 +52,10 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
         List<Route> routeList = findRoutes(origin, destination, mode);
 
         if (routeList.isEmpty()) return null;
+
+        if (routeList.get(0).legList.size() > 1) {
+            throw new RuntimeException("findLeg plan has more than one leg");
+        }
 
         return routeList.get(0);
 
@@ -79,13 +72,13 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
 
     private List<Route> getRouteList(DirectionsResult directions) {
         List<Leg> legs;
-        List<Route> routes;
+        List<Route> routeList;
         List<Step> steps;
         Route tmpRoute;
-        Step tmpStep, tmpStep2;
+        Step tmpStep, tmpSubstep;
         Leg tmpLeg;
 
-        routes = new ArrayList<>();
+        routeList = new ArrayList<>();
 
         for (DirectionsRoute directionsRoute : directions.routes) {
             tmpRoute = new Route();
@@ -100,19 +93,17 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
                     tmpStep.startLocation = getLocation(step.startLocation);
                     tmpStep.endLocation = getLocation(step.endLocation);
                     tmpStep.transportMode = getTransportMode(step.travelMode);
-//                    tmpStep.polyline = getPolyline(step.polyline);
 
                     if (step.steps != null) {
-                        tmpStep.steps = new ArrayList<>();
+                        tmpStep.substeps = new ArrayList<>();
                         for (DirectionsStep step2: step.steps){
-                            tmpStep2 = new Step();
-                            tmpStep2.distanceInMeters = step2.distance.inMeters;
-                            tmpStep2.durationInSeconds = step2.duration.inSeconds;
-                            tmpStep2.startLocation = getLocation(step2.startLocation);
-                            tmpStep2.endLocation = getLocation(step2.endLocation);
-                            tmpStep2.transportMode = getTransportMode(step2.travelMode);
-//                            tmpStep2.polyline = getPolyline(step2.polyline);
-                            tmpStep.steps.add(tmpStep2);
+                            tmpSubstep = new Step();
+                            tmpSubstep.distanceInMeters = step2.distance.inMeters;
+                            tmpSubstep.durationInSeconds = step2.duration.inSeconds;
+                            tmpSubstep.startLocation = getLocation(step2.startLocation);
+                            tmpSubstep.endLocation = getLocation(step2.endLocation);
+                            tmpSubstep.transportMode = getTransportMode(step2.travelMode);
+                            tmpStep.substeps.add(tmpSubstep);
                         }
                     }
                     steps.add(tmpStep);
@@ -129,19 +120,9 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
                 legs.add(tmpLeg);
             }
             tmpRoute.legList = legs;
-            routes.add(tmpRoute);
+            routeList.add(tmpRoute);
         }
-        return routes;
-    }
-
-    private List<Location> getPolyline(EncodedPolyline polyline) {
-        List<Location> points= new ArrayList<>();
-        Location tmp;
-        for(LatLng point: polyline.decodePath()){
-            tmp = new Location(point.lat,point.lng);
-            points.add(tmp);
-        }
-        return points;
+        return routeList;
     }
 
     private TravelMode getTravelMode(TransportMode mode) {
