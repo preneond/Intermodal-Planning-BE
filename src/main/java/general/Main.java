@@ -65,14 +65,14 @@ public class Main {
 //          List<Route> routeList = routePlanner.expandGraph();
 //          GraphMaker.getInstance().createGraph(routeList);
 
-            for (TransportMode mode : TransportMode.values()) {
-                File tmpFile = new File("/Users/ondrejprenek/Desktop/geo_out_" + mode.toString().toLowerCase() + ".json");
-                SerializationUtils.writeGraphToGeoJSONFile(GraphMaker.getInstance().getGraph(), mode, tmpFile);
-            }
+//            for (TransportMode mode : TransportMode.values()) {
+//                File tmpFile = new File("/Users/ondrejprenek/Desktop/geo_out_" + mode.toString().toLowerCase() + ".json");
+//                SerializationUtils.writeGraphToGeoJSONFile(GraphMaker.getInstance().getGraph(), mode, tmpFile);
+//            }
 
             SerializationUtils.writeObjectToFile(GraphMaker.getInstance().getGraph(), file);
 
-        } catch (IOException | URISyntaxException e) {
+        } catch (Exception e) {
             logger.error("Failure");
             e.printStackTrace();
         }

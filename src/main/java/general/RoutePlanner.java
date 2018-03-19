@@ -134,7 +134,7 @@ public class RoutePlanner {
 
         Route route = new Route();
         route.origin = Location.getLocation(graph.getNode(fromId));
-        route.destination = Location.getLocation(graph.getNode(toId));
+        route.destination = Location.getLocation(graph.getNode(plan.get(plan.size()-1).toId));
 
         for (int i = 1; i < plan.size(); i++) {
             curEdge = plan.get(i);
