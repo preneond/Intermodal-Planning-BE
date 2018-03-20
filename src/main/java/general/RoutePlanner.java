@@ -46,30 +46,9 @@ public class RoutePlanner {
     }
 
     public List<GraphEdge> findRandomPath() {
-        Graph graph = GraphMaker.getInstance().getGraph();
-
         Location[] locArray = Location.generateRandomLocationsInPrague(2);
 
-        int originId = (int) KDTree.getInstance().nearest(locArray[0].toDoubleArray());
-        int destinationId = (int) KDTree.getInstance().nearest(locArray[1].toDoubleArray());
-
-        Node origin = graph.getNode(originId);
-        Node destination = graph.getNode(destinationId);
-
-        AStar astar = new AStar<>(graph);
-        List<GraphEdge> plan = astar.plan(origin, destination);
-
-        if (plan == null) {
-            logger.debug("Plan was empty, trying another combination now...");
-            return findRandomPath();
-        }
-
-        logger.info("Generated random origin location" + locArray[0]);
-        logger.info("Generated random destination location" + locArray[1]);
-        logger.info("Founded node as origin location" + Location.getLocation(origin));
-        logger.info("Founded node as destination location" + Location.getLocation(destination));
-
-        return plan;
+        return findPath(locArray[0], locArray[1]);
     }
 
     private Route findRoute(int fromId, int toId, TransportMode mode) {
@@ -98,6 +77,7 @@ public class RoutePlanner {
         for (Leg leg : route.legList) {
             for (Step step : leg.steps) {
                 locationList.add(step.startLocation);
+                locationList.add(step.endLocation);
             }
 
         }
@@ -123,7 +103,7 @@ public class RoutePlanner {
     }
 
 
-    public List<Location> doRefinement(List<GraphEdge> plan) {
+    public Route doRefinement(List<GraphEdge> plan) {
         if (plan.isEmpty()) return null;
 
         GraphEdge startEdge = plan.get(0);
@@ -134,7 +114,7 @@ public class RoutePlanner {
 
         Route route = new Route();
         route.origin = Location.getLocation(graph.getNode(fromId));
-        route.destination = Location.getLocation(graph.getNode(plan.get(plan.size()-1).toId));
+        route.destination = Location.getLocation(graph.getNode(plan.get(plan.size() - 1).toId));
 
         for (int i = 1; i < plan.size(); i++) {
             curEdge = plan.get(i);
@@ -148,7 +128,43 @@ public class RoutePlanner {
                 toId = curEdge.toId;
             }
         }
-        return getLocationSequence(route);
+        Route tmpRoute = findRoute(fromId, toId, startEdge.mode);
+        route.legList.addAll(tmpRoute.legList);
+
+        return route;
+    }
+
+    public void getPathDescription(Route route, String name) {
+        if (route.legList == null || route.legList.isEmpty()) {
+            logger.error("Path is empty");
+            return;
+        }
+
+        long routeDuration = route.legList.stream().mapToLong(o -> o.durationInSeconds).sum();
+        logger.info("Duration of " + name + " path: " + routeDuration + " seconds");
+        logger.info("Number of transfers: " + route.legList.size());
+    }
+
+    public void getPathDescription(List<GraphEdge> path, String name) {
+        if (path == null || path.isEmpty()) {
+            logger.error("Path is empty");
+            return;
+        }
+
+        int numOfTransfers = 0;
+
+        GraphEdge curEdge;
+        GraphEdge prevEdge;
+        for (int i = 1; i < path.size(); i++) {
+            prevEdge = path.get(i - 1);
+            curEdge = path.get(i);
+            numOfTransfers += (prevEdge.mode == curEdge.mode) ? 0 : 1;
+        }
+
+        long routeDuration = path.stream().mapToLong(o -> o.durationInSeconds).sum();
+        logger.info("Duration of " + name + " path: " + routeDuration + " seconds");
+        logger.info("Number of transfers: " + numOfTransfers);
+
     }
 
     public void createKDTree() {
@@ -161,5 +177,30 @@ public class RoutePlanner {
             KDTree.getInstance().insert(tmpArr, node.id);
         }
         logger.info("KDTree created");
+    }
+
+    public List<GraphEdge> findPath(Location origin, Location destination) {
+        Graph graph = GraphMaker.getInstance().getGraph();
+
+        int originId = (int) KDTree.getInstance().nearest(origin.toDoubleArray());
+        int destinationId = (int) KDTree.getInstance().nearest(destination.toDoubleArray());
+
+        Node originNode = graph.getNode(originId);
+        Node destinationNode = graph.getNode(destinationId);
+
+        AStar astar = new AStar<>(graph);
+        List<GraphEdge> plan = astar.plan(originNode, destinationNode);
+
+        if (plan == null) {
+            logger.debug("Plan was empty, trying another combination now...");
+            return findRandomPath();
+        }
+
+//        logger.info("Generated random origin location" + origin);
+//        logger.info("Generated random destination location" + destination);
+//        logger.info("Founded node as origin location" + Location.getLocation(originNode));
+//        logger.info("Founded node as destination location" + Location.getLocation(destinationNode));
+
+        return plan;
     }
 }

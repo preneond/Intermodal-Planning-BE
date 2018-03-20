@@ -65,7 +65,7 @@ public class OTPApiClient {
             }
             String stringOutput = response.getEntity(String.class);
 
-            logger.debug("Output from Server: \n" + stringOutput);
+            logger.info("Output from Server: \n" + stringOutput);
 
             return new JSONObject(stringOutput);
 
