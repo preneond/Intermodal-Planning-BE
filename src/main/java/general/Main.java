@@ -132,17 +132,20 @@ public class Main {
     }
 
     private static void doComparision(GraphMaker perfectGraphMaker, GraphMaker metaGraphMaker) {
-        RoutePlanner routePlanner = RoutePlanner.getInstance();
+        RoutePlanner perfectPlanner = new RoutePlanner(perfectGraphMaker);
+        RoutePlanner metaPlanner = new RoutePlanner(metaGraphMaker);
+
 
         Location[] odPair;
         for (int i = 0; i < 100; i++) {
             odPair = Location.generateRandomLocationsInPrague(2);
-            routePlanner.findPath(odPair[0], odPair[1], metaGraphMaker);
+            perfectPlanner.findPath(odPair[0], odPair[1]);
+            metaPlanner.findPath(odPair[0], odPair[1]);
         }
     }
 
     private static void doStatistics(GraphMaker graphMaker) {
-        RoutePlanner routePlanner = RoutePlanner.getInstance();
+        RoutePlanner routePlanner = new RoutePlanner(graphMaker);
 
 //        int[] graphSize = new int[]{85};
         double sizeDeviation;
@@ -156,10 +159,10 @@ public class Main {
 //            GraphMaker.getInstance().createGraph(routePlanner.expandGraph(graphSize[i]));
 
         for (int j = 0; j < findingPathCount; j++) {
-            List<GraphEdge> graphPath = routePlanner.findRandomPath(graphMaker);
+            List<GraphEdge> graphPath = routePlanner.findRandomPath();
             routeDuration[j] = routePlanner.getDuration(graphPath);
 
-            Route refinementRoute = routePlanner.doRefinement(graphPath,graphMaker.getGraph());
+            Route refinementRoute = routePlanner.doRefinement(graphPath);
             refinementRouteDuration[j] = routePlanner.getDuration(refinementRoute);
 
             deviation[j] = routeDuration[j] - refinementRouteDuration[j];

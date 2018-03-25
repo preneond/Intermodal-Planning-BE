@@ -4,6 +4,7 @@ import com.umotional.basestructures.Edge;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
 import model.graph.GraphEdge;
+import model.planner.TransportMode;
 import utils.LocationUtils;
 
 import java.util.*;
@@ -27,8 +28,7 @@ public class AStar<TNode extends Node> {
         prevNodes = new HashMap<>();
     }
 
-    public List<GraphEdge> plan(TNode origin, TNode destination) {
-
+    public List<GraphEdge> plan(TNode origin, TNode destination, TransportMode... permittedModes) {
         FibonacciHeap.Entry<TNode> entry_from;
         FibonacciHeap.Entry<TNode> entry_old;
         TNode node_to;
@@ -95,6 +95,11 @@ public class AStar<TNode extends Node> {
 
         }
         return null;
+    }
+
+    public List<GraphEdge> plan(TNode origin, TNode destination) {
+        return plan(origin,destination,null);
+
     }
 
     private List<GraphEdge> findPath(Graph<TNode, GraphEdge> graph, TNode origin, TNode destination) {

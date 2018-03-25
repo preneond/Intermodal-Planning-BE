@@ -15,21 +15,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RoutePlanner {
-    private static RoutePlanner sharedInstance;
-
-    private PlannerAdapter[] plannerAdapters;
     private static final Logger logger = LogManager.getLogger(RoutePlanner.class);
+    private GraphMaker graphMaker;
+    private PlannerAdapter[] plannerAdapters;
 
-    public RoutePlanner() {
+    public RoutePlanner(GraphMaker graphMaker) {
         // add more planner adapters if they exist
+        this.graphMaker = graphMaker;
         plannerAdapters = new PlannerAdapter[]{GMapsPlannerAdapter.getInstance(), OpenTripPlannerAdapter.getInstance()};
-    }
-
-    public static RoutePlanner getInstance() {
-        if (sharedInstance == null) {
-            sharedInstance = new RoutePlanner();
-        }
-        return sharedInstance;
     }
 
     public List<Route> getRoutesFromKnownRequest(int numOfRequests) {
@@ -89,13 +82,15 @@ public class RoutePlanner {
         return routes;
     }
 
-    public List<GraphEdge> findRandomPath(GraphMaker graphMaker) {
+    public List<GraphEdge> findRandomPath() {
         Location[] locArray = Location.generateRandomLocationsInPrague(2);
 
-        return findPath(locArray[0], locArray[1], graphMaker);
+        return findPath(locArray[0], locArray[1]);
     }
 
-    private Route findRoute(int fromId, int toId, TransportMode mode, Graph<Node, GraphEdge> graph) {
+    private Route findRoute(int fromId, int toId, TransportMode mode) {
+        Graph graph = graphMaker.getGraph();
+
         Node from = graph.getNode(fromId);
         Node to = graph.getNode(toId);
 
@@ -146,8 +141,10 @@ public class RoutePlanner {
     }
 
 
-    public Route doRefinement(List<GraphEdge> plan, Graph<Node, GraphEdge> graph) {
+    public Route doRefinement(List<GraphEdge> plan) {
         if (plan.isEmpty()) return null;
+
+        Graph graph = graphMaker.getGraph();
 
         GraphEdge startEdge = plan.get(0);
         int fromId = startEdge.fromId;
@@ -161,7 +158,7 @@ public class RoutePlanner {
         for (int i = 1; i < plan.size(); i++) {
             curEdge = plan.get(i);
             if (startEdge.mode != curEdge.mode) {
-                Route tmpRoute = findRoute(fromId, toId, startEdge.mode, graph);
+                Route tmpRoute = findRoute(fromId, toId, startEdge.mode);
                 route.legList.addAll(tmpRoute.legList);
                 startEdge = curEdge;
                 fromId = startEdge.fromId;
@@ -170,7 +167,7 @@ public class RoutePlanner {
                 toId = curEdge.toId;
             }
         }
-        Route tmpRoute = findRoute(fromId, toId, startEdge.mode, graph);
+        Route tmpRoute = findRoute(fromId, toId, startEdge.mode);
         route.legList.addAll(tmpRoute.legList);
 
         return route;
@@ -209,19 +206,29 @@ public class RoutePlanner {
 
     }
 
-    public List<GraphEdge> findPath(Location origin, Location destination, GraphMaker graphMaker) {
-        int originId = (int) graphMaker.getKdTree().nearest(origin.toDoubleArray());
-        int destinationId = (int) graphMaker.getKdTree().nearest(destination.toDoubleArray());
+    public List<GraphEdge> findPath(Location origin, Location destination, TransportMode mode) {
+        Node originNode = getNearestNode(origin);
+        Node destinationNode = getNearestNode(destination);
 
-        Node originNode = graphMaker.getGraph().getNode(originId);
-        Node destinationNode = graphMaker.getGraph().getNode(destinationId);
+
+    }
+
+    private Node getNearestNode(Location location) {
+        int nodeId = (int) graphMaker.getKdTree().nearest(location.toDoubleArray());
+
+        return graphMaker.getGraph().getNode(nodeId);
+    }
+
+    public List<GraphEdge> findPath(Location origin, Location destination) {
+        Node originNode = getNearestNode(origin);
+        Node destinationNode = getNearestNode(destination);
 
         AStar astar = new AStar<>(graphMaker.getGraph());
-        List<GraphEdge> plan = astar.plan(originNode, destinationNode);
+        List<GraphEdge> plan = astar.plan(originNode, destinationNode, null);
 
         if (plan == null) {
             logger.debug("Plan was empty, trying another combination now...");
-            return findRandomPath(graphMaker);
+            return findRandomPath();
         }
 
 //        logger.info("Generated random origin location" + origin);
