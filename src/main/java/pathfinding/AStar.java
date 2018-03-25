@@ -28,7 +28,9 @@ public class AStar<TNode extends Node> {
         prevNodes = new HashMap<>();
     }
 
-    public List<GraphEdge> plan(TNode origin, TNode destination, TransportMode... permittedModes) {
+    public List<GraphEdge> plan(TNode origin, TNode destination, TransportMode... availableModes) {
+        List availableModesList = Arrays.asList(availableModes);
+
         FibonacciHeap.Entry<TNode> entry_from;
         FibonacciHeap.Entry<TNode> entry_old;
         TNode node_to;
@@ -60,7 +62,7 @@ public class AStar<TNode extends Node> {
                 // loop all edges from dequeued node
                 for (GraphEdge edge : list) {
                     //if node is in closed list or is not allowed to ride a car then continue
-                    if (closedList.contains(edge.toId)) { //|| !edge.getPermittedModes().contains(PermittedMode.CAR)) {
+                    if (closedList.contains(edge.toId) || !availableModesList.contains(edge.mode)) {
                         continue;
                     }
 

@@ -90,7 +90,7 @@ public class GraphMaker extends GraphBuilder {
     }
 
 
-    private void getGraphDescription() {
+    public void getGraphDescription() {
         Collection<Node> nodeList = graph.getAllNodes();
         Collection<GraphEdge> edgeList = graph.getAllEdges();
 

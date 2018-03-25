@@ -102,7 +102,7 @@ public class SerializationUtils {
             List<Route> routeList = new ArrayList<>();
             routeList.add(route);
 
-            return GraphMaker.getInstance().createGraph(routeList);
+            return new GraphMaker().createGraph(routeList);
         } catch (IOException e) {
             logger.error(e.getMessage());
         }

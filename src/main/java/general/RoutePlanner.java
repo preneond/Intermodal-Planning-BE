@@ -206,9 +206,27 @@ public class RoutePlanner {
 
     }
 
-    public List<GraphEdge> findPath(Location origin, Location destination, TransportMode mode) {
+    public List<GraphEdge> findPath(Location origin, Location destination) {
+        return findPath(origin, destination, TransportMode.values());
+    }
+
+    public List<GraphEdge> findPath(Location origin, Location destination, TransportMode... availableModes) {
         Node originNode = getNearestNode(origin);
         Node destinationNode = getNearestNode(destination);
+
+        AStar astar = new AStar<>(graphMaker.getGraph());
+        List<GraphEdge> plan = astar.plan(originNode, destinationNode, availableModes);
+
+        if (plan == null) logger.debug("Plan is empty");
+//            return findRandomPath();
+//        }
+
+//        logger.info("Generated random origin location" + origin);
+//        logger.info("Generated random destination location" + destination);
+//        logger.info("Founded node as origin location" + Location.getLocation(originNode));
+//        logger.info("Founded node as destination location" + Location.getLocation(destinationNode));
+
+        return plan;
 
 
     }
@@ -217,26 +235,6 @@ public class RoutePlanner {
         int nodeId = (int) graphMaker.getKdTree().nearest(location.toDoubleArray());
 
         return graphMaker.getGraph().getNode(nodeId);
-    }
-
-    public List<GraphEdge> findPath(Location origin, Location destination) {
-        Node originNode = getNearestNode(origin);
-        Node destinationNode = getNearestNode(destination);
-
-        AStar astar = new AStar<>(graphMaker.getGraph());
-        List<GraphEdge> plan = astar.plan(originNode, destinationNode, null);
-
-        if (plan == null) {
-            logger.debug("Plan was empty, trying another combination now...");
-            return findRandomPath();
-        }
-
-//        logger.info("Generated random origin location" + origin);
-//        logger.info("Generated random destination location" + destination);
-//        logger.info("Founded node as origin location" + Location.getLocation(originNode));
-//        logger.info("Founded node as destination location" + Location.getLocation(destinationNode));
-
-        return plan;
     }
 
     public long getDuration(List<GraphEdge> graphPath) {

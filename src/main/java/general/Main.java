@@ -7,6 +7,7 @@ import model.graph.GraphEdge;
 import model.planner.Location;
 import model.planner.Route;
 import model.planner.TransportMode;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -30,7 +31,7 @@ public class Main {
 
     private static final Logger logger = LogManager.getLogger(Main.class);
 
-    public static final boolean statistics = false;
+    public static final boolean statistics = true;
 
     public static final String dataPath = "/Users/ondrejprenek/Documents/CVUT/Bachelor_thesis/Intermodal_planning/Data/";
 
@@ -66,7 +67,6 @@ public class Main {
 //            SerializationUtils.writeObjectToFile(GraphMaker.getInstance().getGraph(), file);
 //            SerializationUtils.writeObjectToFile(GraphMaker.getInstance().getGraph(), metafile);
 
-            if (!statistics) return;
 
             if (statistics) {
 //                doStatistics();
@@ -74,6 +74,7 @@ public class Main {
 //                SerializationUtils.writeObjectToFile(GraphMaker.getInstance().getGraph(), file);
                 return;
             }
+            if (!statistics) return;
 
 
 //            GraphMaker.getInstance().createGraph(routePlanner.expandGraph());
@@ -135,12 +136,33 @@ public class Main {
         RoutePlanner perfectPlanner = new RoutePlanner(perfectGraphMaker);
         RoutePlanner metaPlanner = new RoutePlanner(metaGraphMaker);
 
+        perfectGraphMaker.getGraphDescription();
+        metaGraphMaker.getGraphDescription();
 
         Location[] odPair;
         for (int i = 0; i < 100; i++) {
-            odPair = Location.generateRandomLocationsInPrague(2);
-            perfectPlanner.findPath(odPair[0], odPair[1]);
-            metaPlanner.findPath(odPair[0], odPair[1]);
+            comparePath(perfectPlanner, metaPlanner);
+        }
+    }
+
+    //FIXME: Need to modify KDTree to be able find Node with specific transport mode option
+    private static void comparePath(RoutePlanner perfectPlanner, RoutePlanner metaPlanner) {
+        while (true) {
+            Location[] odPair = Location.generateRandomLocationsInPrague(2);
+            //CAR
+            List<GraphEdge> perfectCarPath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.WALK, TransportMode.CAR);
+            List<GraphEdge> metaCarPath = metaPlanner.findPath(odPair[0], odPair[1], TransportMode.WALK, TransportMode.CAR);
+            //TRANSIT
+            List<GraphEdge> perfectTransitPath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.WALK, TransportMode.TRANSIT);
+            List<GraphEdge> metaTransitPath = metaPlanner.findPath(odPair[0], odPair[1], TransportMode.WALK, TransportMode.TRANSIT);
+            //INTERMODAL
+            List<GraphEdge> perfectIntermodalPath = perfectPlanner.findPath(odPair[0], odPair[1]);
+            List<GraphEdge> metaIntermodalPath = metaPlanner.findPath(odPair[0], odPair[1]);
+
+            if (ObjectUtils.allNotNull(perfectCarPath, metaCarPath,
+                    perfectTransitPath, metaTransitPath,
+                    perfectIntermodalPath, metaIntermodalPath
+            )) return;
         }
     }
 
