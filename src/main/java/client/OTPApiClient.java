@@ -1,5 +1,7 @@
 package client;
 
+import com.google.gson.Gson;
+import com.google.maps.model.TravelMode;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
@@ -10,7 +12,9 @@ import model.planner.TransportMode;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.json.JSONObject;
+import utils.SerializationUtils;
 
+import java.io.File;
 import java.util.Map;
 
 public class OTPApiClient {
@@ -20,6 +24,8 @@ public class OTPApiClient {
     private static final Logger logger = LogManager.getLogger(OTPApiClient.class);
 
     private static final String PLANNER_ENDPOINT = "http://127.0.0.1:8080/otp/routers/default/plan";
+    public static final String REQUEST_STORAGE = "/Users/ondrejprenek/Documents/CVUT/Bachelor_thesis/Intermodal_planning/Data/requests/otp/";
+    public static int requestsCount = 6400;
 
     public static OTPApiClient getInstance() {
         if (sharedInstance == null) {
@@ -55,7 +61,6 @@ public class OTPApiClient {
 
     private JSONObject sendNewRequest(WebResource webResource) {
         try {
-            Main.numOfRequests++;
             ClientResponse response = webResource.accept("application/json")
                     .get(ClientResponse.class);
 
@@ -63,16 +68,32 @@ public class OTPApiClient {
                 throw new RuntimeException("Failed : HTTP error code : "
                         + response.getStatus());
             }
-            String stringOutput = response.getEntity(String.class);
+            Main.numOfRequests++;
+            requestsCount++;
 
-            logger.info("Output from Server: \n" + stringOutput);
+            logger.info("Request: " + webResource.getURI());
 
-            return new JSONObject(stringOutput);
+            File file = new File(REQUEST_STORAGE + "request_" + requestsCount + ".txt");
+
+            String stringResponse = response.getEntity(String.class);
+            SerializationUtils.writeStringToFile(stringResponse, file);
+
+            return new JSONObject(stringResponse);
 
         } catch (Exception e) {
             logger.error(e);
         }
         return null;
+    }
+
+    public JSONObject getKnownRequest(int numOfRequest) throws NullPointerException {
+        File file = new File(REQUEST_STORAGE + "request_" + numOfRequest + ".txt");
+
+        JSONObject request = SerializationUtils.readJSONObjectFromFile(file);
+
+        if (request == null) throw new NullPointerException("Unable to read request");
+
+        return request;
     }
 }
 

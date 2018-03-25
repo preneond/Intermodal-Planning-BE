@@ -10,6 +10,17 @@ import java.util.List;
 
 
 public class GMapsPlannerAdapter extends PlannerAdapter {
+    private static GMapsPlannerAdapter sharedInstance;
+
+    public static GMapsPlannerAdapter getInstance() {
+        if (sharedInstance == null) {
+            sharedInstance = new GMapsPlannerAdapter();
+        }
+        return sharedInstance;
+    }
+
+    private GMapsPlannerAdapter() {
+    }
 
     @Override
     public List<Route> findRoutes(Location origin, Location destination, TransportMode mode) {
@@ -34,10 +45,12 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
         DirectionsResult result = new DirectionsResult();
         DirectionsResult tmpResult;
 
-        for(TravelMode travelMode: new TravelMode[]{TravelMode.DRIVING, TravelMode.WALKING}) {
-            tmpResult = GMapsApiClient.getInstance().sendNewRequest(originLatLng, destinationLatLng,travelMode);
-            result.routes = concatenate(result.routes,tmpResult.routes);
-        }
+//        for (TravelMode travelMode : new TravelMode[]{TravelMode.DRIVING, TravelMode.WALKING}) {
+//            tmpResult = GMapsApiClient.getInstance().sendNewRequest(originLatLng, destinationLatLng, travelMode);
+
+//            result.routes = concatenate(result.routes, tmpResult.routes);
+        result = GMapsApiClient.getInstance().sendNewRequest(originLatLng,destinationLatLng,TravelMode.DRIVING);
+//        }
 
         try {
             return getRouteList(result);
@@ -46,6 +59,19 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
             return new ArrayList<>();
         }
     }
+
+
+    public List<Route> findRoutesFromKnownRequests(int requestNumber, TransportMode mode) {
+        DirectionsResult result = GMapsApiClient.getInstance().getKnownRequest(requestNumber, getTravelMode(mode));
+        
+        try {
+            return getRouteList(result);
+        } catch (ArrayIndexOutOfBoundsException | NullPointerException e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+
 
     @Override
     public Route findRoute(Location origin, Location destination, TransportMode mode) {
@@ -86,7 +112,7 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
 
             for (DirectionsLeg leg : directionsRoute.legs) {
                 steps = new ArrayList<>();
-                for (DirectionsStep step: leg.steps){
+                for (DirectionsStep step : leg.steps) {
                     tmpStep = new Step();
                     tmpStep.distanceInMeters = step.distance.inMeters;
                     tmpStep.durationInSeconds = step.duration.inSeconds;
@@ -96,7 +122,7 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
 
                     if (step.steps != null) {
                         tmpStep.substeps = new ArrayList<>();
-                        for (DirectionsStep step2: step.steps){
+                        for (DirectionsStep step2 : step.steps) {
                             tmpSubstep = new Step();
                             tmpSubstep.distanceInMeters = step2.distance.inMeters;
                             tmpSubstep.durationInSeconds = step2.duration.inSeconds;
@@ -155,11 +181,11 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
         }
     }
 
-    private Location getLocation(LatLng location){
-        return new Location(location.lat,location.lng);
+    private Location getLocation(LatLng location) {
+        return new Location(location.lat, location.lng);
     }
 
-    private  <T> T[] concatenate(T[] a, T[] b) {
+    private <T> T[] concatenate(T[] a, T[] b) {
         if (b == null) return a;
         if (a == null) return b;
 

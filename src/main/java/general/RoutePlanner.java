@@ -3,6 +3,8 @@ package general;
 import adapters.GMapsPlannerAdapter;
 import adapters.OpenTripPlannerAdapter;
 import adapters.PlannerAdapter;
+import client.GMapsApiClient;
+import client.OTPApiClient;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
 import model.graph.GraphEdge;
@@ -12,34 +14,80 @@ import org.apache.log4j.Logger;
 import pathfinding.AStar;
 import pathfinding.kdtree.KDTree;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 public class RoutePlanner {
-    private PlannerAdapter[] plannerAdapters;
+    private static RoutePlanner sharedInstance;
 
-    private static final short NUM_OF_PATHS = 40;
+    private PlannerAdapter[] plannerAdapters;
     private static final Logger logger = LogManager.getLogger(RoutePlanner.class);
 
-    RoutePlanner() {
+    private RoutePlanner() {
         // add more planner adapters if they exist
-        plannerAdapters = new PlannerAdapter[]{new GMapsPlannerAdapter(), new OpenTripPlannerAdapter()};
+        plannerAdapters = new PlannerAdapter[]{GMapsPlannerAdapter.getInstance(), OpenTripPlannerAdapter.getInstance()};
     }
 
-    public List<Route> expandGraph() {
+    public static RoutePlanner getInstance() {
+        if (sharedInstance == null) {
+            sharedInstance = new RoutePlanner();
+        }
+        return sharedInstance;
+    }
+
+    public List<Route> getRoutesFromKnownRequest(int numOfRequests) {
+        List<Route> resultRoutes = new ArrayList<>();
+        List<Route> tmpResult;
+        for (int i = 1; i <= numOfRequests; i++) {
+            for (TransportMode mode : TransportMode.values()) {
+                tmpResult = null;
+                if (mode == TransportMode.TRANSIT) {
+                    tmpResult = OpenTripPlannerAdapter.getInstance().findRoutesFromKnownRequests(i);
+                } else if (mode == TransportMode.CAR || mode == TransportMode.WALK) {
+                    tmpResult = GMapsPlannerAdapter.getInstance().findRoutesFromKnownRequests(i, mode);
+                }
+                if (tmpResult == null) continue;
+
+                resultRoutes.addAll(tmpResult);
+            }
+        }
+        return resultRoutes;
+    }
+
+    public List<Route> expandGraph(int numOfRequests, PlannerAdapter plannerAdapter) {
+        Location[] locArray;
+        List<Route> routes = new ArrayList<>();
+        List<Route> routeList;
+
+        for (int i = 0; i < numOfRequests; i++) {
+            locArray = Location.generateRandomLocationsInPrague(2);
+            routeList = plannerAdapter.findRoutes(locArray[0], locArray[1]);
+            routes.addAll(routeList);
+            routeList = plannerAdapter.findRoutes(locArray[1], locArray[0]);
+            routes.addAll(routeList);
+        }
+        return routes;
+    }
+
+    public List<Route> expandGraph(int numOfRequests, TransportMode transportMode) {
+        switch (transportMode) {
+            case TRANSIT:
+                return expandGraph(numOfRequests, OpenTripPlannerAdapter.getInstance());
+            default:
+                return expandGraph(numOfRequests, GMapsPlannerAdapter.getInstance());
+        }
+    }
+
+    public List<Route> expandGraph(int numOfRequests) {
         Location[] locArray;
         List<Route> routes = new ArrayList<>();
         List<Route> routeList;
 
         for (PlannerAdapter plannerAdapter : plannerAdapters) {
             // Uncomment for loop for generating more routes
-            for (int i = 0; i < NUM_OF_PATHS; i++) {
-                locArray = Location.generateRandomLocationsInPrague(2);
-                routeList = plannerAdapter.findRoutes(locArray[0], locArray[1]);
-                routes.addAll(routeList);
-                routeList = plannerAdapter.findRoutes(locArray[1], locArray[0]);
-                routes.addAll(routeList);
-            }
+            routeList = expandGraph(numOfRequests, plannerAdapter);
+            routes.addAll(routeList);
         }
 
         return routes;
@@ -62,10 +110,12 @@ public class RoutePlanner {
         Location locFrom = new Location(from.getLatitude(), from.getLongitude());
         Location locTo = new Location(to.getLatitude(), to.getLongitude());
         if (mode == TransportMode.TRANSIT) {
-            route = new OpenTripPlannerAdapter().findRoute(locFrom, locTo, TransportMode.TRANSIT);
+            route = OpenTripPlannerAdapter.getInstance().findRoute(locFrom, locTo, TransportMode.TRANSIT);
         } else if (mode == TransportMode.CAR || mode == TransportMode.WALK) {
-            route = new GMapsPlannerAdapter().findRoute(locFrom, locTo, mode);
+            route = GMapsPlannerAdapter.getInstance().findRoute(locFrom, locTo, mode);
         }
+
+        if (route == null) return new Route();
 
         return route;
     }
@@ -202,5 +252,19 @@ public class RoutePlanner {
 //        logger.info("Founded node as destination location" + Location.getLocation(destinationNode));
 
         return plan;
+    }
+
+    public long getDuration(List<GraphEdge> graphPath) {
+        return graphPath.stream().mapToLong(o -> o.durationInSeconds).sum();
+    }
+
+    public long getDuration(Route route) {
+        return route == null ? 0 : route.legList.stream().mapToLong(o -> o.durationInSeconds).sum();
+    }
+
+    public void checkFunctionality(Graph metaGraph, Graph idealGraph) {
+        for (int i = 0; i < 100; i++) {
+
+        }
     }
 }

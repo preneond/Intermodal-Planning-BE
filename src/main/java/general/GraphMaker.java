@@ -143,7 +143,7 @@ public class GraphMaker extends GraphBuilder {
 
     /**
      * Create unique Node source id based on location using Szudzik's function
-     *
+     * <p>
      * See https://stackoverflow.com/questions/919612/mapping-two-integers-to-one-in-a-unique-and-deterministic-way
      *
      * @param location - location which is unique for each node

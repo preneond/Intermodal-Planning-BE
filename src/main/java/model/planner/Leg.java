@@ -8,7 +8,7 @@ public class Leg {
     public Location startLocation,endLocation;
     public List<Step> steps;
     public long distanceInMeters; //in meters
-    public long durationInSeconds;
+    public long durationInSeconds = 0;
     public TransportMode mode;
 
     public Leg() {

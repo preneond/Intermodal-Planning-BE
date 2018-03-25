@@ -1,14 +1,20 @@
 package utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
+import com.google.maps.model.DirectionsResult;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
 import general.GraphMaker;
 import model.graph.GraphEdge;
 import model.planner.*;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.geojson.*;
+import org.json.JSONObject;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -16,9 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 public class SerializationUtils {
-
     private static final Logger logger = LogManager.getLogger(SerializationUtils.class);
-
 
     public static void writeObjectToFile(Object serObj, File file) {
         try {
@@ -45,6 +49,10 @@ public class SerializationUtils {
             logger.error(ex.getMessage());
         }
         return null;
+    }
+
+    public static void writeStringToFile(String text, File file) throws IOException {
+        FileUtils.writeStringToFile(file,text);
     }
 
 
@@ -104,5 +112,47 @@ public class SerializationUtils {
 
     public static Location lngLatAltToLocation(LngLatAlt latLng) {
         return new Location(latLng.getLatitude(), latLng.getLongitude());
+    }
+
+    public static void writeRequestToFile(String request, File file) {
+        try {
+            FileWriter fileWriter = new FileWriter(file);
+            fileWriter.write(request);
+            fileWriter.close();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public static void writeRequestToGson(Object request, File file) {
+        Gson gson = new Gson();
+        String requestJson = gson.toJson(request);
+
+        writeRequestToFile(requestJson, file);
+    }
+
+    public static JSONObject readJSONObjectFromFile(File file) {
+        try {
+            InputStream is = new FileInputStream(file);
+            String jsonTxt = IOUtils.toString(is);
+
+            return new JSONObject(jsonTxt);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static DirectionsResult readDirectionsResultFromGson(File file) {
+        Gson gson = new Gson();
+        try {
+            JsonReader reader = new JsonReader(new FileReader(file));
+            DirectionsResult data = gson.fromJson(reader, DirectionsResult.class);
+
+            return data;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

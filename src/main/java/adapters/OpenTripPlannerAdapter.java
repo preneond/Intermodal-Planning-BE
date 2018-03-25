@@ -10,6 +10,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class OpenTripPlannerAdapter extends PlannerAdapter {
+    private static OpenTripPlannerAdapter sharedInstance;
+
+    public static OpenTripPlannerAdapter getInstance() {
+        if (sharedInstance == null) {
+            sharedInstance = new OpenTripPlannerAdapter();
+        }
+        return sharedInstance;
+    }
+
+    private OpenTripPlannerAdapter() {
+    }
+
     @Override
     public List<Route> findRoutes(Location origin, Location destination, TransportMode mode) {
         JSONObject response = OTPApiClient.getInstance().sendNewRequest(origin, destination, mode);
@@ -44,6 +56,11 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
         if (routeList.isEmpty()) return null;
 
         return routeList.get(0);
+    }
+
+    public List<Route> findRoutesFromKnownRequests(int requestNumber) {
+        JSONObject jsonObject = OTPApiClient.getInstance().getKnownRequest(requestNumber);
+        return getRouteList(jsonObject);
     }
 
     private List<Route> getRouteList(JSONObject response) {
