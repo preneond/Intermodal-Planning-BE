@@ -3,8 +3,6 @@ package general;
 import adapters.GMapsPlannerAdapter;
 import adapters.OpenTripPlannerAdapter;
 import adapters.PlannerAdapter;
-import client.GMapsApiClient;
-import client.OTPApiClient;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
 import model.graph.GraphEdge;
@@ -12,9 +10,7 @@ import model.planner.*;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import pathfinding.AStar;
-import pathfinding.kdtree.KDTree;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +20,7 @@ public class RoutePlanner {
     private PlannerAdapter[] plannerAdapters;
     private static final Logger logger = LogManager.getLogger(RoutePlanner.class);
 
-    private RoutePlanner() {
+    public RoutePlanner() {
         // add more planner adapters if they exist
         plannerAdapters = new PlannerAdapter[]{GMapsPlannerAdapter.getInstance(), OpenTripPlannerAdapter.getInstance()};
     }
@@ -93,15 +89,13 @@ public class RoutePlanner {
         return routes;
     }
 
-    public List<GraphEdge> findRandomPath() {
+    public List<GraphEdge> findRandomPath(GraphMaker graphMaker) {
         Location[] locArray = Location.generateRandomLocationsInPrague(2);
 
-        return findPath(locArray[0], locArray[1]);
+        return findPath(locArray[0], locArray[1], graphMaker);
     }
 
-    private Route findRoute(int fromId, int toId, TransportMode mode) {
-        Graph graph = GraphMaker.getInstance().getGraph();
-
+    private Route findRoute(int fromId, int toId, TransportMode mode, Graph<Node, GraphEdge> graph) {
         Node from = graph.getNode(fromId);
         Node to = graph.getNode(toId);
 
@@ -136,10 +130,9 @@ public class RoutePlanner {
     }
 
 
-    public List<Location> getLocationsFromEdges(List<GraphEdge> edgeList) {
+    public List<Location> getLocationsFromEdges(List<GraphEdge> edgeList, Graph<Node, GraphEdge> graph) {
         if (edgeList.isEmpty()) return new ArrayList<>();
 
-        Graph graph = GraphMaker.getInstance().getGraph();
         List<Location> locationList = new ArrayList<>();
         Node nodeFrom;
         for (GraphEdge edge : edgeList) {
@@ -153,14 +146,13 @@ public class RoutePlanner {
     }
 
 
-    public Route doRefinement(List<GraphEdge> plan) {
+    public Route doRefinement(List<GraphEdge> plan, Graph<Node, GraphEdge> graph) {
         if (plan.isEmpty()) return null;
 
         GraphEdge startEdge = plan.get(0);
         int fromId = startEdge.fromId;
         int toId = startEdge.toId;
         GraphEdge curEdge;
-        Graph graph = GraphMaker.getInstance().getGraph();
 
         Route route = new Route();
         route.origin = Location.getLocation(graph.getNode(fromId));
@@ -169,7 +161,7 @@ public class RoutePlanner {
         for (int i = 1; i < plan.size(); i++) {
             curEdge = plan.get(i);
             if (startEdge.mode != curEdge.mode) {
-                Route tmpRoute = findRoute(fromId, toId, startEdge.mode);
+                Route tmpRoute = findRoute(fromId, toId, startEdge.mode, graph);
                 route.legList.addAll(tmpRoute.legList);
                 startEdge = curEdge;
                 fromId = startEdge.fromId;
@@ -178,7 +170,7 @@ public class RoutePlanner {
                 toId = curEdge.toId;
             }
         }
-        Route tmpRoute = findRoute(fromId, toId, startEdge.mode);
+        Route tmpRoute = findRoute(fromId, toId, startEdge.mode, graph);
         route.legList.addAll(tmpRoute.legList);
 
         return route;
@@ -217,33 +209,19 @@ public class RoutePlanner {
 
     }
 
-    public void createKDTree() {
-        Graph<Node, GraphEdge> graph = GraphMaker.getInstance().getGraph();
-        logger.info("Creating KDTree...");
-        double[] tmpArr = new double[2];
-        for (Node node : graph.getAllNodes()) {
-            tmpArr[0] = node.getLatitude();
-            tmpArr[1] = node.getLongitude();
-            KDTree.getInstance().insert(tmpArr, node.id);
-        }
-        logger.info("KDTree created");
-    }
+    public List<GraphEdge> findPath(Location origin, Location destination, GraphMaker graphMaker) {
+        int originId = (int) graphMaker.getKdTree().nearest(origin.toDoubleArray());
+        int destinationId = (int) graphMaker.getKdTree().nearest(destination.toDoubleArray());
 
-    public List<GraphEdge> findPath(Location origin, Location destination) {
-        Graph graph = GraphMaker.getInstance().getGraph();
+        Node originNode = graphMaker.getGraph().getNode(originId);
+        Node destinationNode = graphMaker.getGraph().getNode(destinationId);
 
-        int originId = (int) KDTree.getInstance().nearest(origin.toDoubleArray());
-        int destinationId = (int) KDTree.getInstance().nearest(destination.toDoubleArray());
-
-        Node originNode = graph.getNode(originId);
-        Node destinationNode = graph.getNode(destinationId);
-
-        AStar astar = new AStar<>(graph);
+        AStar astar = new AStar<>(graphMaker.getGraph());
         List<GraphEdge> plan = astar.plan(originNode, destinationNode);
 
         if (plan == null) {
             logger.debug("Plan was empty, trying another combination now...");
-            return findRandomPath();
+            return findRandomPath(graphMaker);
         }
 
 //        logger.info("Generated random origin location" + origin);
@@ -260,11 +238,5 @@ public class RoutePlanner {
 
     public long getDuration(Route route) {
         return route == null ? 0 : route.legList.stream().mapToLong(o -> o.durationInSeconds).sum();
-    }
-
-    public void checkFunctionality(Graph metaGraph, Graph idealGraph) {
-        for (int i = 0; i < 100; i++) {
-
-        }
     }
 }

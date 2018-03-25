@@ -7,6 +7,7 @@ import model.graph.GraphEdge;
 import model.planner.*;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import pathfinding.kdtree.KDTree;
 
 import java.util.Collection;
 import java.util.List;
@@ -18,18 +19,11 @@ import java.util.stream.Collectors;
  * All Rights Reserved.
  */
 public class GraphMaker extends GraphBuilder {
-    private static GraphMaker sharedInstance;
     private Graph<Node, GraphEdge> graph;
+    private KDTree kdTree;
     private int nodeCounter = 0;
 
     private static final Logger logger = LogManager.getLogger(GraphMaker.class);
-
-    public static GraphMaker getInstance() {
-        if (sharedInstance == null) {
-            sharedInstance = new GraphMaker();
-        }
-        return sharedInstance;
-    }
 
     public Graph getGraph() {
         return graph;
@@ -45,11 +39,15 @@ public class GraphMaker extends GraphBuilder {
         return graph;
     }
 
-    public void setGraph(Graph<Node, GraphEdge> graph) {
-        addNodes(graph.getAllNodes());
-        addEdges(graph.getAllEdges());
+    public void setGraph(Graph<Node, GraphEdge> graph,boolean append) {
+        if (append) {
+            addNodes(graph.getAllNodes());
+            addEdges(graph.getAllEdges());
 
-        nodeCounter = graph.getAllNodes().size();
+            nodeCounter = graph.getAllNodes().size();
+        } else {
+            this.graph = graph;
+        }
     }
 
     private void addRoutes(List<Route> routes) {
@@ -156,5 +154,21 @@ public class GraphMaker extends GraphBuilder {
         int B = b >= 0 ? 2 * b : -2 * b - 1;
 
         return A >= B ? A * A + A + B : A + B * B;
+    }
+
+    public void createKDTree() {
+        logger.info("Creating KDTree...");
+        double[] tmpArr = new double[2];
+        kdTree = new KDTree(2);
+        for (Node node : graph.getAllNodes()) {
+            tmpArr[0] = node.getLatitude();
+            tmpArr[1] = node.getLongitude();
+            kdTree.insert(tmpArr, node.id);
+        }
+        logger.info("KDTree created");
+    }
+
+    public KDTree getKdTree() {
+        return kdTree;
     }
 }

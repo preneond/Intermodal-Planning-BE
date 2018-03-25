@@ -10,6 +10,7 @@ import model.planner.TransportMode;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import pathfinding.kdtree.KDTree;
 import utils.GeoJSONBuilder;
 import utils.SerializationUtils;
 
@@ -38,35 +39,45 @@ public class Main {
     }
 
     public static void main(String[] args) {
-//        URL resource = RoutePlanner.class.getResource("/perfect_graph.json");
+        URL resource = RoutePlanner.class.getResource("/perfect_graph.json");
         URL metaresource = RoutePlanner.class.getResource("/meta_graph.json");
 
-        RoutePlanner routePlanner = RoutePlanner.getInstance();
         try {
-//            File file = Paths.get(resource.toURI()).toFile();
+            File file = Paths.get(resource.toURI()).toFile();
             File metafile = Paths.get(metaresource.toURI()).toFile();
 
-//            Graph<Node, GraphEdge> graph = (Graph<Node, GraphEdge>) SerializationUtils.readObjectFromFile(file);
+            Graph<Node, GraphEdge> perfectGraph = (Graph<Node, GraphEdge>) SerializationUtils.readObjectFromFile(file);
             Graph<Node, GraphEdge> metaGraph = (Graph<Node, GraphEdge>) SerializationUtils.readObjectFromFile(metafile);
 
+            GraphMaker perfectGraphMaker = new GraphMaker();
+            perfectGraphMaker.setGraph(perfectGraph, false);
+            perfectGraphMaker.createKDTree();
+
+            GraphMaker metaGraphMaker = new GraphMaker();
+            metaGraphMaker.setGraph(metaGraph, false);
+            metaGraphMaker.createKDTree();
+
+
 //            if (graph != null) GraphMaker.getInstance().setGraph(graph);
-            if (metaGraph != null) GraphMaker.getInstance().setGraph(metaGraph);
-            GraphMaker.getInstance().createGraph(routePlanner.expandGraph(8,TransportMode.CAR));
+//            if (metaGraph != null) GraphMaker.getInstance().setGraph(metaGraph);
+//            GraphMaker.getInstance().createGraph(routePlanner.getRoutesFromKnownRequest(1000));
+//            GraphMaker.getInstance().createGraph(new ArrayList<>());
 
 //            SerializationUtils.writeObjectToFile(GraphMaker.getInstance().getGraph(), file);
-            SerializationUtils.writeObjectToFile(GraphMaker.getInstance().getGraph(), metafile);
+//            SerializationUtils.writeObjectToFile(GraphMaker.getInstance().getGraph(), metafile);
 
             if (!statistics) return;
 
             if (statistics) {
-                doStatistics();
+//                doStatistics();
+                doComparision(perfectGraphMaker, metaGraphMaker);
 //                SerializationUtils.writeObjectToFile(GraphMaker.getInstance().getGraph(), file);
                 return;
             }
 
 
 //            GraphMaker.getInstance().createGraph(routePlanner.expandGraph());
-            routePlanner.createKDTree();
+//            routePlanner.createKDTree();
 
             //
 //            routePlanner.checkFunctionality(metaGraph,);
@@ -120,7 +131,17 @@ public class Main {
         }
     }
 
-    private static void doStatistics() {
+    private static void doComparision(GraphMaker perfectGraphMaker, GraphMaker metaGraphMaker) {
+        RoutePlanner routePlanner = RoutePlanner.getInstance();
+
+        Location[] odPair;
+        for (int i = 0; i < 100; i++) {
+            odPair = Location.generateRandomLocationsInPrague(2);
+            routePlanner.findPath(odPair[0], odPair[1], metaGraphMaker);
+        }
+    }
+
+    private static void doStatistics(GraphMaker graphMaker) {
         RoutePlanner routePlanner = RoutePlanner.getInstance();
 
 //        int[] graphSize = new int[]{85};
@@ -133,13 +154,12 @@ public class Main {
         long[] refinementRouteDuration = new long[findingPathCount];
         long[] deviation = new long[findingPathCount];
 //            GraphMaker.getInstance().createGraph(routePlanner.expandGraph(graphSize[i]));
-        routePlanner.createKDTree();
 
         for (int j = 0; j < findingPathCount; j++) {
-            List<GraphEdge> graphPath = routePlanner.findRandomPath();
+            List<GraphEdge> graphPath = routePlanner.findRandomPath(graphMaker);
             routeDuration[j] = routePlanner.getDuration(graphPath);
 
-            Route refinementRoute = routePlanner.doRefinement(graphPath);
+            Route refinementRoute = routePlanner.doRefinement(graphPath,graphMaker.getGraph());
             refinementRouteDuration[j] = routePlanner.getDuration(refinementRoute);
 
             deviation[j] = routeDuration[j] - refinementRouteDuration[j];
