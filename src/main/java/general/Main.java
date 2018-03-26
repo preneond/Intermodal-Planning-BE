@@ -1,10 +1,8 @@
 package general;
 
-import com.google.maps.model.DirectionsResult;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
 import model.graph.GraphEdge;
-import model.graph.GraphNode;
 import model.planner.Location;
 import model.planner.Route;
 import model.planner.TransportMode;
@@ -12,20 +10,15 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import pathfinding.kdtree.KDTree;
-import utils.GeoJSONBuilder;
 import utils.SerializationUtils;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.OptionalDouble;
 
 public class Main {
     public static int numOfRequests = 0;
@@ -48,24 +41,28 @@ public class Main {
             File file = Paths.get(resource.toURI()).toFile();
             File metafile = Paths.get(metaresource.toURI()).toFile();
 
-            Graph<GraphNode, GraphEdge> perfectGraph = (Graph<GraphNode, GraphEdge>) SerializationUtils.readObjectFromFile(file);
-            Graph<GraphNode, GraphEdge> metaGraph = (Graph<GraphNode, GraphEdge>) SerializationUtils.readObjectFromFile(metafile);
+            Graph<Node, GraphEdge> perfectGraph = (Graph<Node, GraphEdge>) SerializationUtils.readObjectFromFile(file);
+            Graph<Node, GraphEdge> metaGraph = (Graph<Node, GraphEdge>) SerializationUtils.readObjectFromFile(metafile);
 
             GraphMaker perfectGraphMaker = new GraphMaker();
-            perfectGraphMaker.setGraph(perfectGraph, false);
-            perfectGraphMaker.createKDTree();
-
             GraphMaker metaGraphMaker = new GraphMaker();
-            metaGraphMaker.setGraph(metaGraph, false);
+
+            perfectGraphMaker.setGraph(perfectGraph);
+            metaGraphMaker.setGraph(metaGraph);
+
+//            RoutePlanner perfectRoutePlanner = new RoutePlanner(perfectGraphMaker);
+//            RoutePlanner metaRoutePlanner = new RoutePlanner(metaGraphMaker);
+
+//            perfectRoutePlanner.expandGraphFromKnownRequests(7000);
+//            metaRoutePlanner.expandGraphFromKnownRequests(1000);
+
+            perfectGraphMaker.createKDTree();
             metaGraphMaker.createKDTree();
 
-            /*
-            perfectGraphMaker.setAvailableModes();
-            metaGraphMaker.setAvailableModes();
-            */
 
-            SerializationUtils.writeObjectToFile(perfectGraphMaker.getGraph(), file);
-            SerializationUtils.writeObjectToFile(metaGraphMaker.getGraph(), metafile);
+
+//            SerializationUtils.writeObjectToFile(perfectGraphMaker.getGraph(), file);
+//            SerializationUtils.writeObjectToFile(metaGraphMaker.getGraph(), metafile);
 
 
 //            if (graph != null) GraphMaker.getInstance().setGraph(graph);
@@ -154,7 +151,6 @@ public class Main {
         }
     }
 
-    //TODO: Need to modify KDTree to be able find Node with specific transport mode option
     private static void comparePath(RoutePlanner perfectPlanner, RoutePlanner metaPlanner) {
         while (true) {
             Location[] odPair = Location.generateRandomLocationsInPrague(2);

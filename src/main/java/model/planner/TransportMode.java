@@ -20,4 +20,8 @@ public enum TransportMode implements Serializable{
                 return Color.BLACK;
         }
     }
+
+    public static TransportMode[] availableModes() {
+        return new TransportMode[] {TransportMode.WALK,TransportMode.TRANSIT,TransportMode.CAR};
+    }
 }

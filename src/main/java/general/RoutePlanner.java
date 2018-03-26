@@ -44,6 +44,10 @@ public class RoutePlanner {
         return resultRoutes;
     }
 
+    public void expandGraphFromKnownRequests(int numOfrequests) {
+        graphMaker.createGraph(getRoutesFromKnownRequest(numOfrequests));
+    }
+
     public List<Route> expandGraph(int numOfRequests, PlannerAdapter plannerAdapter) {
         Location[] locArray;
         List<Route> routes = new ArrayList<>();
@@ -56,6 +60,7 @@ public class RoutePlanner {
             routeList = plannerAdapter.findRoutes(locArray[1], locArray[0]);
             routes.addAll(routeList);
         }
+
         return routes;
     }
 
@@ -68,7 +73,7 @@ public class RoutePlanner {
         }
     }
 
-    public List<Route> expandGraph(int numOfRequests) {
+    public void expandGraph(int numOfRequests) {
         Location[] locArray;
         List<Route> routes = new ArrayList<>();
         List<Route> routeList;
@@ -79,7 +84,7 @@ public class RoutePlanner {
             routes.addAll(routeList);
         }
 
-        return routes;
+        graphMaker.createGraph(routes);
     }
 
     public List<GraphEdge> findRandomPath() {
