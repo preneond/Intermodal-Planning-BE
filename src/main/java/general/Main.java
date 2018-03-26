@@ -12,9 +12,7 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import utils.SerializationUtils;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -44,21 +42,32 @@ public class Main {
             Graph<Node, GraphEdge> perfectGraph = (Graph<Node, GraphEdge>) SerializationUtils.readObjectFromFile(file);
             Graph<Node, GraphEdge> metaGraph = (Graph<Node, GraphEdge>) SerializationUtils.readObjectFromFile(metafile);
 
+//            perfectGraph.getAllEdges()
+//                    .stream()
+//                    .filter(graphEdge -> graphEdge.mode == TransportMode.TRANSIT)
+//                    .forEach(graphEdge -> {
+//                        Node from = perfectGraph.getNode(graphEdge.fromId);
+//                        Node to = perfectGraph.getNode(graphEdge.toId);
+//                        System.out.println(from.getLongitude() + ", " + from.getLatitude()
+//                                + " " + "-Duration=" + graphEdge.durationInSeconds + "->"
+//                                + to.getLongitude() + ", " + to.getLatitude());
+//                    });
+//            if (statistics) return;
+
             GraphMaker perfectGraphMaker = new GraphMaker();
             GraphMaker metaGraphMaker = new GraphMaker();
 
             perfectGraphMaker.setGraph(perfectGraph);
             metaGraphMaker.setGraph(metaGraph);
 
-//            RoutePlanner perfectRoutePlanner = new RoutePlanner(perfectGraphMaker);
-//            RoutePlanner metaRoutePlanner = new RoutePlanner(metaGraphMaker);
+            RoutePlanner perfectRoutePlanner = new RoutePlanner(perfectGraphMaker);
+            RoutePlanner metaRoutePlanner = new RoutePlanner(metaGraphMaker);
 
 //            perfectRoutePlanner.expandGraphFromKnownRequests(7000);
 //            metaRoutePlanner.expandGraphFromKnownRequests(1000);
 
             perfectGraphMaker.createKDTree();
             metaGraphMaker.createKDTree();
-
 
 
 //            SerializationUtils.writeObjectToFile(perfectGraphMaker.getGraph(), file);
@@ -145,18 +154,28 @@ public class Main {
         perfectGraphMaker.getGraphDescription();
         metaGraphMaker.getGraphDescription();
 
-        Location[] odPair;
-        for (int i = 0; i < 100; i++) {
-            comparePath(perfectPlanner, metaPlanner);
+        File file = new File(dataPath + "statistics/comparision.txt");
+        try {
+            PrintWriter printWriter = new PrintWriter(file);
+            printWriter.println("count: car meta, car ref, transit meta, transit ref, intermodal meta, intermodal ref, intermodal description meta, intermodal description ref");
+            printWriter.println("---------------------------------------------------------------------------------------------------------------------------------------------");
+
+            for (int i = 0; i < 100; i++) {
+                comparePath(perfectPlanner, metaPlanner, printWriter, i + 1);
+            }
+
+            printWriter.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
         }
     }
 
-    private static void comparePath(RoutePlanner perfectPlanner, RoutePlanner metaPlanner) {
+    private static void comparePath(RoutePlanner perfectPlanner, RoutePlanner metaPlanner, PrintWriter printWriter, int count) {
         while (true) {
             Location[] odPair = Location.generateRandomLocationsInPrague(2);
             //CAR
-            List<GraphEdge> perfectCarPath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.CAR, TransportMode.WALK);
-            List<GraphEdge> metaCarPath = metaPlanner.findPath(odPair[0], odPair[1], TransportMode.CAR, TransportMode.WALK);
+            List<GraphEdge> perfectCarPath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.CAR);
+            List<GraphEdge> metaCarPath = metaPlanner.findPath(odPair[0], odPair[1], TransportMode.CAR);
             //TRANSIT
             List<GraphEdge> perfectTransitPath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.TRANSIT, TransportMode.WALK);
             List<GraphEdge> metaTransitPath = metaPlanner.findPath(odPair[0], odPair[1], TransportMode.TRANSIT, TransportMode.WALK);
@@ -166,9 +185,56 @@ public class Main {
 
             if (ObjectUtils.allNotNull(perfectCarPath, metaCarPath,
                     perfectTransitPath, metaTransitPath,
-                    perfectIntermodalPath, metaIntermodalPath
-            )) return;
+                    perfectIntermodalPath, metaIntermodalPath)) {
+
+                Long carMeta = metaPlanner.getDuration(metaCarPath);
+                Long carRef = perfectPlanner.getDuration(perfectCarPath);
+
+                Long transitMeta = metaPlanner.getDuration(metaTransitPath);
+                Long transitRef = perfectPlanner.getDuration(perfectTransitPath);
+
+                Long interMeta = metaPlanner.getDuration(metaIntermodalPath);
+                Long interRef = perfectPlanner.getDuration(perfectIntermodalPath);
+
+                String interDescriptionMeta = getIntermodalDescription(metaIntermodalPath);
+                String interDescriptionRef = getIntermodalDescription(perfectIntermodalPath);
+
+                printWriter.println(count + ": "
+                        + carMeta + ", " + carRef + ", "
+                        + transitMeta + ", " + transitRef + ", "
+                        + interMeta + ", " + interRef + ", "
+                        + interDescriptionMeta + ", "
+                        + interDescriptionRef
+                );
+                printWriter.println();
+
+
+                return;
+            }
         }
+    }
+
+    private static String getIntermodalDescription(List<GraphEdge> intermodalPath) {
+        String description = "";
+        if (intermodalPath == null || intermodalPath.isEmpty()) return description;
+
+
+        long curDuration = intermodalPath.get(0).durationInSeconds;
+        TransportMode curMode = intermodalPath.get(0).mode;
+        GraphEdge curEdge;
+        for (int i = 1; i < intermodalPath.size(); i += 1) {
+            curEdge = intermodalPath.get(i);
+            if (curMode == curEdge.mode) {
+                curDuration += curEdge.durationInSeconds;
+            } else {
+                description += curDuration + curMode.shortcut() + "+";
+                curMode = curEdge.mode;
+                curDuration = curEdge.durationInSeconds;
+            }
+        }
+        description += curDuration + curMode.shortcut();
+
+        return description;
     }
 
     private static void doStatistics(GraphMaker graphMaker) {

@@ -24,4 +24,8 @@ public enum TransportMode implements Serializable{
     public static TransportMode[] availableModes() {
         return new TransportMode[] {TransportMode.WALK,TransportMode.TRANSIT,TransportMode.CAR};
     }
+
+    public String shortcut() {
+        return this.name().substring(0,1);
+    }
 }

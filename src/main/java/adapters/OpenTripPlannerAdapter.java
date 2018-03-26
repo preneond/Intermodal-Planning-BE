@@ -143,7 +143,7 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
         tmpStep.endLocation = getLocation(steps.getJSONObject(0));
 
         if (isTransitLeg) {
-            tmpStep.durationInSeconds = steps.getJSONObject(0).getLong("arrival") - startTime;
+            tmpStep.durationInSeconds = (steps.getJSONObject(0).getLong("arrival") - startTime) / 1000;
         } else {
             tmpStep.distanceInMeters = steps.getJSONObject(0).getLong("distance");
             tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / WALKING_SPEED_MPS);
@@ -156,8 +156,8 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
             tmpStep.endLocation = getLocation(steps.getJSONObject(i));
 
             if (isTransitLeg) {
-                tmpStep.durationInSeconds = steps.getJSONObject(i).getLong("departure") -
-                        steps.getJSONObject(i - 1).getLong("arrival");
+                tmpStep.durationInSeconds = (steps.getJSONObject(i).getLong("departure") -
+                        steps.getJSONObject(i - 1).getLong("arrival")) / 1000;
             } else {
                 tmpStep.distanceInMeters = steps.getJSONObject(i).getLong("distance");
                 tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / WALKING_SPEED_MPS);
@@ -170,9 +170,11 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
         tmpStep.startLocation = stepList.get(steps.length() - 1).endLocation;
         tmpStep.endLocation = endLocation;
         if (isTransitLeg) {
-            tmpStep.durationInSeconds = endTime - steps.getJSONObject(steps.length() - 1).getLong("arrival");
+            tmpStep.durationInSeconds = (endTime - steps.getJSONObject(steps.length() - 1)
+                    .getLong("arrival")) / 1000;
         } else {
-            tmpStep.distanceInMeters = steps.getJSONObject(steps.length() - 1).getLong("distance");
+            tmpStep.distanceInMeters = steps.getJSONObject(steps.length() - 1)
+                    .getLong("distance");
             tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / WALKING_SPEED_MPS);
         }
         stepList.add(tmpStep);
