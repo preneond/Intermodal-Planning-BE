@@ -4,6 +4,7 @@ import com.google.maps.model.DirectionsResult;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
 import model.graph.GraphEdge;
+import model.graph.GraphNode;
 import model.planner.Location;
 import model.planner.Route;
 import model.planner.TransportMode;
@@ -47,8 +48,8 @@ public class Main {
             File file = Paths.get(resource.toURI()).toFile();
             File metafile = Paths.get(metaresource.toURI()).toFile();
 
-            Graph<Node, GraphEdge> perfectGraph = (Graph<Node, GraphEdge>) SerializationUtils.readObjectFromFile(file);
-            Graph<Node, GraphEdge> metaGraph = (Graph<Node, GraphEdge>) SerializationUtils.readObjectFromFile(metafile);
+            Graph<GraphNode, GraphEdge> perfectGraph = (Graph<GraphNode, GraphEdge>) SerializationUtils.readObjectFromFile(file);
+            Graph<GraphNode, GraphEdge> metaGraph = (Graph<GraphNode, GraphEdge>) SerializationUtils.readObjectFromFile(metafile);
 
             GraphMaker perfectGraphMaker = new GraphMaker();
             perfectGraphMaker.setGraph(perfectGraph, false);
@@ -57,6 +58,14 @@ public class Main {
             GraphMaker metaGraphMaker = new GraphMaker();
             metaGraphMaker.setGraph(metaGraph, false);
             metaGraphMaker.createKDTree();
+
+            /*
+            perfectGraphMaker.setAvailableModes();
+            metaGraphMaker.setAvailableModes();
+            */
+
+            SerializationUtils.writeObjectToFile(perfectGraphMaker.getGraph(), file);
+            SerializationUtils.writeObjectToFile(metaGraphMaker.getGraph(), metafile);
 
 
 //            if (graph != null) GraphMaker.getInstance().setGraph(graph);
@@ -145,16 +154,16 @@ public class Main {
         }
     }
 
-    //FIXME: Need to modify KDTree to be able find Node with specific transport mode option
+    //TODO: Need to modify KDTree to be able find Node with specific transport mode option
     private static void comparePath(RoutePlanner perfectPlanner, RoutePlanner metaPlanner) {
         while (true) {
             Location[] odPair = Location.generateRandomLocationsInPrague(2);
             //CAR
-            List<GraphEdge> perfectCarPath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.WALK, TransportMode.CAR);
-            List<GraphEdge> metaCarPath = metaPlanner.findPath(odPair[0], odPair[1], TransportMode.WALK, TransportMode.CAR);
+            List<GraphEdge> perfectCarPath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.CAR, TransportMode.WALK);
+            List<GraphEdge> metaCarPath = metaPlanner.findPath(odPair[0], odPair[1], TransportMode.CAR, TransportMode.WALK);
             //TRANSIT
-            List<GraphEdge> perfectTransitPath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.WALK, TransportMode.TRANSIT);
-            List<GraphEdge> metaTransitPath = metaPlanner.findPath(odPair[0], odPair[1], TransportMode.WALK, TransportMode.TRANSIT);
+            List<GraphEdge> perfectTransitPath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.TRANSIT, TransportMode.WALK);
+            List<GraphEdge> metaTransitPath = metaPlanner.findPath(odPair[0], odPair[1], TransportMode.TRANSIT, TransportMode.WALK);
             //INTERMODAL
             List<GraphEdge> perfectIntermodalPath = perfectPlanner.findPath(odPair[0], odPair[1]);
             List<GraphEdge> metaIntermodalPath = metaPlanner.findPath(odPair[0], odPair[1]);

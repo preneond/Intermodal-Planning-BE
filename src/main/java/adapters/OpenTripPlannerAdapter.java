@@ -104,7 +104,7 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
     private Leg parseNonTransitLeg(JSONObject jsonLeg) {
         Leg leg = new Leg();
 
-        leg.mode = TransportMode.valueOf(jsonLeg.getString("mode"));
+        leg.transportMode = TransportMode.valueOf(jsonLeg.getString("mode"));
         leg.durationInSeconds = jsonLeg.getLong("duration");
 
         leg.startLocation = getLocation(jsonLeg.getJSONObject("from"));

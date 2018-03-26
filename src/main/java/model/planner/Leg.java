@@ -9,7 +9,7 @@ public class Leg {
     public List<Step> steps;
     public long distanceInMeters; //in meters
     public long durationInSeconds = 0;
-    public TransportMode mode;
+    public TransportMode transportMode;
 
     public Leg() {
         steps = new ArrayList<>();

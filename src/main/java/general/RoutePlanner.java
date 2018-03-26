@@ -211,9 +211,15 @@ public class RoutePlanner {
     }
 
     public List<GraphEdge> findPath(Location origin, Location destination, TransportMode... availableModes) {
-        Node originNode = getNearestNode(origin);
-        Node destinationNode = getNearestNode(destination);
-
+        Node originNode;
+        Node destinationNode;
+        if (availableModes == null) {
+            originNode = getNearestNode(origin);
+            destinationNode = getNearestNode(destination);
+        } else {
+            originNode = getNearestNode(origin, availableModes[0], true);
+            destinationNode = getNearestNode(destination, availableModes[0], false);
+        }
         AStar astar = new AStar<>(graphMaker.getGraph());
         List<GraphEdge> plan = astar.plan(originNode, destinationNode, availableModes);
 
@@ -233,6 +239,12 @@ public class RoutePlanner {
 
     private Node getNearestNode(Location location) {
         int nodeId = (int) graphMaker.getKdTree().nearest(location.toDoubleArray());
+
+        return graphMaker.getGraph().getNode(nodeId);
+    }
+
+    private Node getNearestNode(Location location, TransportMode mode, boolean isIngoingMode) {
+        int nodeId = (int) graphMaker.getKdTreeForMode(mode, isIngoingMode).nearest(location.toDoubleArray());
 
         return graphMaker.getGraph().getNode(nodeId);
     }
