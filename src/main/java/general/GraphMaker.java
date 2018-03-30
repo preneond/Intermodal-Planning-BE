@@ -127,6 +127,7 @@ public class GraphMaker extends GraphBuilder {
         List carList = edgeList.stream().filter(graphEdge -> graphEdge.mode == TransportMode.CAR).collect(Collectors.toList());
         List walkingList = edgeList.stream().filter(graphEdge -> graphEdge.mode == TransportMode.WALK).collect(Collectors.toList());
         List transitList = edgeList.stream().filter(graphEdge -> graphEdge.mode == TransportMode.TRANSIT).collect(Collectors.toList());
+        List bikeList = edgeList.stream().filter(graphEdge -> graphEdge.mode == TransportMode.BICYCLE).collect(Collectors.toList());
 
         int inputLevel = 0;
         int outputLevel = 0;
@@ -143,9 +144,10 @@ public class GraphMaker extends GraphBuilder {
                 "Number of requests: " + Main.numOfRequests + "\n" +
                 "Number of edges: " + edgeList.size() + "\n" +
                 "Number of nodes: " + nodeList.size() + "\n" +
-                "Number of edges for car: " + carList.size() + "\n" +
                 "Number of edges for walking: " + walkingList.size() + "\n" +
+                "Number of edges for bike: " + bikeList.size() + "\n" +
                 "Number of edges for public transport: " + transitList.size() + "\n" +
+                "Number of edges for car: " + carList.size() + "\n" +
                 "Average input level:  " + avgInputLevel + "\n" +
                 "Average output level: " + avgOutputLevel);
     }

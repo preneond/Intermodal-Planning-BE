@@ -29,10 +29,10 @@ public class RoutePlanner {
         List<Route> resultRoutes = new ArrayList<>();
         List<Route> tmpResult;
         for (int i = 1; i <= numOfRequests; i++) {
-            for (TransportMode mode : TransportMode.values()) {
+            for (TransportMode mode : TransportMode.availableModes()) {
                 tmpResult = null;
-                if (mode == TransportMode.TRANSIT) {
-                    tmpResult = OpenTripPlannerAdapter.getInstance().findRoutesFromKnownRequests(i);
+                if (mode == TransportMode.TRANSIT || mode == TransportMode.BICYCLE) {
+                    tmpResult = OpenTripPlannerAdapter.getInstance().findRoutesFromKnownRequests(i, mode);
                 } else if (mode == TransportMode.CAR || mode == TransportMode.WALK) {
                     tmpResult = GMapsPlannerAdapter.getInstance().findRoutesFromKnownRequests(i, mode);
                 }
@@ -66,11 +66,29 @@ public class RoutePlanner {
 
     public List<Route> expandGraph(int numOfRequests, TransportMode transportMode) {
         switch (transportMode) {
+            case BICYCLE:
+                return expandGraph(numOfRequests, OpenTripPlannerAdapter.getInstance(), transportMode);
             case TRANSIT:
                 return expandGraph(numOfRequests, OpenTripPlannerAdapter.getInstance());
             default:
-                return expandGraph(numOfRequests, GMapsPlannerAdapter.getInstance());
+                return expandGraph(numOfRequests, GMapsPlannerAdapter.getInstance(), transportMode);
         }
+    }
+
+    private List<Route> expandGraph(int numOfRequests, PlannerAdapter plannerAdapter, TransportMode transportMode) {
+        Location[] locArray;
+        List<Route> routes = new ArrayList<>();
+        List<Route> routeList;
+
+        for (int i = 0; i < numOfRequests; i++) {
+            locArray = Location.generateRandomLocationsInPrague(2);
+            routeList = plannerAdapter.findRoutes(locArray[0], locArray[1],transportMode);
+            routes.addAll(routeList);
+            routeList = plannerAdapter.findRoutes(locArray[1], locArray[0],transportMode);
+            routes.addAll(routeList);
+        }
+
+        return routes;
     }
 
     public void expandGraph(int numOfRequests) {
@@ -212,7 +230,7 @@ public class RoutePlanner {
     }
 
     public List<GraphEdge> findPath(Location origin, Location destination) {
-        return findPath(origin, destination, TransportMode.values());
+        return findPath(origin, destination, TransportMode.availableModes());
     }
 
     public List<GraphEdge> findPath(Location origin, Location destination, TransportMode... availableModes) {
@@ -228,7 +246,7 @@ public class RoutePlanner {
         AStar astar = new AStar<>(graphMaker.getGraph());
         List<GraphEdge> plan = astar.plan(originNode, destinationNode, availableModes);
 
-        if (plan == null) logger.debug("Plan is empty");
+//        if (plan == null) logger.debug("Plan is empty");
 //            return findRandomPath();
 //        }
 

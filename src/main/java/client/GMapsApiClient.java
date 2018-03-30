@@ -11,17 +11,24 @@ import general.Main;
 import utils.SerializationUtils;
 
 import java.io.File;
+import java.sql.Timestamp;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class GMapsApiClient {
-    public static int carRequestsCount = 35;
-    public static int walkRequestsCount = 6910;
+    public static int carRequestsCount = 9928;
+    public static int walkRequestsCount = 7000;
     private static GMapsApiClient sharedInstance;
     private GeoApiContext context;
-    public static final String[] apiKeys = new String[]{"AIzaSyDPlXXLGlWdjqyha8M5IWJMfgM4kf_uV4A",
-            "AIzaSyBAJwyMaIhPdMptdXbDcFYGzl-86J2oyKw",
-            "AIzaSyB1BXePutkWKhuKzk3TTTFKvjtaDKslI5A",
-            "AIzaSyDqe-iuB8J9H4zUwZ1APCYzayuOx7-oKgg"};
+    public static final String[] apiKeys = new String[]{
+//            "AIzaSyDPlXXLGlWdjqyha8M5IWJMfgM4kf_uV4A",
+//            "AIzaSyBAJwyMaIhPdMptdXbDcFYGzl-86J2oyKw",
+//            "AIzaSyB1BXePutkWKhuKzk3TTTFKvjtaDKslI5A",
+//            "AIzaSyDqe-iuB8J9H4zUwZ1APCYzayuOx7-oKgg"
+            "AIzaSyBdF2b3EpPazT5NPl_xRlcWXpBH4Pt0GWE",
+            "AIzaSyDePcOSehCxz5SCFsDMPVqlUHq0BMIrTx4",
+            "AIzaSyBsYq8wlQIlEHu0XpSWR-u1pbRJogKwdiQ",
+            "AIzaSyDTcjYJ339Hah37BlxIJcAacKGlBwMwuhQ"
+    };
 
     public static final String REQUEST_STORAGE = "/Users/ondrejprenek/Documents/CVUT/Bachelor_thesis/Intermodal_planning/Data/requests/gmaps/";
 
@@ -38,9 +45,13 @@ public class GMapsApiClient {
     }
 
     public DirectionsResult sendNewRequest(LatLng origin, LatLng destination, TravelMode mode, DateTime departure) {
+        int idx = ThreadLocalRandom.current().nextInt(apiKeys.length);
+        context.setApiKey(apiKeys[idx]);
+
+        DirectionsResult directionResult = null;
         try {
             Main.numOfRequests++;
-            return DirectionsApi.newRequest(context)
+            directionResult = DirectionsApi.newRequest(context)
                     .origin(origin)
                     .destination(destination)
                     .mode(mode)
@@ -49,11 +60,14 @@ public class GMapsApiClient {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return null;
+        return directionResult;
     }
 
     public DirectionsResult sendNewRequest(LatLng origin, LatLng destination, TravelMode mode) {
-        DateTime time = new DateTime(DateTime.now());
+        Timestamp ts = new Timestamp(1523254800000l);
+        DateTime time = new DateTime(ts);
+
+//        DateTime time = new DateTime(DateTime.now());
         int idx = ThreadLocalRandom.current().nextInt(apiKeys.length);
         context.setApiKey(apiKeys[idx]);
 
@@ -66,9 +80,9 @@ public class GMapsApiClient {
                     .await();
 
             Main.numOfRequests++;
-            int tmpCount = mode == TravelMode.DRIVING ?  ++carRequestsCount : ++walkRequestsCount;
+            int tmpCount = mode == TravelMode.DRIVING ? ++carRequestsCount : ++walkRequestsCount;
 
-            File file = new File(REQUEST_STORAGE + mode.toString() + "/request_" + tmpCount+ ".txt");
+            File file = new File(REQUEST_STORAGE + mode.toString() + "/request_" + tmpCount + ".txt");
             SerializationUtils.writeRequestToGson(directionResult, file);
 
             return directionResult;
@@ -79,7 +93,7 @@ public class GMapsApiClient {
     }
 
     public DirectionsResult getKnownRequest(int count, TravelMode mode) throws NullPointerException {
-        File file = new File(REQUEST_STORAGE + mode.toString() + "/request_" + count+ ".txt");
+        File file = new File(REQUEST_STORAGE + mode.toString() + "/request_" + count + ".txt");
 
         DirectionsResult request = SerializationUtils.readDirectionsResultFromGson(file);
 

@@ -3,14 +3,14 @@ package model.planner;
 import java.awt.*;
 import java.io.Serializable;
 
-public enum TransportMode implements Serializable{
-    WALK,BIKE,TRANSIT,CAR, UNKNOWN;
+public enum TransportMode implements Serializable {
+    WALK, BICYCLE, TRANSIT, CAR, UNKNOWN;
 
-    public Color modeColor(){
-        switch(this){
+    public Color modeColor() {
+        switch (this) {
             case CAR:
                 return Color.BLUE;
-            case BIKE:
+            case BICYCLE:
                 return Color.GREEN;
             case WALK:
                 return Color.YELLOW;
@@ -22,10 +22,10 @@ public enum TransportMode implements Serializable{
     }
 
     public static TransportMode[] availableModes() {
-        return new TransportMode[] {TransportMode.WALK,TransportMode.TRANSIT,TransportMode.CAR};
+        return new TransportMode[]{TransportMode.CAR, TransportMode.TRANSIT, TransportMode.BICYCLE, TransportMode.WALK};
     }
 
     public String shortcut() {
-        return this.name().substring(0,1);
+        return this.name().substring(0, 1);
     }
 }

@@ -49,7 +49,7 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
 //            tmpResult = GMapsApiClient.getInstance().sendNewRequest(originLatLng, destinationLatLng, travelMode);
 
 //            result.routes = concatenate(result.routes, tmpResult.routes);
-        result = GMapsApiClient.getInstance().sendNewRequest(originLatLng,destinationLatLng,TravelMode.DRIVING);
+        result = GMapsApiClient.getInstance().sendNewRequest(originLatLng, destinationLatLng, TravelMode.DRIVING);
 //        }
 
         try {
@@ -63,7 +63,7 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
 
     public List<Route> findRoutesFromKnownRequests(int requestNumber, TransportMode mode) {
         DirectionsResult result = GMapsApiClient.getInstance().getKnownRequest(requestNumber, getTravelMode(mode));
-        
+
         try {
             return getRouteList(result);
         } catch (ArrayIndexOutOfBoundsException | NullPointerException e) {
@@ -111,11 +111,13 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
             legs = new ArrayList<>();
 
             for (DirectionsLeg leg : directionsRoute.legs) {
+                float trafficConstant = leg.durationInTraffic == null ? 1 :
+                        leg.durationInTraffic.inSeconds / (float) leg.duration.inSeconds;
                 steps = new ArrayList<>();
                 for (DirectionsStep step : leg.steps) {
                     tmpStep = new Step();
                     tmpStep.distanceInMeters = step.distance.inMeters;
-                    tmpStep.durationInSeconds = step.duration.inSeconds;
+                    tmpStep.durationInSeconds = (long) (trafficConstant * step.duration.inSeconds);
                     tmpStep.startLocation = getLocation(step.startLocation);
                     tmpStep.endLocation = getLocation(step.endLocation);
                     tmpStep.transportMode = getTransportMode(step.travelMode);
@@ -125,7 +127,7 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
                         for (DirectionsStep step2 : step.steps) {
                             tmpSubstep = new Step();
                             tmpSubstep.distanceInMeters = step2.distance.inMeters;
-                            tmpSubstep.durationInSeconds = step2.duration.inSeconds;
+                            tmpSubstep.durationInSeconds = (long) (trafficConstant * step2.duration.inSeconds);
                             tmpSubstep.startLocation = getLocation(step2.startLocation);
                             tmpSubstep.endLocation = getLocation(step2.endLocation);
                             tmpSubstep.transportMode = getTransportMode(step2.travelMode);
@@ -137,7 +139,8 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
 
                 tmpLeg = new Leg();
 
-                tmpLeg.durationInSeconds = leg.duration.inSeconds;
+                tmpLeg.durationInSeconds = leg.durationInTraffic == null ?
+                        leg.duration.inSeconds : leg.durationInTraffic.inSeconds;
                 tmpLeg.distanceInMeters = leg.distance.inMeters;
                 tmpLeg.startLocation = getLocation(leg.startLocation);
                 tmpLeg.endLocation = getLocation(leg.endLocation);
@@ -155,7 +158,7 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
         switch (mode) {
             case WALK:
                 return TravelMode.WALKING;
-            case BIKE:
+            case BICYCLE:
                 return TravelMode.BICYCLING;
             case TRANSIT:
                 return TravelMode.TRANSIT;
@@ -171,7 +174,7 @@ public class GMapsPlannerAdapter extends PlannerAdapter {
             case WALKING:
                 return TransportMode.WALK;
             case BICYCLING:
-                return TransportMode.BIKE;
+                return TransportMode.BICYCLE;
             case TRANSIT:
                 return TransportMode.TRANSIT;
             case DRIVING:

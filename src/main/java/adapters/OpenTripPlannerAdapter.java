@@ -5,7 +5,6 @@ import model.planner.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,15 +50,15 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
 
     @Override
     public Route findRoute(Location origin, Location destination) {
-        List<Route> routeList = findRoutes(origin, destination);
+        List<Route> routeList = findRoutes(origin, destination, TransportMode.BICYCLE);
 
         if (routeList.isEmpty()) return null;
 
         return routeList.get(0);
     }
 
-    public List<Route> findRoutesFromKnownRequests(int requestNumber) {
-        JSONObject jsonObject = OTPApiClient.getInstance().getKnownRequest(requestNumber);
+    public List<Route> findRoutesFromKnownRequests(int requestNumber, TransportMode mode) {
+        JSONObject jsonObject = OTPApiClient.getInstance().getKnownRequest(requestNumber, mode);
         return getRouteList(jsonObject);
     }
 
@@ -109,9 +108,16 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
 
         leg.startLocation = getLocation(jsonLeg.getJSONObject("from"));
         leg.endLocation = getLocation(jsonLeg.getJSONObject("to"));
-        leg.steps = getStepList(jsonLeg.getJSONArray("intermediateStops"), leg.startLocation,
-                leg.endLocation, 0, 0, false);
-        leg.steps.forEach(step -> step.transportMode = TransportMode.WALK);
+
+        long distance = 0;
+        if (jsonLeg.has("duration")) {
+            distance = jsonLeg.getLong("duration");
+        }
+
+        leg.distanceInMeters = distance;
+        leg.steps = getNonTransitStepList(jsonLeg.getJSONArray("steps"), leg.startLocation,
+                leg.endLocation, leg.durationInSeconds, leg.distanceInMeters, leg.transportMode);
+        leg.steps.forEach(step -> step.transportMode = leg.transportMode);
 
         return leg;
     }
@@ -124,16 +130,28 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
         leg.startLocation = getLocation(jsonLeg.getJSONObject("from"));
         leg.endLocation = getLocation(jsonLeg.getJSONObject("to"));
         leg.durationInSeconds = (endTime - startTime) / 1000;
-
-        leg.steps = getStepList(jsonLeg.getJSONArray("intermediateStops"), leg.startLocation,
-                leg.endLocation, startTime, endTime, true);
+        leg.steps = getStepListForTransit(jsonLeg.getJSONArray("intermediateStops"), leg.startLocation,
+                leg.endLocation, startTime, endTime);
         leg.steps.forEach(step -> step.transportMode = TransportMode.TRANSIT);
 
         return leg;
     }
 
-    private List<Step> getStepList(JSONArray steps, Location startLocation, Location endLocation,
-                                   long startTime, long endTime, boolean isTransitLeg) {
+    private List<Step> getNonTransitStepList(JSONArray steps, Location startLocation, Location endLocation,
+                                             long durationInSeconds, long distanceInMeters,
+                                             TransportMode transportMode) {
+        switch (transportMode) {
+            case BICYCLE:
+                return getStepListForBike(steps, startLocation, endLocation, durationInSeconds, distanceInMeters);
+            case WALK:
+                return getStepListForWalking(steps, startLocation, endLocation);
+            default:
+                return new ArrayList<>();
+        }
+    }
+
+    private List<Step> getStepListForTransit(JSONArray steps, Location startLocation, Location endLocation,
+                                             long startTime, long endTime) {
         List<Step> stepList = new ArrayList<>();
 
         if (steps.length() == 0) return stepList;
@@ -142,12 +160,8 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
         tmpStep.startLocation = startLocation;
         tmpStep.endLocation = getLocation(steps.getJSONObject(0));
 
-        if (isTransitLeg) {
-            tmpStep.durationInSeconds = (steps.getJSONObject(0).getLong("arrival") - startTime) / 1000;
-        } else {
-            tmpStep.distanceInMeters = steps.getJSONObject(0).getLong("distance");
-            tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / WALKING_SPEED_MPS);
-        }
+        tmpStep.durationInSeconds = (steps.getJSONObject(0).getLong("arrival") - startTime) / 1000;
+
         stepList.add(tmpStep);
 
         for (int i = 1; i < steps.length(); i++) {
@@ -155,13 +169,8 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
             tmpStep.startLocation = stepList.get(i - 1).endLocation;
             tmpStep.endLocation = getLocation(steps.getJSONObject(i));
 
-            if (isTransitLeg) {
-                tmpStep.durationInSeconds = (steps.getJSONObject(i).getLong("departure") -
-                        steps.getJSONObject(i - 1).getLong("arrival")) / 1000;
-            } else {
-                tmpStep.distanceInMeters = steps.getJSONObject(i).getLong("distance");
-                tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / WALKING_SPEED_MPS);
-            }
+            tmpStep.durationInSeconds = (steps.getJSONObject(i).getLong("departure") -
+                    steps.getJSONObject(i - 1).getLong("arrival")) / 1000;
 
             stepList.add(tmpStep);
         }
@@ -169,14 +178,84 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
         tmpStep = new Step();
         tmpStep.startLocation = stepList.get(steps.length() - 1).endLocation;
         tmpStep.endLocation = endLocation;
-        if (isTransitLeg) {
-            tmpStep.durationInSeconds = (endTime - steps.getJSONObject(steps.length() - 1)
-                    .getLong("arrival")) / 1000;
-        } else {
-            tmpStep.distanceInMeters = steps.getJSONObject(steps.length() - 1)
-                    .getLong("distance");
+        tmpStep.durationInSeconds = (endTime - steps.getJSONObject(steps.length() - 1)
+                .getLong("arrival")) / 1000;
+        stepList.add(tmpStep);
+
+        return stepList;
+    }
+
+    private List<Step> getStepListForWalking(JSONArray steps, Location startLocation, Location endLocation) {
+        List<Step> stepList = new ArrayList<>();
+
+        if (steps.length() == 0) return stepList;
+
+        Step tmpStep = new Step();
+        tmpStep.startLocation = startLocation;
+        tmpStep.endLocation = getLocation(steps.getJSONObject(0));
+
+        tmpStep.distanceInMeters = steps.getJSONObject(0).getLong("distance");
+        tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / WALKING_SPEED_MPS);
+        stepList.add(tmpStep);
+
+        for (int i = 1; i < steps.length(); i++) {
+            tmpStep = new Step();
+            tmpStep.startLocation = stepList.get(i - 1).endLocation;
+            tmpStep.endLocation = getLocation(steps.getJSONObject(i));
+
+
+            tmpStep.distanceInMeters = steps.getJSONObject(i).getLong("distance");
             tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / WALKING_SPEED_MPS);
+
+            stepList.add(tmpStep);
         }
+
+        tmpStep = new Step();
+        tmpStep.startLocation = stepList.get(steps.length() - 1).endLocation;
+        tmpStep.endLocation = endLocation;
+
+        tmpStep.distanceInMeters = steps.getJSONObject(steps.length() - 1).getLong("distance");
+        tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / WALKING_SPEED_MPS);
+        stepList.add(tmpStep);
+
+        return stepList;
+
+    }
+
+    private List<Step> getStepListForBike(JSONArray steps, Location startLocation,
+                                          Location endLocation, long distanceInMeters, long durationInSeconds) {
+        List<Step> stepList = new ArrayList<>();
+
+        if (steps.length() == 0) return stepList;
+
+        float movingSpeedInMps = distanceInMeters/ (float) durationInSeconds;
+
+        Step tmpStep = new Step();
+        tmpStep.startLocation = startLocation;
+        tmpStep.endLocation = getLocation(steps.getJSONObject(0));
+
+        tmpStep.distanceInMeters = steps.getJSONObject(0).getLong("distance");
+        tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / movingSpeedInMps);
+        stepList.add(tmpStep);
+
+        for (int i = 1; i < steps.length(); i++) {
+            tmpStep = new Step();
+            tmpStep.startLocation = stepList.get(i - 1).endLocation;
+            tmpStep.endLocation = getLocation(steps.getJSONObject(i));
+
+
+            tmpStep.distanceInMeters = steps.getJSONObject(i).getLong("distance");
+            tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / movingSpeedInMps);
+
+            stepList.add(tmpStep);
+        }
+
+        tmpStep = new Step();
+        tmpStep.startLocation = stepList.get(steps.length() - 1).endLocation;
+        tmpStep.endLocation = endLocation;
+
+        tmpStep.distanceInMeters = steps.getJSONObject(steps.length() - 1).getLong("distance");
+        tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / movingSpeedInMps);
         stepList.add(tmpStep);
 
         return stepList;

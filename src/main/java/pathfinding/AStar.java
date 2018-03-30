@@ -37,6 +37,7 @@ public class AStar<TNode extends Node> {
         List<GraphEdge> list;
         double edgeDuration;
         double priority_new;
+        TransportMode prevMode = null;
 
         openList = new FibonacciHeap<>();
         closedList.clear();
@@ -70,12 +71,12 @@ public class AStar<TNode extends Node> {
 
                     //edge length divided by 1000- We are workin' with kilometres
                     edgeDuration = edge.durationInSeconds;
-//                    edgeSpeed = edge.getAllowedMaxSpeedInKmph();
+                    int transferPenalty = 0;
+                    if (prevMode != null && prevMode != edge.mode) transferPenalty = 120; //set value
 
                     // get cost of start node, we substract start-node's distance and after that we add end-node's distance
                     // and we also add edge length divided by allowed speed
-                    priority_new = entry_from.getPriority() + edgeDuration;
-
+                    priority_new = entry_from.getPriority() + edgeDuration + transferPenalty;
 
                     entry_old = openList.getEntry(node_to);
                     //node is in the open list, so we have to compare priority and choose the better ones
@@ -83,12 +84,14 @@ public class AStar<TNode extends Node> {
                         if (entry_old.getPriority() > priority_new) {
                             openList.decreaseKey(entry_old, priority_new);
                             prevNodes.put(node_to.id, entry_from.getValue().id);
+                            prevMode = edge.mode;
                         }
                     } else {
                         //if node is not in the open list, then we have to add it there
                         prevNodes.put(node_to.id, entry_from.getValue().id);
                         // do something
                         openList.enqueue(node_to, priority_new);
+                        prevMode = edge.mode;
                     }
                 }
             } catch (NullPointerException e) {
@@ -100,7 +103,7 @@ public class AStar<TNode extends Node> {
     }
 
     public List<GraphEdge> plan(TNode origin, TNode destination) {
-        return plan(origin,destination,null);
+        return plan(origin, destination, TransportMode.availableModes());
 
     }
 

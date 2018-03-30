@@ -1,5 +1,8 @@
 package general;
 
+import client.GMapsApiClient;
+import com.google.maps.model.LatLng;
+import com.google.maps.model.TravelMode;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
 import model.graph.GraphEdge;
@@ -10,11 +13,13 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
 import utils.SerializationUtils;
 
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Paths;
+import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
 
@@ -26,6 +31,10 @@ public class Main {
     public static final boolean statistics = true;
 
     public static final String dataPath = "/Users/ondrejprenek/Documents/CVUT/Bachelor_thesis/Intermodal_planning/Data/";
+    private static int IntermodalCount = 0;
+    private static int CarCount = 0;
+    private static int TransitCount = 0;
+    private static int BikeCount = 0;
 
     static {
         BasicConfigurator.configure();
@@ -60,11 +69,12 @@ public class Main {
             perfectGraphMaker.setGraph(perfectGraph);
             metaGraphMaker.setGraph(metaGraph);
 
-            RoutePlanner perfectRoutePlanner = new RoutePlanner(perfectGraphMaker);
-            RoutePlanner metaRoutePlanner = new RoutePlanner(metaGraphMaker);
-
-//            perfectRoutePlanner.expandGraphFromKnownRequests(7000);
-//            metaRoutePlanner.expandGraphFromKnownRequests(1000);
+//            RoutePlanner perfectRoutePlanner = new RoutePlanner(perfectGraphMaker);
+//            RoutePlanner metaRoutePlanner = new RoutePlanner(metaGraphMaker);
+//
+//            perfectRoutePlanner.expandGraph(40, TransportMode.CAR);
+//            perfectRoutePlanner.expandGraphFromKnownRequests(10000);
+//            metaRoutePlanner.expandGraphFromKnownRequests(2000);
 
             perfectGraphMaker.createKDTree();
             metaGraphMaker.createKDTree();
@@ -151,20 +161,20 @@ public class Main {
         RoutePlanner perfectPlanner = new RoutePlanner(perfectGraphMaker);
         RoutePlanner metaPlanner = new RoutePlanner(metaGraphMaker);
 
-        perfectGraphMaker.getGraphDescription();
-        metaGraphMaker.getGraphDescription();
-
         File file = new File(dataPath + "statistics/comparision.txt");
         try {
             PrintWriter printWriter = new PrintWriter(file);
-            printWriter.println("count: car meta, car ref, transit meta, transit ref, intermodal meta, intermodal ref, intermodal description meta, intermodal description ref");
+            printWriter.println("count: car meta, car ref, transit meta, transit ref, bike meta, bike ref, intermodal meta, intermodal ref, intermodal description meta, intermodal description ref");
             printWriter.println("---------------------------------------------------------------------------------------------------------------------------------------------");
 
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 1000; i++) {
                 comparePath(perfectPlanner, metaPlanner, printWriter, i + 1);
             }
-
             printWriter.close();
+            System.out.println("Car count: " + CarCount);
+            System.out.println("Transit count: " + TransitCount);
+            System.out.println("Bike count: " + BikeCount);
+            System.out.println("Intermodal count: " + IntermodalCount);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
@@ -179,12 +189,18 @@ public class Main {
             //TRANSIT
             List<GraphEdge> perfectTransitPath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.TRANSIT, TransportMode.WALK);
             List<GraphEdge> metaTransitPath = metaPlanner.findPath(odPair[0], odPair[1], TransportMode.TRANSIT, TransportMode.WALK);
+
+            //BIKE
+            List<GraphEdge> perfectBikePath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.BICYCLE);
+            List<GraphEdge> metaBikePath = metaPlanner.findPath(odPair[0], odPair[1], TransportMode.BICYCLE);
+
             //INTERMODAL
             List<GraphEdge> perfectIntermodalPath = perfectPlanner.findPath(odPair[0], odPair[1]);
             List<GraphEdge> metaIntermodalPath = metaPlanner.findPath(odPair[0], odPair[1]);
 
             if (ObjectUtils.allNotNull(perfectCarPath, metaCarPath,
                     perfectTransitPath, metaTransitPath,
+                    perfectBikePath, metaBikePath,
                     perfectIntermodalPath, metaIntermodalPath)) {
 
                 Long carMeta = metaPlanner.getDuration(metaCarPath);
@@ -196,18 +212,31 @@ public class Main {
                 Long interMeta = metaPlanner.getDuration(metaIntermodalPath);
                 Long interRef = perfectPlanner.getDuration(perfectIntermodalPath);
 
+                Long bikeMeta = metaPlanner.getDuration(metaBikePath);
+                Long bikeRef = perfectPlanner.getDuration(perfectBikePath);
+
                 String interDescriptionMeta = getIntermodalDescription(metaIntermodalPath);
                 String interDescriptionRef = getIntermodalDescription(perfectIntermodalPath);
 
                 printWriter.println(count + ": "
                         + carMeta + ", " + carRef + ", "
                         + transitMeta + ", " + transitRef + ", "
+                        + bikeMeta + ", " + bikeRef + ", "
                         + interMeta + ", " + interRef + ", "
                         + interDescriptionMeta + ", "
                         + interDescriptionRef
                 );
                 printWriter.println();
 
+                if (carRef < transitRef && carRef < interRef ){//&& carRef < bikeRef) {
+                    CarCount++;
+                } else if (interRef < transitRef && interRef < carRef ){//&& interRef < bikeRef) {
+                    IntermodalCount++;
+                } else if (bikeRef < transitRef && bikeRef < carRef && bikeRef < interRef) {
+                    BikeCount++;
+                } else {
+                    TransitCount++;
+                }
 
                 return;
             }
