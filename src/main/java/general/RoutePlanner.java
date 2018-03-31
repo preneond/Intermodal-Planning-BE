@@ -10,6 +10,7 @@ import model.planner.*;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import pathfinding.AStar;
+import utils.LocationUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -82,9 +83,9 @@ public class RoutePlanner {
 
         for (int i = 0; i < numOfRequests; i++) {
             locArray = Location.generateRandomLocationsInPrague(2);
-            routeList = plannerAdapter.findRoutes(locArray[0], locArray[1],transportMode);
+            routeList = plannerAdapter.findRoutes(locArray[0], locArray[1], transportMode);
             routes.addAll(routeList);
-            routeList = plannerAdapter.findRoutes(locArray[1], locArray[0],transportMode);
+            routeList = plannerAdapter.findRoutes(locArray[1], locArray[0], transportMode);
             routes.addAll(routeList);
         }
 
@@ -230,13 +231,13 @@ public class RoutePlanner {
     }
 
     public List<GraphEdge> findPath(Location origin, Location destination) {
-        return findPath(origin, destination, TransportMode.availableModes());
+        return findPath(origin, destination, new TransportMode[]{});
     }
 
     public List<GraphEdge> findPath(Location origin, Location destination, TransportMode... availableModes) {
         Node originNode;
         Node destinationNode;
-        if (availableModes == null) {
+        if (availableModes.length == 0) {
             originNode = getNearestNode(origin);
             destinationNode = getNearestNode(destination);
         } else {
@@ -246,7 +247,14 @@ public class RoutePlanner {
         AStar astar = new AStar<>(graphMaker.getGraph());
         List<GraphEdge> plan = astar.plan(originNode, destinationNode, availableModes);
 
-//        if (plan == null) logger.debug("Plan is empty");
+        if (plan == null) return plan;
+
+        double distanceToOriginInMeters = LocationUtils.distance(origin, Location.getLocation(originNode));
+        GraphEdge pathToOriginEdge = new GraphEdge(0, 0, 0);
+        pathToOriginEdge.durationInSeconds = (long) (distanceToOriginInMeters / PlannerAdapter.WALKING_SPEED_MPS);
+        plan.add(0, pathToOriginEdge);
+//
+//  if (plan == null) logger.debug("Plan is empty");
 //            return findRandomPath();
 //        }
 
@@ -273,10 +281,35 @@ public class RoutePlanner {
     }
 
     public long getDuration(List<GraphEdge> graphPath) {
-        return graphPath.stream().mapToLong(o -> o.durationInSeconds).sum();
+        if (graphPath.isEmpty()) return 0;
+        long duration = graphPath.stream().mapToLong(o -> o.durationInSeconds).sum();
+        TransportMode prevMode = graphPath.get(0).mode;
+        for (GraphEdge edge : graphPath) {
+            // penalty for transfer
+            duration += (prevMode == edge.mode) ? 0 : getTransferPenalty(prevMode);
+            prevMode = edge.mode;
+        }
+        return duration;
     }
 
     public long getDuration(Route route) {
         return route == null ? 0 : route.legList.stream().mapToLong(o -> o.durationInSeconds).sum();
+    }
+
+    public static int getTransferPenalty(TransportMode prevMode) {
+        if (prevMode == TransportMode.CAR) {
+            return 300; //5 minutes
+        } else if (prevMode == TransportMode.BICYCLE) {
+            return 60;
+        } else {
+            return 0;
+        }
+    }
+
+    public static boolean isTransferPossible(TransportMode prevMode, TransportMode currentMode) {
+        if (prevMode == null || prevMode == currentMode) return true;
+        if (currentMode == TransportMode.CAR) return false;
+        if (currentMode == TransportMode.BICYCLE) return false;
+        return true;
     }
 }

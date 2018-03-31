@@ -3,6 +3,7 @@ package pathfinding;
 import com.umotional.basestructures.Edge;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
+import general.RoutePlanner;
 import model.graph.GraphEdge;
 import model.planner.TransportMode;
 import utils.LocationUtils;
@@ -35,7 +36,6 @@ public class AStar<TNode extends Node> {
         FibonacciHeap.Entry<TNode> entry_old;
         TNode node_to;
         List<GraphEdge> list;
-        double edgeDuration;
         double priority_new;
         TransportMode prevMode = null;
 
@@ -63,20 +63,20 @@ public class AStar<TNode extends Node> {
                 // loop all edges from dequeued node
                 for (GraphEdge edge : list) {
                     //if node is in closed list or is not allowed to ride a car then continue
-                    if (closedList.contains(edge.toId) || !availableModesList.contains(edge.mode)) {
+                    if (closedList.contains(edge.toId)
+                            || !availableModesList.contains(edge.mode)
+                            || !RoutePlanner.isTransferPossible(prevMode, edge.mode)
+                            ) {
                         continue;
                     }
-
                     node_to = graph.getNode(edge.toId);
 
-                    //edge length divided by 1000- We are workin' with kilometres
-                    edgeDuration = edge.durationInSeconds;
-                    int transferPenalty = 0;
-                    if (prevMode != null && prevMode != edge.mode) transferPenalty = 120; //set value
+                    int transferPenalty = (prevMode != null && prevMode != edge.mode) ?
+                            RoutePlanner.getTransferPenalty(prevMode) : 0;
 
                     // get cost of start node, we substract start-node's distance and after that we add end-node's distance
                     // and we also add edge length divided by allowed speed
-                    priority_new = entry_from.getPriority() + edgeDuration + transferPenalty;
+                    priority_new = entry_from.getPriority() + edge.durationInSeconds + transferPenalty;
 
                     entry_old = openList.getEntry(node_to);
                     //node is in the open list, so we have to compare priority and choose the better ones

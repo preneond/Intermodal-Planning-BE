@@ -9,7 +9,7 @@ import java.util.List;
 
 public abstract class PlannerAdapter {
 
-    static final float WALKING_SPEED_MPS = 1.4f;
+    public static final float WALKING_SPEED_MPS = 1.4f;
 
     public abstract List<Route> findRoutes(Location origin, Location destination, TransportMode mode);
 
