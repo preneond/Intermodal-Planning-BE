@@ -237,22 +237,25 @@ public class RoutePlanner {
     public List<GraphEdge> findPath(Location origin, Location destination, TransportMode... availableModes) {
         Node originNode;
         Node destinationNode;
+
+        AStar astar = new AStar<>(graphMaker.getGraph());
+
         if (availableModes.length == 0) {
             originNode = getNearestNode(origin);
             destinationNode = getNearestNode(destination);
+            return astar.plan(originNode, destinationNode, TransportMode.availableModes());
         } else {
             originNode = getNearestNode(origin, availableModes[0], true);
             destinationNode = getNearestNode(destination, availableModes[0], false);
+            return astar.plan(originNode, destinationNode, availableModes);
         }
-        AStar astar = new AStar<>(graphMaker.getGraph());
-        List<GraphEdge> plan = astar.plan(originNode, destinationNode, availableModes);
 
-        if (plan == null) return plan;
+//        if (plan == null) return plan;
 
-        double distanceToOriginInMeters = LocationUtils.distance(origin, Location.getLocation(originNode));
-        GraphEdge pathToOriginEdge = new GraphEdge(0, 0, 0);
-        pathToOriginEdge.durationInSeconds = (long) (distanceToOriginInMeters / PlannerAdapter.WALKING_SPEED_MPS);
-        plan.add(0, pathToOriginEdge);
+//        double distanceToOriginInMeters = LocationUtils.distance(origin, Location.getLocation(originNode));
+//        GraphEdge pathToOriginEdge = new GraphEdge(0, 0, 0);
+//        pathToOriginEdge.durationInSeconds = (long) (distanceToOriginInMeters / PlannerAdapter.WALKING_SPEED_MPS);
+//        plan.add(0, pathToOriginEdge);
 //
 //  if (plan == null) logger.debug("Plan is empty");
 //            return findRandomPath();
@@ -262,9 +265,6 @@ public class RoutePlanner {
 //        logger.info("Generated random destination location" + destination);
 //        logger.info("Founded node as origin location" + Location.getLocation(originNode));
 //        logger.info("Founded node as destination location" + Location.getLocation(destinationNode));
-
-        return plan;
-
 
     }
 
@@ -289,6 +289,7 @@ public class RoutePlanner {
             duration += (prevMode == edge.mode) ? 0 : getTransferPenalty(prevMode);
             prevMode = edge.mode;
         }
+        if (graphPath.get(graphPath.size() - 1).mode == TransportMode.CAR) duration += 300;
         return duration;
     }
 

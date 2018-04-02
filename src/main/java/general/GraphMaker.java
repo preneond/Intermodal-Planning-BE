@@ -200,7 +200,16 @@ public class GraphMaker extends GraphBuilder {
             tmpArr[1] = graphNode.getLongitude();
             kdTree.insert(tmpArr, graphNode.id);
         }
-        ingoingKDTreeMap = new HashMap<>();
+        ingoingKDTreeMap = createIngoingKDTreeMap();
+        outgoingKDTreeMap = createOutgoingKDTreeMap();
+
+        logger.info("KDTree created");
+    }
+
+
+    private Map<TransportMode, KDTree> createIngoingKDTreeMap() {
+        Map<TransportMode, KDTree> map = new HashMap<>();
+        double[] tmpArr = new double[2];
         Arrays.stream(TransportMode.availableModes())
                 .forEach(transportMode -> {
                     KDTree tmpKdTree = new KDTree(2);
@@ -214,10 +223,15 @@ public class GraphMaker extends GraphBuilder {
                                 tmpArr[1] = graphNode.getLongitude();
                                 tmpKdTree.insert(tmpArr, graphNode.id);
                             });
-                    ingoingKDTreeMap.put(transportMode, tmpKdTree);
+                    map.put(transportMode, tmpKdTree);
                 });
+        return map;
+    }
 
-        outgoingKDTreeMap = new HashMap<>();
+    private Map<TransportMode, KDTree> createOutgoingKDTreeMap() {
+        Map<TransportMode, KDTree> map = new HashMap<>();
+        double[] tmpArr = new double[2];
+
         Arrays.stream(TransportMode.availableModes())
                 .forEach(transportMode -> {
                     KDTree tmpKdTree = new KDTree(2);
@@ -230,9 +244,10 @@ public class GraphMaker extends GraphBuilder {
                                 tmpArr[1] = graphNode.getLongitude();
                                 tmpKdTree.insert(tmpArr, graphNode.id);
                             });
-                    outgoingKDTreeMap.put(transportMode, tmpKdTree);
+                    map.put(transportMode, tmpKdTree);
                 });
-        logger.info("KDTree created");
+
+        return map;
     }
 
     public KDTree getKdTree() {

@@ -171,62 +171,66 @@ public class Main {
             printWriter.println("count: car ref, transit ref, bike ref, intermodal ref,intermodal description ref");
             printWriter.println("--------------------------------------------------------------------------------");
 
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 1000; i++) {
                 comparePath(perfectPlanner, metaPlanner, printWriter, i + 1);
             }
             printWriter.close();
-            System.out.println("Car count: " + CarCount);
-            System.out.println("Transit count: " + TransitCount);
-            System.out.println("Bike count: " + BikeCount);
-            System.out.println("Intermodal count: " + IntermodalCount);
+            logger.info("Car count: " + CarCount);
+            logger.info("Transit count: " + TransitCount);
+            logger.info("Bike count: " + BikeCount);
+            logger.info("Intermodal count: " + IntermodalCount);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
     }
 
     private static void comparePath(RoutePlanner perfectPlanner, RoutePlanner metaPlanner, PrintWriter printWriter, int count) {
-        while (true) {
-            Location[] odPair = Location.generateRandomLocationsInPrague(2);
+        Location[] odPair;
+        List<GraphEdge> perfectCarPath = null;
+        List<GraphEdge> perfectTransitPath = null;
+        List<GraphEdge> perfectBikePath = null;
+        List<GraphEdge> perfectIntermodalPath = null;
+
+        while (!ObjectUtils.allNotNull(perfectCarPath,
+                perfectTransitPath,
+                perfectBikePath,
+                perfectIntermodalPath)) {
+            odPair = Location.generateRandomLocationsInPrague(2);
             //CAR
-            List<GraphEdge> perfectCarPath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.CAR);
+            perfectCarPath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.CAR);
 //            List<GraphEdge> metaCarPath = metaPlanner.findPath(odPair[0], odPair[1], TransportMode.CAR);
             //TRANSIT
-            List<GraphEdge> perfectTransitPath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.TRANSIT);
+            perfectTransitPath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.TRANSIT);
 //            List<GraphEdge> metaTransitPath = metaPlanner.findPath(odPair[0], odPair[1], TransportMode.TRANSIT);
 
             //BIKE
-            List<GraphEdge> perfectBikePath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.BICYCLE);
+            perfectBikePath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.BICYCLE);
 //            List<GraphEdge> metaBikePath = metaPlanner.findPath(odPair[0], odPair[1], TransportMode.BICYCLE);
 
             //INTERMODAL
-            List<GraphEdge> perfectIntermodalPath = perfectPlanner.findPath(odPair[0], odPair[1]);
+            perfectIntermodalPath = perfectPlanner.findPath(odPair[0], odPair[1]);
 //            List<GraphEdge> metaIntermodalPath = metaPlanner.findPath(odPair[0], odPair[1]);
 
 //            if (ObjectUtils.allNotNull(perfectCarPath, metaCarPath,
 //                    perfectTransitPath, metaTransitPath,
 //                    perfectBikePath, metaBikePath,
 //                    perfectIntermodalPath, metaIntermodalPath)) {
-
-            if (ObjectUtils.allNotNull(perfectCarPath,
-                    perfectTransitPath,
-                    perfectBikePath,
-                    perfectIntermodalPath
-            )) {
+        }
 
 //                Long carMeta = metaPlanner.getDuration(metaCarPath);
-                Long carRef = perfectPlanner.getDuration(perfectCarPath);
+        Long carRef = perfectPlanner.getDuration(perfectCarPath);
 
 //                Long transitMeta = metaPlanner.getDuration(metaTransitPath);
-                Long transitRef = perfectPlanner.getDuration(perfectTransitPath);
+        Long transitRef = perfectPlanner.getDuration(perfectTransitPath);
 
 //                Long interMeta = metaPlanner.getDuration(metaIntermodalPath);
-                Long interRef = perfectPlanner.getDuration(perfectIntermodalPath);
+        Long interRef = perfectPlanner.getDuration(perfectIntermodalPath);
 
 //                Long bikeMeta = metaPlanner.getDuration(metaBikePath);
-                Long bikeRef = perfectPlanner.getDuration(perfectBikePath);
+        Long bikeRef = perfectPlanner.getDuration(perfectBikePath);
 
 //                String interDescriptionMeta = getIntermodalDescription(metaIntermodalPath);
-                String interDescriptionRef = getIntermodalDescription(perfectIntermodalPath);
+        String interDescriptionRef = getIntermodalDescription(perfectIntermodalPath);
 
                 /*
                 printWriter.println(count + ": "
@@ -238,23 +242,19 @@ public class Main {
                         + interDescriptionRef
                 );
                 */
-                printWriter.println(count + ": " + carRef + ", " + transitRef + ", " + bikeRef
-                        + ", " + interRef + ", " + interDescriptionRef
-                );
-                printWriter.println();
+        printWriter.println(count + ": " + carRef + ", " + transitRef + ", " + bikeRef
+                + ", " + interRef + ", " + interDescriptionRef
+        );
+        printWriter.println();
 
-                if (carRef < transitRef && carRef < interRef) {//&& carRef < bikeRef) {
-                    CarCount++;
-                } else if (interRef < transitRef && interRef < carRef) {//&& interRef < bikeRef) {
-                    IntermodalCount++;
-                } else if (bikeRef < transitRef && bikeRef < carRef && bikeRef < interRef) {
-                    BikeCount++;
-                } else {
-                    TransitCount++;
-                }
-
-                return;
-            }
+        if (carRef < transitRef && carRef < interRef) {//&& carRef < bikeRef) {
+            CarCount++;
+        } else if (interRef < transitRef && interRef < carRef) {//&& interRef < bikeRef) {
+            IntermodalCount++;
+        } else if (bikeRef < transitRef && bikeRef < carRef && bikeRef < interRef) {
+            BikeCount++;
+        } else {
+            TransitCount++;
         }
     }
 

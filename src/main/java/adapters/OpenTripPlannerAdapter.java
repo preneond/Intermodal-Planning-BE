@@ -228,12 +228,11 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
 
         if (steps.length() == 0) return stepList;
 
-        float movingSpeedInMps = distanceInMeters/ (float) durationInSeconds;
+        float movingSpeedInMps = 5.5f;
 
         Step tmpStep = new Step();
         tmpStep.startLocation = startLocation;
         tmpStep.endLocation = getLocation(steps.getJSONObject(0));
-
         tmpStep.distanceInMeters = steps.getJSONObject(0).getLong("distance");
         tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / movingSpeedInMps);
         stepList.add(tmpStep);
@@ -242,18 +241,14 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
             tmpStep = new Step();
             tmpStep.startLocation = stepList.get(i - 1).endLocation;
             tmpStep.endLocation = getLocation(steps.getJSONObject(i));
-
-
             tmpStep.distanceInMeters = steps.getJSONObject(i).getLong("distance");
             tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / movingSpeedInMps);
-
             stepList.add(tmpStep);
         }
 
         tmpStep = new Step();
         tmpStep.startLocation = stepList.get(steps.length() - 1).endLocation;
         tmpStep.endLocation = endLocation;
-
         tmpStep.distanceInMeters = steps.getJSONObject(steps.length() - 1).getLong("distance");
         tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / movingSpeedInMps);
         stepList.add(tmpStep);
