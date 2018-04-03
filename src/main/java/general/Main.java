@@ -1,8 +1,5 @@
 package general;
 
-import client.GMapsApiClient;
-import com.google.maps.model.LatLng;
-import com.google.maps.model.TravelMode;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
 import model.graph.GraphEdge;
@@ -13,15 +10,13 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.joda.time.DateTime;
 import utils.SerializationUtils;
 
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Paths;
-import java.sql.Timestamp;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Main {
     public static int numOfRequests = 0;
@@ -35,6 +30,7 @@ public class Main {
     private static int CarCount = 0;
     private static int TransitCount = 0;
     private static int BikeCount = 0;
+    private static Map<String, Integer> histogramMap;
 
     static {
         BasicConfigurator.configure();
@@ -170,10 +166,13 @@ public class Main {
 
             printWriter.println("count: car ref, transit ref, bike ref, intermodal ref,intermodal description ref");
             printWriter.println("--------------------------------------------------------------------------------");
+            histogramMap = new HashMap<>();
 
             for (int i = 0; i < 1000; i++) {
                 comparePath(perfectPlanner, metaPlanner, printWriter, i + 1);
             }
+
+            SerializationUtils.writeObjectToFile(stringify(histogramMap), new File(dataPath + "statistics/histogram.txt"));
             printWriter.close();
             logger.info("Car count: " + CarCount);
             logger.info("Transit count: " + TransitCount);
@@ -182,6 +181,18 @@ public class Main {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
+    }
+
+    private static String stringify(Map<String, Integer> map) {
+        final String[] result = {""};
+
+        map.entrySet()
+                .stream()
+                .sorted((o1, o2) -> o1.getValue() > o2.getValue() ? -1 : 1)
+                .forEach(entry -> {
+                    result[0] += entry.getKey() + ": " + entry.getValue() + "\n";
+                });
+        return result[0];
     }
 
     private static void comparePath(RoutePlanner perfectPlanner, RoutePlanner metaPlanner, PrintWriter printWriter, int count) {
@@ -217,6 +228,12 @@ public class Main {
 //                    perfectIntermodalPath, metaIntermodalPath)) {
         }
 
+        addToHistogram(perfectIntermodalPath
+                .stream()
+                .filter(graphEdge -> graphEdge.mode != TransportMode.WALK)
+                .collect(Collectors.toList())
+        );
+
 //                Long carMeta = metaPlanner.getDuration(metaCarPath);
         Long carRef = perfectPlanner.getDuration(perfectCarPath);
 
@@ -231,7 +248,6 @@ public class Main {
 
 //                String interDescriptionMeta = getIntermodalDescription(metaIntermodalPath);
         String interDescriptionRef = getIntermodalDescription(perfectIntermodalPath);
-
                 /*
                 printWriter.println(count + ": "
                         + carMeta + ", " + carRef + ", "
@@ -256,6 +272,16 @@ public class Main {
         } else {
             TransitCount++;
         }
+    }
+
+    private static void addToHistogram(List<GraphEdge> path) {
+        String keyDesc = getHistogramDescription(path);
+
+        histogramMap.put(keyDesc, histogramMap.containsKey(keyDesc) ? histogramMap.get(keyDesc) + 1 : 1);
+    }
+
+    private static String getHistogramDescription(List<GraphEdge> path) {
+        return getIntermodalDescription(path).replaceAll("\\d","");
     }
 
     private static String getIntermodalDescription(List<GraphEdge> intermodalPath) {

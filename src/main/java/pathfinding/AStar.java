@@ -62,7 +62,9 @@ public class AStar<TNode extends Node> {
 
                 // loop all edges from dequeued node
                 for (GraphEdge edge : list) {
-                    //if node is in closed list or is not allowed to ride a car then continue
+                    //if node is in closed list
+                    // or is not allowed to use a specified transport mode then continue
+                    // or is not transfer possible
                     if (closedList.contains(edge.toId)
                             || !availableModesList.contains(edge.mode)
                             || !RoutePlanner.isTransferPossible(prevMode, edge.mode)
