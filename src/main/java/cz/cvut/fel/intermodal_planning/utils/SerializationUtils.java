@@ -6,7 +6,7 @@ import com.google.gson.stream.JsonReader;
 import com.google.maps.model.DirectionsResult;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
-import cz.cvut.fel.intermodal_planning.general.GraphMaker;
+import cz.cvut.fel.intermodal_planning.planner.GraphMaker;
 import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
 import cz.cvut.fel.intermodal_planning.model.planner.*;
 import org.apache.commons.io.FileUtils;

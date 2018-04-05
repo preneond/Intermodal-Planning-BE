@@ -2,9 +2,11 @@ package cz.cvut.fel.intermodal_planning.pathfinding;
 
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
-import cz.cvut.fel.intermodal_planning.general.RoutePlanner;
+import cz.cvut.fel.intermodal_planning.planner.RoutePlanner;
 import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
+import cz.cvut.fel.intermodal_planning.model.planner.Location;
 import cz.cvut.fel.intermodal_planning.model.planner.TransportMode;
+import cz.cvut.fel.intermodal_planning.utils.LocationUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,7 +30,8 @@ public class AStar<TNode extends Node> {
         prevNodes = new HashMap<>();
     }
 
-    public List<GraphEdge> plan(List<TNode> originList, List<TNode> destinationList, TransportMode... availableModes) {
+    public List<GraphEdge> plan(Location originLocation, List<TNode> originNodes, List<TNode> destinationNodes,
+                                TransportMode... availableModes) {
         List availableModesList = Arrays.asList(availableModes);
         FibonacciHeap.Entry<TNode> entry_from;
         FibonacciHeap.Entry<TNode> entry_old;
@@ -43,15 +46,16 @@ public class AStar<TNode extends Node> {
         path.clear();
         prevNodes.clear();
 
-        originList.stream().forEach(origin -> openList.enqueue(origin,0));
+        originNodes.stream().forEach(originNode -> openList.enqueue(originNode,
+                LocationUtils.walkDuration(Location.getLocation(originNode), originLocation)));
 
 
         while (!openList.isEmpty()) {
             entry_from = openList.dequeueMin();
 
             //we find the DESTINATION NODE! Now, we have to backtrack the path
-            if (destinationList.contains(entry_from.getValue())) {
-                return findPath(graph, originList, entry_from.getValue());
+            if (destinationNodes.contains(entry_from.getValue())) {
+                return findPath(graph, originNodes, entry_from.getValue());
             }
 
             closedList.add(entry_from.getValue().id);
@@ -104,8 +108,8 @@ public class AStar<TNode extends Node> {
         return null;
     }
 
-    public List<GraphEdge> plan(List<TNode> origin, List<TNode> destination) {
-        return plan(origin, destination, TransportMode.availableModes());
+    public List<GraphEdge> plan(Location origin, List<TNode> originNode, List<TNode> destinationNode) {
+        return plan(origin, originNode, destinationNode, TransportMode.availableModes());
 
     }
 

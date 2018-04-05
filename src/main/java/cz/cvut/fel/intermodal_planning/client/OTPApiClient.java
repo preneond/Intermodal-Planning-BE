@@ -3,6 +3,7 @@ package cz.cvut.fel.intermodal_planning.client;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
+import cz.cvut.fel.intermodal_planning.general.Constants;
 import cz.cvut.fel.intermodal_planning.general.Main;
 import cz.cvut.fel.intermodal_planning.model.planner.Location;
 import cz.cvut.fel.intermodal_planning.model.planner.TransportMode;
@@ -19,11 +20,6 @@ public class OTPApiClient {
 
     private static final Logger logger = LogManager.getLogger(OTPApiClient.class);
 
-    private static final String PLANNER_ENDPOINT = "http://127.0.0.1:8080/otp/routers/default/plan";
-    public static final String REQUEST_STORAGE = "/Users/ondrejprenek/Documents/CVUT/Bachelor_thesis/Intermodal_planning/Data/requests/otp/";
-    public static int transitRequestsCount = 0;
-    public static int bikeRequestsCount = 0;
-
     public static OTPApiClient getInstance() {
         if (sharedInstance == null) {
             sharedInstance = new OTPApiClient();
@@ -35,7 +31,7 @@ public class OTPApiClient {
     public JSONObject sendNewRequest(Location origin, Location destination) {
         Client client = Client.create();
         WebResource webResource = client
-                .resource(PLANNER_ENDPOINT)
+                .resource(Constants.OTP_ENDPOINT)
                 .queryParam("fromPlace", origin.toString())
                 .queryParam("toPlace", destination.toString())
                 .queryParam("showIntermediateStops", "true");
@@ -46,7 +42,7 @@ public class OTPApiClient {
     public JSONObject sendNewRequest(Location origin, Location destination, TransportMode mode) {
         Client client = Client.create();
         WebResource webResource = client
-                .resource(PLANNER_ENDPOINT)
+                .resource(Constants.OTP_ENDPOINT)
                 .queryParam("fromPlace", origin.toString())
                 .queryParam("toPlace", destination.toString())
                 .queryParam("mode", mode.name())
@@ -65,12 +61,12 @@ public class OTPApiClient {
                 throw new RuntimeException("Failed : HTTP error code : "
                         + response.getStatus());
             }
-            Main.numOfRequests++;
-            int tmpCount = mode == TransportMode.TRANSIT ?  ++transitRequestsCount : ++bikeRequestsCount;
+            Constants.TOTAL_REQUEST_COUNT++;
+            int tmpCount = mode == TransportMode.TRANSIT ?  ++Constants.TRANSIT_REQUEST_COUNT: ++Constants.BIKE_REQUEST_COUNT;
 
             logger.info("Request: " + webResource.getURI());
 
-            File file = new File(REQUEST_STORAGE + mode.toString() + "/request_" + tmpCount + ".txt");
+            File file = new File(Constants.OTP_REQUEST_STORAGE + mode.toString() + "/request_" + tmpCount + ".txt");
 
             String stringResponse = response.getEntity(String.class);
             SerializationUtils.writeStringToFile(stringResponse, file);
@@ -84,7 +80,7 @@ public class OTPApiClient {
     }
 
     public JSONObject getKnownRequest(int numOfRequest, TransportMode mode) throws NullPointerException {
-        File file = new File(REQUEST_STORAGE + mode.toString() + "/request_" + numOfRequest + ".txt");
+        File file = new File(Constants.OTP_REQUEST_STORAGE + mode.toString() + "/request_" + numOfRequest + ".txt");
 
         JSONObject request = SerializationUtils.readJSONObjectFromFile(file);
 

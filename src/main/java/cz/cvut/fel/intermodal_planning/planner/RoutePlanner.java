@@ -1,4 +1,4 @@
-package cz.cvut.fel.intermodal_planning.general;
+package cz.cvut.fel.intermodal_planning.planner;
 
 import cz.cvut.fel.intermodal_planning.adapters.GMapsPlannerAdapter;
 import cz.cvut.fel.intermodal_planning.adapters.OpenTripPlannerAdapter;
@@ -12,7 +12,9 @@ import org.apache.log4j.Logger;
 import cz.cvut.fel.intermodal_planning.pathfinding.AStar;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class RoutePlanner {
     private static final Logger logger = LogManager.getLogger(RoutePlanner.class);
@@ -244,21 +246,15 @@ public class RoutePlanner {
 
 
         if (availableModes.length == 0) {
-            originNode = getNearestNode(origin);
-            destinationNode = getNearestNode(destination);
+            originList = getNearestNodes(origin,5);
+            destinationList = getNearestNodes(destination,5);
 
-            originList.add(originNode);
-            destinationList.add(destinationNode);
-
-            return astar.plan(originList, destinationList, TransportMode.availableModes());
+            return astar.plan(origin, originList, destinationList, TransportMode.availableModes());
         } else {
-            originNode = getNearestNode(origin, availableModes[0], true);
-            destinationNode = getNearestNode(destination, availableModes[0], false);
+            originList = getNearestNodes(origin, availableModes[0], true,5);
+            destinationList = getNearestNodes(destination, availableModes[0], false,5);
 
-            originList.add(originNode);
-            destinationList.add(destinationNode);
-
-            return astar.plan(originList, destinationList, availableModes);
+            return astar.plan(origin, originList, destinationList, availableModes);
         }
 
 //        if (plan == null) return plan;
@@ -279,16 +275,30 @@ public class RoutePlanner {
 
     }
 
-    private Node getNearestNode(Location location) {
-        int nodeId = (int) graphMaker.getKdTree().nearest(location.toDoubleArray());
+    private List<Node> getNearestNodes(Location location, int count) {
+        Object[] nodeIdArr = graphMaker.getKdTree().nearest(location.toDoubleArray(), count);
 
-        return graphMaker.getGraph().getNode(nodeId);
+        return Arrays
+                .stream(((Integer[]) nodeIdArr))
+                .map(nodeid -> graphMaker.getGraph().getNode(nodeid))
+                .collect(Collectors.toList());
+    }
+
+    private Node getNearestNode(Location location) {
+        return getNearestNodes(location, 1).get(0);
     }
 
     private Node getNearestNode(Location location, TransportMode mode, boolean isIngoingMode) {
-        int nodeId = (int) graphMaker.getKdTreeForMode(mode, isIngoingMode).nearest(location.toDoubleArray());
+       return getNearestNodes(location,mode,isIngoingMode,1).get(0);
+    }
 
-        return graphMaker.getGraph().getNode(nodeId);
+    private List<Node> getNearestNodes(Location location, TransportMode mode, boolean isIngoingMode, int count) {
+        Object[] nodeIdArr = graphMaker.getKdTreeForMode(mode, isIngoingMode).nearest(location.toDoubleArray(),count);
+
+        return Arrays
+                .stream(((Integer[]) nodeIdArr))
+                .map(nodeid -> graphMaker.getGraph().getNode(nodeid))
+                .collect(Collectors.toList());
     }
 
     public long getDuration(List<GraphEdge> graphPath) {
