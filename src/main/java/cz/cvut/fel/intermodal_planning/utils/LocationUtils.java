@@ -39,11 +39,4 @@ public class LocationUtils {
     public static double distance(Location l1, Location l2) {
         return distance(l1.lat, l2.lat, l1.lon, l2.lon);
     }
-    public static double distanceInKm(Location l1, Location l2) {
-        return distance(l1.lat, l2.lat, l1.lon, l2.lon)/1000;
-    }
-
-    public static double walkDuration(Location l1, Location l2) {
-        return distance(l1,l2)/ PlannerAdapter.WALKING_SPEED_MPS;
-    }
 }

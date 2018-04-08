@@ -1,12 +1,10 @@
 package cz.cvut.fel.intermodal_planning.general;
 
-import cz.cvut.fel.intermodal_planning.planner.RoutePlanner;
-
 import java.net.URL;
 
-public final class Constants {
-    public static URL GRAPH_RESOURCE = Constants.class.getResource("/graph.json");
-    public static URL METAGRAPH_RESOURCE = RoutePlanner.class.getResource("/metagraph.json");
+public final class Storage {
+    public static URL GRAPH_RESOURCE = Storage.class.getResource("/graph.json");
+    public static URL METAGRAPH_RESOURCE = Storage.class.getResource("/metagraph.json");
 
     private static final String ROOT_PATH = "/Users/ondrejprenek/Documents/CVUT/Bachelor_thesis/Intermodal_planning/";
 
@@ -44,4 +42,9 @@ public final class Constants {
     public static int BIKE_PATH_COUNT = 0;
     public static int WALK_PATH_COUNT = 0;
     public static int TOTAL_PATH_COUNT = CAR_PATH_COUNT + TRANSIT_PATH_COUNT + BIKE_PATH_COUNT + WALK_PATH_COUNT + INTERMODAL_PATH_COUNT;
+
+    public static final float CAR_SPEED_MPS = 10;
+    public static final float TRANSIT_SPEED_MPS = 12;
+    public static final float BIKE_SPEED_MPS = 5.5f;
+    public static final float WALK_SPEED_MPS = 1.4f;
 }

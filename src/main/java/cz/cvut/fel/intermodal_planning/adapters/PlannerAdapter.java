@@ -7,16 +7,13 @@ import cz.cvut.fel.intermodal_planning.model.planner.TransportMode;
 import java.util.List;
 
 
-public abstract class PlannerAdapter {
+public interface PlannerAdapter {
+    List<Route> findRoutes(Location origin, Location destination, TransportMode mode);
 
-    public static final float WALKING_SPEED_MPS = 1.4f;
+    List<Route> findRoutes(Location origin, Location destination);
 
-    public abstract List<Route> findRoutes(Location origin, Location destination, TransportMode mode);
+    Route findRoute(Location origin, Location destination, TransportMode mode);
 
-    public abstract List<Route> findRoutes(Location origin, Location destination);
-
-    public abstract Route findRoute(Location origin, Location destination, TransportMode mode);
-
-    public abstract Route findRoute(Location origin, Location destination);
+    Route findRoute(Location origin, Location destination);
 
 }

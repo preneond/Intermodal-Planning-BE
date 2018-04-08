@@ -5,13 +5,11 @@ import com.google.maps.GeoApiContext;
 import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.LatLng;
 import com.google.maps.model.TravelMode;
-import cz.cvut.fel.intermodal_planning.general.Constants;
-import cz.cvut.fel.intermodal_planning.general.Main;
+import cz.cvut.fel.intermodal_planning.general.Storage;
 import org.joda.time.DateTime;
 import cz.cvut.fel.intermodal_planning.utils.SerializationUtils;
 
 import java.io.File;
-import java.sql.Timestamp;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class GMapsApiClient {
@@ -32,12 +30,12 @@ public class GMapsApiClient {
     }
 
     public DirectionsResult sendNewRequest(LatLng origin, LatLng destination, TravelMode mode, DateTime departure) {
-        int idx = ThreadLocalRandom.current().nextInt(Constants.GMAPS_API_KEYS.length);
-        context.setApiKey(Constants.GMAPS_API_KEYS[idx]);
+        int idx = ThreadLocalRandom.current().nextInt(Storage.GMAPS_API_KEYS.length);
+        context.setApiKey(Storage.GMAPS_API_KEYS[idx]);
 
         DirectionsResult directionResult = null;
         try {
-            Constants.TOTAL_REQUEST_COUNT++;
+            Storage.TOTAL_REQUEST_COUNT++;
             directionResult = DirectionsApi.newRequest(context)
                     .origin(origin)
                     .destination(destination)
@@ -55,8 +53,8 @@ public class GMapsApiClient {
 //        DateTime time = new DateTime(ts);
 
         DateTime time = new DateTime(DateTime.now());
-        int idx = ThreadLocalRandom.current().nextInt(Constants.GMAPS_API_KEYS.length);
-        context.setApiKey(Constants.GMAPS_API_KEYS[idx]);
+        int idx = ThreadLocalRandom.current().nextInt(Storage.GMAPS_API_KEYS.length);
+        context.setApiKey(Storage.GMAPS_API_KEYS[idx]);
 
         try {
             DirectionsResult directionResult = DirectionsApi.newRequest(context)
@@ -66,10 +64,10 @@ public class GMapsApiClient {
                     .mode(mode)
                     .await();
 
-            Constants.TOTAL_REQUEST_COUNT++;
-            int tmpCount = mode == TravelMode.DRIVING ? ++Constants.CAR_REQUEST_COUNT : ++Constants.WALK_REQUEST_COUNT;
+            Storage.TOTAL_REQUEST_COUNT++;
+            int tmpCount = mode == TravelMode.DRIVING ? ++Storage.CAR_REQUEST_COUNT : ++Storage.WALK_REQUEST_COUNT;
 
-            File file = new File(Constants.GMAPS_REQUEST_STORAGE + mode.toString() + "/request_" + tmpCount + ".txt");
+            File file = new File(Storage.GMAPS_REQUEST_STORAGE + mode.toString() + "/request_" + tmpCount + ".txt");
             SerializationUtils.writeRequestToGson(directionResult, file);
 
             return directionResult;
@@ -80,7 +78,7 @@ public class GMapsApiClient {
     }
 
     public DirectionsResult getKnownRequest(int count, TravelMode mode) throws NullPointerException {
-        File file = new File(Constants.GMAPS_REQUEST_STORAGE + mode.toString() + "/request_" + count + ".txt");
+        File file = new File(Storage.GMAPS_REQUEST_STORAGE + mode.toString() + "/request_" + count + ".txt");
 
         DirectionsResult request = SerializationUtils.readDirectionsResultFromGson(file);
 

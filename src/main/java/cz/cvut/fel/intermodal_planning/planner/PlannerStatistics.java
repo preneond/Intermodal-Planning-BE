@@ -1,6 +1,6 @@
 package cz.cvut.fel.intermodal_planning.planner;
 
-import cz.cvut.fel.intermodal_planning.general.Constants;
+import cz.cvut.fel.intermodal_planning.general.Storage;
 import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
 import cz.cvut.fel.intermodal_planning.model.planner.Location;
 import cz.cvut.fel.intermodal_planning.model.planner.Route;
@@ -19,37 +19,29 @@ import java.util.stream.Collectors;
 
 public class PlannerStatistics {
     private static final Logger logger = LogManager.getLogger(PlannerStatistics.class);
-
     private static Map<String, Integer> histogramMap;
 
-    public static void doComparision(GraphMaker perfectGraphMaker, GraphMaker metaGraphMaker) {
-        RoutePlanner perfectPlanner = new RoutePlanner(perfectGraphMaker);
-        RoutePlanner metaPlanner = new RoutePlanner(metaGraphMaker);
+    public static void doComparision(PlannerInitializer plannerInitializer) {
+        File file = new File(Storage.STATISTICS_PATH + "/comparision.txt");
 
-        File file = new File(Constants.STATISTICS_PATH + "/comparision.txt");
         try {
             PrintWriter printWriter = new PrintWriter(file);
-//            printWriter.println("count: car meta, car ref, transit meta, transit ref, bike meta, bike ref, intermodal meta, intermodal ref, intermodal description meta, intermodal description ref");
-//            printWriter.println("---------------------------------------------------------------------------------------------------------------------------------------------");
-
-
-            printWriter.println(Constants.DESCRIPTION_HEADER);
+            printWriter.println(Storage.DESCRIPTION_HEADER);
 
             histogramMap = new HashMap<>();
 
             for (int i = 0; i < 1000; i++) {
-                comparePath(perfectPlanner, metaPlanner, printWriter, i + 1);
+                comparePath(plannerInitializer, printWriter, i + 1);
             }
 
             SerializationUtils.writeObjectToFile(stringify(histogramMap),
-                    new File(Constants.STATISTICS_PATH + "/histogram.txt"));
-
+                    new File(Storage.STATISTICS_PATH + "/histogram.txt"));
             printWriter.close();
 
-            logger.info("Car count: " + Constants.CAR_PATH_COUNT);
-            logger.info("Transit count: " + Constants.TRANSIT_PATH_COUNT);
-            logger.info("Bike count: " + Constants.BIKE_PATH_COUNT);
-            logger.info("Intermodal count: " + Constants.INTERMODAL_PATH_COUNT);
+            logger.info("Car count: " + Storage.CAR_PATH_COUNT);
+            logger.info("Transit count: " + Storage.TRANSIT_PATH_COUNT);
+            logger.info("Bike count: " + Storage.BIKE_PATH_COUNT);
+            logger.info("Intermodal count: " + Storage.INTERMODAL_PATH_COUNT);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
@@ -67,12 +59,14 @@ public class PlannerStatistics {
         return result[0];
     }
 
-    private static void comparePath(RoutePlanner perfectPlanner, RoutePlanner metaPlanner, PrintWriter printWriter, int count) {
+    private static void comparePath(PlannerInitializer plannerInitializer, PrintWriter printWriter, int count) {
         Location[] odPair;
         List<GraphEdge> perfectCarPath = null;
         List<GraphEdge> perfectTransitPath = null;
         List<GraphEdge> perfectBikePath = null;
         List<GraphEdge> perfectIntermodalPath = null;
+
+        RoutePlanner perfectPlanner = plannerInitializer.perfectRoutePlanner;
 
         while (!ObjectUtils.allNotNull(perfectCarPath,
                 perfectTransitPath,
@@ -136,13 +130,13 @@ public class PlannerStatistics {
         printWriter.println();
 
         if (carRef < transitRef && carRef < interRef) {//&& carRef < bikeRef) {
-            Constants.CAR_PATH_COUNT++;
+            Storage.CAR_PATH_COUNT++;
         } else if (interRef < transitRef && interRef < carRef) {//&& interRef < bikeRef) {
-            Constants.INTERMODAL_PATH_COUNT++;
+            Storage.INTERMODAL_PATH_COUNT++;
         } else if (bikeRef < transitRef && bikeRef < carRef && bikeRef < interRef) {
-            Constants.BIKE_PATH_COUNT++;
+            Storage.BIKE_PATH_COUNT++;
         } else {
-            Constants.TRANSIT_PATH_COUNT++;
+            Storage.TRANSIT_PATH_COUNT++;
         }
     }
 
@@ -183,30 +177,26 @@ public class PlannerStatistics {
     private static void makeGraphQualityDescription(GraphMaker graphMaker) {
         RoutePlanner routePlanner = new RoutePlanner(graphMaker);
 
-//        int[] graphSize = new int[]{85};
         double sizeDeviation;
-
         int findingPathCount = 100;
 
-//        for (int i = 0; i < graphSize.length; i++) {
         long[] routeDuration = new long[findingPathCount];
         long[] refinementRouteDuration = new long[findingPathCount];
         long[] deviation = new long[findingPathCount];
-//            GraphMaker.getInstance().createGraph(routePlanner.expandGraph(graphSize[i]));
 
         for (int j = 0; j < findingPathCount; j++) {
             List<GraphEdge> graphPath = routePlanner.findRandomPath();
             routeDuration[j] = routePlanner.getDuration(graphPath);
-
             Route refinementRoute = routePlanner.doRefinement(graphPath);
             refinementRouteDuration[j] = routePlanner.getDuration(refinementRoute);
-
             deviation[j] = routeDuration[j] - refinementRouteDuration[j];
         }
 
         sizeDeviation = Arrays.stream(deviation).average().orElse(0);
 
-        File file = new File(Constants.STATISTICS_PATH + "/statistics_graph_requests" + 10000 + ".txt");
+        //TODO fill num of requests
+        File file = new File(Storage.STATISTICS_PATH +
+                "/statistics_graph_requests" + Storage.TOTAL_REQUEST_COUNT + ".txt");
         try {
             FileWriter writer = new FileWriter(file, false);
             for (int ii = 0; ii < findingPathCount; ii++) {
@@ -217,19 +207,13 @@ public class PlannerStatistics {
             e.printStackTrace();
         }
 
-        File reqfile = new File(Constants.STATISTICS_PATH + "/requests.txt");
+        File reqfile = new File(Storage.STATISTICS_PATH + "/requests.txt");
         try {
             FileWriter writer = new FileWriter(reqfile, true);
-//            for (int k = 0; k < graphSize.length; k++) {
             writer.write(10000 + " requests: " + sizeDeviation + "\n");
-//            }
             writer.close();
-        } catch (
-                IOException e)
-
-        {
+        } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 }

@@ -3,8 +3,7 @@ package cz.cvut.fel.intermodal_planning.client;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
-import cz.cvut.fel.intermodal_planning.general.Constants;
-import cz.cvut.fel.intermodal_planning.general.Main;
+import cz.cvut.fel.intermodal_planning.general.Storage;
 import cz.cvut.fel.intermodal_planning.model.planner.Location;
 import cz.cvut.fel.intermodal_planning.model.planner.TransportMode;
 import org.apache.log4j.LogManager;
@@ -31,7 +30,7 @@ public class OTPApiClient {
     public JSONObject sendNewRequest(Location origin, Location destination) {
         Client client = Client.create();
         WebResource webResource = client
-                .resource(Constants.OTP_ENDPOINT)
+                .resource(Storage.OTP_ENDPOINT)
                 .queryParam("fromPlace", origin.toString())
                 .queryParam("toPlace", destination.toString())
                 .queryParam("showIntermediateStops", "true");
@@ -42,7 +41,7 @@ public class OTPApiClient {
     public JSONObject sendNewRequest(Location origin, Location destination, TransportMode mode) {
         Client client = Client.create();
         WebResource webResource = client
-                .resource(Constants.OTP_ENDPOINT)
+                .resource(Storage.OTP_ENDPOINT)
                 .queryParam("fromPlace", origin.toString())
                 .queryParam("toPlace", destination.toString())
                 .queryParam("mode", mode.name())
@@ -61,12 +60,12 @@ public class OTPApiClient {
                 throw new RuntimeException("Failed : HTTP error code : "
                         + response.getStatus());
             }
-            Constants.TOTAL_REQUEST_COUNT++;
-            int tmpCount = mode == TransportMode.TRANSIT ?  ++Constants.TRANSIT_REQUEST_COUNT: ++Constants.BIKE_REQUEST_COUNT;
+            Storage.TOTAL_REQUEST_COUNT++;
+            int tmpCount = mode == TransportMode.TRANSIT ?  ++Storage.TRANSIT_REQUEST_COUNT: ++Storage.BIKE_REQUEST_COUNT;
 
             logger.info("Request: " + webResource.getURI());
 
-            File file = new File(Constants.OTP_REQUEST_STORAGE + mode.toString() + "/request_" + tmpCount + ".txt");
+            File file = new File(Storage.OTP_REQUEST_STORAGE + mode.toString() + "/request_" + tmpCount + ".txt");
 
             String stringResponse = response.getEntity(String.class);
             SerializationUtils.writeStringToFile(stringResponse, file);
@@ -80,7 +79,7 @@ public class OTPApiClient {
     }
 
     public JSONObject getKnownRequest(int numOfRequest, TransportMode mode) throws NullPointerException {
-        File file = new File(Constants.OTP_REQUEST_STORAGE + mode.toString() + "/request_" + numOfRequest + ".txt");
+        File file = new File(Storage.OTP_REQUEST_STORAGE + mode.toString() + "/request_" + numOfRequest + ".txt");
 
         JSONObject request = SerializationUtils.readJSONObjectFromFile(file);
 

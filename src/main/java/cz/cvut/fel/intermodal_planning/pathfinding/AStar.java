@@ -2,16 +2,22 @@ package cz.cvut.fel.intermodal_planning.pathfinding;
 
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
+import cz.cvut.fel.intermodal_planning.planner.PlannerStatistics;
 import cz.cvut.fel.intermodal_planning.planner.RoutePlanner;
 import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
 import cz.cvut.fel.intermodal_planning.model.planner.Location;
 import cz.cvut.fel.intermodal_planning.model.planner.TransportMode;
 import cz.cvut.fel.intermodal_planning.utils.LocationUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 public class AStar<TNode extends Node> {
+    private static final Logger logger = LogManager.getLogger(AStar.class);
 
     private final Graph<TNode, GraphEdge> graph;
 
@@ -30,13 +36,14 @@ public class AStar<TNode extends Node> {
         prevNodes = new HashMap<>();
     }
 
-    public List<GraphEdge> plan(Location originLocation, List<TNode> originNodes, List<TNode> destinationNodes,
+    public List<GraphEdge> plan(Location origin, Location destination, List<TNode> originNodes, List<TNode> destinationNodes,
                                 TransportMode... availableModes) {
         List availableModesList = Arrays.asList(availableModes);
         FibonacciHeap.Entry<TNode> entry_from;
         FibonacciHeap.Entry<TNode> entry_old;
 
         TNode node_to;
+        List<List<GraphEdge>> pathList = new ArrayList<>();
         List<GraphEdge> list;
         double priority_new;
         TransportMode prevMode = null;
@@ -47,7 +54,7 @@ public class AStar<TNode extends Node> {
         prevNodes.clear();
 
         originNodes.stream().forEach(originNode -> openList.enqueue(originNode,
-                LocationUtils.walkDuration(Location.getLocation(originNode), originLocation)));
+                RoutePlanner.getDistanceDuration(TransportMode.WALK, LocationUtils.distance(Location.getLocation(originNode), origin))));
 
 
         while (!openList.isEmpty()) {
@@ -55,8 +62,40 @@ public class AStar<TNode extends Node> {
 
             //we find the DESTINATION NODE! Now, we have to backtrack the path
             if (destinationNodes.contains(entry_from.getValue())) {
-                return findPath(graph, originNodes, entry_from.getValue());
+                pathList.add(findPath(graph, originNodes, entry_from.getValue()));
+                destinationNodes.remove(entry_from.getValue());
+                if (destinationNodes.isEmpty()) {
+                    List<Long> pathDuration = new ArrayList<>();
+
+                    pathList.forEach(path -> {
+                        long destinationPenalty = 0;
+
+                        if (path != null) {
+                            GraphEdge lastEdge = path.get(path.size() - 1);
+                            TransportMode lastMode = lastEdge.mode;
+                            double distance = LocationUtils.distance(destination, Location.getLocation(graph.getNode(lastEdge.toId)));
+                            destinationPenalty = RoutePlanner.getDistanceDuration(lastMode, distance);
+                        }
+                        pathDuration.add(path.stream()
+                                .mapToLong(graphEdge -> graphEdge.durationInSeconds)
+                                .sum() + destinationPenalty);
+                    });
+                    TreeMap<Long, List<GraphEdge>> pathTreeMap = IntStream.range(0, pathDuration.size()).boxed()
+                            .collect(Collectors.toMap(i -> pathDuration.get(i),
+                                    i -> pathList.get(i),
+                                    (v1, v2) -> {
+                                        throw new RuntimeException(String.format("Duplicate key for values %s and %s", v1, v2));
+                                    },
+                                    TreeMap::new));
+
+                    logger.info("Lowest path duration is " + pathTreeMap.firstKey());
+                    logger.info("Highest path duration is " + pathTreeMap.lastKey());
+
+
+                    return pathTreeMap.firstEntry().getValue();
+                }
             }
+
 
             closedList.add(entry_from.getValue().id);
 
@@ -108,8 +147,8 @@ public class AStar<TNode extends Node> {
         return null;
     }
 
-    public List<GraphEdge> plan(Location origin, List<TNode> originNode, List<TNode> destinationNode) {
-        return plan(origin, originNode, destinationNode, TransportMode.availableModes());
+    public List<GraphEdge> plan(Location origin, Location destination, List<TNode> originNode, List<TNode> destinationNode) {
+        return plan(origin, destination, originNode, destinationNode, TransportMode.availableModes());
 
     }
 
@@ -119,7 +158,7 @@ public class AStar<TNode extends Node> {
 
         List<Integer> originIdList = originList.stream().map(origin -> origin.id).collect(Collectors.toList());
 
-        while (originIdList.contains(tmpId)) {
+        while (!originIdList.contains(tmpId)) {
             GraphEdge edge = graph.getEdge(prevNodes.get(tmpId), tmpId);
             path.addFirst(edge);
             tmpId = prevNodes.get(tmpId);

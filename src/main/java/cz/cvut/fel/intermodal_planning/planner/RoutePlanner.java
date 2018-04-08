@@ -5,6 +5,7 @@ import cz.cvut.fel.intermodal_planning.adapters.OpenTripPlannerAdapter;
 import cz.cvut.fel.intermodal_planning.adapters.PlannerAdapter;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
+import cz.cvut.fel.intermodal_planning.general.Storage;
 import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
 import cz.cvut.fel.intermodal_planning.model.planner.*;
 import org.apache.log4j.LogManager;
@@ -14,6 +15,7 @@ import cz.cvut.fel.intermodal_planning.pathfinding.AStar;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 public class RoutePlanner {
@@ -236,23 +238,19 @@ public class RoutePlanner {
     }
 
     public List<GraphEdge> findPath(Location origin, Location destination, TransportMode... availableModes) {
-        Node originNode;
-        Node destinationNode;
-
         AStar astar = new AStar<>(graphMaker.getGraph());
 
-        List<Node> originList = new ArrayList<>();
-        List<Node> destinationList = new ArrayList<>();
-
+        List<Node> originList;
+        List<Node> destinationList;
 
         if (availableModes.length == 0) {
-            originList = getNearestNodes(origin,5);
-            destinationList = getNearestNodes(destination,5);
+            originList = getNearestNodes(origin, 5);
+            destinationList = getNearestNodes(destination, 5);
 
-            return astar.plan(origin, originList, destinationList, TransportMode.availableModes());
+            return astar.plan(origin, originList, destinationList);
         } else {
-            originList = getNearestNodes(origin, availableModes[0], true,5);
-            destinationList = getNearestNodes(destination, availableModes[0], false,5);
+            originList = getNearestNodes(origin, availableModes, true, 5);
+            destinationList = getNearestNodes(destination, availableModes, false, 5);
 
             return astar.plan(origin, originList, destinationList, availableModes);
         }
@@ -261,7 +259,7 @@ public class RoutePlanner {
 
 //        double distanceToOriginInMeters = LocationUtils.distance(origin, Location.getLocation(originNode));
 //        GraphEdge pathToOriginEdge = new GraphEdge(0, 0, 0);
-//        pathToOriginEdge.durationInSeconds = (long) (distanceToOriginInMeters / PlannerAdapter.WALKING_SPEED_MPS);
+//        pathToOriginEdge.durationInSeconds = (long) (distanceToOriginInMeters / PlannerAdapter.WALK_SPEED_MPS);
 //        plan.add(0, pathToOriginEdge);
 //
 //  if (plan == null) logger.debug("Plan is empty");
@@ -288,12 +286,13 @@ public class RoutePlanner {
         return getNearestNodes(location, 1).get(0);
     }
 
-    private Node getNearestNode(Location location, TransportMode mode, boolean isIngoingMode) {
-       return getNearestNodes(location,mode,isIngoingMode,1).get(0);
+    private Node getNearestNode(Location location, TransportMode[] mode, boolean isIngoingMode) {
+        return getNearestNodes(location, mode, isIngoingMode, 1).get(0);
     }
 
-    private List<Node> getNearestNodes(Location location, TransportMode mode, boolean isIngoingMode, int count) {
-        Object[] nodeIdArr = graphMaker.getKdTreeForMode(mode, isIngoingMode).nearest(location.toDoubleArray(),count);
+    private List<Node> getNearestNodes(Location location, TransportMode[] modeArr, boolean isIngoingMode, int count) {
+        int idx = ThreadLocalRandom.current().nextInt(modeArr.length);
+        Object[] nodeIdArr = graphMaker.getKdTreeForMode(modeArr[idx], isIngoingMode).nearest(location.toDoubleArray(), count);
 
         return Arrays
                 .stream(((Integer[]) nodeIdArr))
@@ -333,5 +332,20 @@ public class RoutePlanner {
         if (currentMode == TransportMode.CAR) return false;
         if (currentMode == TransportMode.BICYCLE) return false;
         return true;
+    }
+
+    public static long getDistanceDuration(TransportMode mode, double distance) {
+        switch (mode) {
+            case CAR:
+                return (long) (distance / Storage.CAR_SPEED_MPS);
+            case TRANSIT:
+                return (long) (distance / Storage.TRANSIT_SPEED_MPS);
+            case BICYCLE:
+                return (long) (distance / Storage.BIKE_SPEED_MPS);
+            case WALK:
+                return (long) (distance / Storage.WALK_SPEED_MPS);
+            default:
+                return 0;
+        }
     }
 }

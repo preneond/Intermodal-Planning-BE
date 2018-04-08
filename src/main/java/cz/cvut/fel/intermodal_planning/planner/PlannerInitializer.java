@@ -1,7 +1,7 @@
 package cz.cvut.fel.intermodal_planning.planner;
 
 import com.umotional.basestructures.Graph;
-import cz.cvut.fel.intermodal_planning.general.Constants;
+import cz.cvut.fel.intermodal_planning.general.Storage;
 import cz.cvut.fel.intermodal_planning.utils.SerializationUtils;
 
 import java.io.File;
@@ -9,21 +9,11 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 
 public class PlannerInitializer {
-//    private static PlannerInitializer sharedInstance;
+    public GraphMaker perfectGraphMaker;
+    public GraphMaker metaGraphMaker;
 
-    private static GraphMaker perfectGraphMaker;
-    private static GraphMaker metaGraphMaker;
-
-    private static RoutePlanner perfectRoutePlanner;
-    private static RoutePlanner metaRoutePlanner;
-
-
-//    public static PlannerInitializer getInstance() {
-//        if (sharedInstance == null) {
-//            sharedInstance = new PlannerInitializer();
-//        }
-//        return sharedInstance;
-//    }
+    public RoutePlanner perfectRoutePlanner;
+    public RoutePlanner metaRoutePlanner;
 
     public PlannerInitializer() {
         initGraph();
@@ -32,8 +22,8 @@ public class PlannerInitializer {
 
     private void initGraph() {
         try {
-            File perfectGraphFile = Paths.get(Constants.GRAPH_RESOURCE.toURI()).toFile();
-            File metaGraphFile = Paths.get(Constants.METAGRAPH_RESOURCE.toURI()).toFile();
+            File perfectGraphFile = Paths.get(Storage.GRAPH_RESOURCE.toURI()).toFile();
+            File metaGraphFile = Paths.get(Storage.METAGRAPH_RESOURCE.toURI()).toFile();
 
             Graph perfectGraph = SerializationUtils.readGraphFromGeoJSON(perfectGraphFile);
             Graph metaGraph = SerializationUtils.readGraphFromGeoJSON(metaGraphFile);

@@ -1,6 +1,7 @@
 package cz.cvut.fel.intermodal_planning.adapters;
 
 import cz.cvut.fel.intermodal_planning.client.OTPApiClient;
+import cz.cvut.fel.intermodal_planning.general.Storage;
 import cz.cvut.fel.intermodal_planning.model.planner.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -195,7 +196,7 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
         tmpStep.endLocation = getLocation(steps.getJSONObject(0));
 
         tmpStep.distanceInMeters = steps.getJSONObject(0).getLong("distance");
-        tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / WALKING_SPEED_MPS);
+        tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / Storage.WALK_SPEED_MPS);
         stepList.add(tmpStep);
 
         for (int i = 1; i < steps.length(); i++) {
@@ -205,7 +206,7 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
 
 
             tmpStep.distanceInMeters = steps.getJSONObject(i).getLong("distance");
-            tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / WALKING_SPEED_MPS);
+            tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / Storage.WALK_SPEED_MPS);
 
             stepList.add(tmpStep);
         }
@@ -215,7 +216,7 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
         tmpStep.endLocation = endLocation;
 
         tmpStep.distanceInMeters = steps.getJSONObject(steps.length() - 1).getLong("distance");
-        tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / WALKING_SPEED_MPS);
+        tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / Storage.WALK_SPEED_MPS);
         stepList.add(tmpStep);
 
         return stepList;
@@ -228,13 +229,11 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
 
         if (steps.length() == 0) return stepList;
 
-        float movingSpeedInMps = 5.5f;
-
         Step tmpStep = new Step();
         tmpStep.startLocation = startLocation;
         tmpStep.endLocation = getLocation(steps.getJSONObject(0));
         tmpStep.distanceInMeters = steps.getJSONObject(0).getLong("distance");
-        tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / movingSpeedInMps);
+        tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / Storage.BIKE_SPEED_MPS);
         stepList.add(tmpStep);
 
         for (int i = 1; i < steps.length(); i++) {
@@ -242,7 +241,7 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
             tmpStep.startLocation = stepList.get(i - 1).endLocation;
             tmpStep.endLocation = getLocation(steps.getJSONObject(i));
             tmpStep.distanceInMeters = steps.getJSONObject(i).getLong("distance");
-            tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / movingSpeedInMps);
+            tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / Storage.BIKE_SPEED_MPS);
             stepList.add(tmpStep);
         }
 
@@ -250,7 +249,7 @@ public class OpenTripPlannerAdapter extends PlannerAdapter {
         tmpStep.startLocation = stepList.get(steps.length() - 1).endLocation;
         tmpStep.endLocation = endLocation;
         tmpStep.distanceInMeters = steps.getJSONObject(steps.length() - 1).getLong("distance");
-        tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / movingSpeedInMps);
+        tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / Storage.BIKE_SPEED_MPS);
         stepList.add(tmpStep);
 
         return stepList;

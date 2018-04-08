@@ -3,8 +3,7 @@ package cz.cvut.fel.intermodal_planning.planner;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.GraphBuilder;
 import com.umotional.basestructures.Node;
-import cz.cvut.fel.intermodal_planning.general.Constants;
-import cz.cvut.fel.intermodal_planning.general.Main;
+import cz.cvut.fel.intermodal_planning.general.Storage;
 import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
 import cz.cvut.fel.intermodal_planning.model.planner.*;
 import cz.cvut.fel.intermodal_planning.pathfinding.kdtree.KDTree;
@@ -143,7 +142,7 @@ public class GraphMaker extends GraphBuilder {
         double avgOutputLevel = outputLevel / (double) nodeList.size();
 
         logger.info("\n" +
-                "Number of requests: " + Constants.TOTAL_REQUEST_COUNT + "\n" +
+                "Number of requests: " + Storage.TOTAL_REQUEST_COUNT + "\n" +
                 "Number of edges: " + edgeList.size() + "\n" +
                 "Number of nodes: " + nodeList.size() + "\n" +
                 "Number of edges for walking: " + walkingList.size() + "\n" +
