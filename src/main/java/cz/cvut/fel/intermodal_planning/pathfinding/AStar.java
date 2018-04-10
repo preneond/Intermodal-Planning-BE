@@ -53,6 +53,7 @@ public class AStar<TNode extends Node> {
         path.clear();
         prevNodes.clear();
 
+//        openList.enqueue(originNodes.get(0), 0);
         originNodes.stream().forEach(originNode -> openList.enqueue(originNode,
                 RoutePlanner.getDistanceDuration(TransportMode.WALK, LocationUtils.distance(Location.getLocation(originNode), origin))));
 
@@ -72,13 +73,12 @@ public class AStar<TNode extends Node> {
                 Long duration = path.stream()
                         .mapToLong(graphEdge -> graphEdge.durationInSeconds)
                         .sum() + destinationPenalty;
-                pathTreeMap.put(duration,path);
+                pathTreeMap.put(duration, path);
                 destinationNodes.remove(entry_from.getValue());
                 if (destinationNodes.isEmpty()) {
                     return pathTreeMap.firstEntry().getValue();
                 }
             }
-
 
             closedList.add(entry_from.getValue().id);
 
@@ -122,12 +122,11 @@ public class AStar<TNode extends Node> {
                         prevMode = edge.mode;
                     }
                 }
-            } catch (NullPointerException e) {
-
+            } catch (NullPointerException ignored) {
             }
-
         }
-        return pathTreeMap.firstEntry().getValue();
+
+        return pathTreeMap.isEmpty() ? null : pathTreeMap.firstEntry().getValue();
     }
 
     public List<GraphEdge> plan(Location origin, Location destination, List<TNode> originNode, List<TNode> destinationNode) {

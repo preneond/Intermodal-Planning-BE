@@ -47,16 +47,16 @@ public class Location implements Serializable {
     }
 
     public static Location[] generateRandomLocationsInPrague(int count) {
-//        double upLat = 50.1472;
-//        double bottomLat = 50.0069;
-//        double leftLon = 14.2946;
-//        double rightLon = 14.5898;
+        double upLat = 50.1472;
+        double bottomLat = 50.0069;
+        double leftLon = 14.2946;
+        double rightLon = 14.5898;
 
         // + 10 km radius
-        double upLat = 50.24;
-        double bottomLat = 49.92;
-        double leftLon = 14.15;
-        double rightLon = 14.73;
+//        double upLat = 50.24;
+//        double bottomLat = 49.92;
+//        double leftLon = 14.15;
+//        double rightLon = 14.73;
 
         Location[] resultArr = new Location[count];
 

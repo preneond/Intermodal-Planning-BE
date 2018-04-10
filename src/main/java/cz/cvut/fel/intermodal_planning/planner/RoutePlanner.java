@@ -32,8 +32,9 @@ public class RoutePlanner {
     public List<Route> getRoutesFromKnownRequest(int numOfRequests) {
         List<Route> resultRoutes = new ArrayList<>();
         List<Route> tmpResult;
-        for (int i = 1; i <= numOfRequests; i++) {
-            for (TransportMode mode : TransportMode.availableModes()) {
+        for (TransportMode mode : TransportMode.availableModes()) {
+            int tmpNum = mode == TransportMode.CAR ? 15000: numOfRequests;
+            for (int i = 1; i <= tmpNum; i++) {
                 tmpResult = null;
                 if (mode == TransportMode.TRANSIT || mode == TransportMode.BICYCLE) {
                     tmpResult = OpenTripPlannerAdapter.getInstance().findRoutesFromKnownRequests(i, mode);
@@ -249,8 +250,8 @@ public class RoutePlanner {
 
             return astar.plan(origin,destination, originList, destinationList);
         } else {
-            originList = getNearestNodes(origin, availableModes, true, 5);
-            destinationList = getNearestNodes(destination, availableModes, false, 5);
+            originList = getNearestNodes(origin, availableModes, true, 1);
+            destinationList = getNearestNodes(destination, availableModes, false, 1);
 
             return astar.plan(origin, destination, originList, destinationList, availableModes);
         }

@@ -83,12 +83,6 @@ public class GMapsApiClient {
         File file = new File(Storage.GMAPS_REQUEST_STORAGE + mode.toString() + "/request_" + count + ".txt");
         DirectionsResult request = SerializationUtils.readDirectionsResultFromGson(file);
 
-        if (mode == TravelMode.DRIVING) {
-            File inPragueFile = new File(Storage.GMAPS_REQUEST_STORAGE + "driving_prague/request_" + count + ".txt");
-            DirectionsResult request2 = SerializationUtils.readDirectionsResultFromGson(inPragueFile);
-            request.routes = concatenate(request.routes, request2.routes);
-        }
-
         if (request == null) throw new NullPointerException("Unable to read request");
 
         return request;
@@ -105,6 +99,5 @@ public class GMapsApiClient {
 
         return c;
     }
-
 }
 

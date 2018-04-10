@@ -33,7 +33,7 @@ public final class Storage {
             "AIzaSyDTcjYJ339Hah37BlxIJcAacKGlBwMwuhQ"
     };
 
-    public static int CAR_REQUEST_COUNT = 10000;
+    public static int CAR_REQUEST_COUNT = 710;
     public static int TRANSIT_REQUEST_COUNT = 10000;
     public static int BIKE_REQUEST_COUNT = 10000;
     public static int WALK_REQUEST_COUNT = 10000;
@@ -48,6 +48,6 @@ public final class Storage {
 
     public static final float CAR_SPEED_MPS = 10;
     public static final float TRANSIT_SPEED_MPS = 12;
-    public static final float BIKE_SPEED_MPS = 5.5f;
+    public static final float BIKE_SPEED_MPS = 4.16f;
     public static final float WALK_SPEED_MPS = 1.4f;
 }

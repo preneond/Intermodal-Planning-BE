@@ -22,32 +22,23 @@ public class PlannerStatistics {
     private static Map<String, Integer> histogramMap;
 
     public static void doComparision(PlannerInitializer plannerInitializer) {
-        File file = new File(Storage.STATISTICS_PATH + "/comparision.txt");
+        histogramMap = new HashMap<>();
 
-        try {
-            PrintWriter printWriter = new PrintWriter(file);
-            printWriter.println(Storage.DESCRIPTION_HEADER);
-
-            histogramMap = new HashMap<>();
-
-            for (int i = 0; i < 1000; i++) {
-                comparePath(plannerInitializer, printWriter, i + 1);
-//                compareKnownPath(plannerInitializer, i + 1);
+        final int loopCount = 1000;
+        for (int i = 0; i < loopCount; i++) {
+//            comparePath(plannerInitializer, i + 1);
+            compareKnownPath(plannerInitializer, i + 1);
 //                System.out.println(i);
-            }
-
-            SerializationUtils.writeObjectToFile(stringify(histogramMap),
-                    new File(Storage.STATISTICS_PATH + "/histogram.txt"));
-            printWriter.close();
-
-            logger.info("Car count: " + Storage.CAR_PATH_COUNT);
-            logger.info("Transit count: " + Storage.TRANSIT_PATH_COUNT);
-            logger.info("Bike count: " + Storage.BIKE_PATH_COUNT);
-            logger.info("Intermodal count: " + Storage.INTERMODAL_PATH_COUNT);
-            logger.info("Intermodal avg duration: " + Storage.INTERMODAL_AVG_DURATION / 1000);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         }
+
+        SerializationUtils.writeObjectToFile(stringify(histogramMap),
+                new File(Storage.STATISTICS_PATH + "/histogram.txt"));
+
+        logger.info("Car count: " + Storage.CAR_PATH_COUNT);
+        logger.info("Transit count: " + Storage.TRANSIT_PATH_COUNT);
+        logger.info("Bike count: " + Storage.BIKE_PATH_COUNT);
+        logger.info("Intermodal count: " + Storage.INTERMODAL_PATH_COUNT);
+        logger.info("Intermodal avg duration: " + Storage.INTERMODAL_AVG_DURATION / loopCount);
     }
 
     private static String stringify(Map<String, Integer> map) {
@@ -63,28 +54,26 @@ public class PlannerStatistics {
     }
 
     private static void compareKnownPath(PlannerInitializer plannerInitializer, int count) {
-        Location[] odPair = null;
-        List<GraphEdge> perfectCarPath = null;
-        List<GraphEdge> perfectTransitPath = null;
-        List<GraphEdge> perfectBikePath = null;
-        List<GraphEdge> perfectIntermodalPath = null;
-
         RoutePlanner perfectPlanner = plannerInitializer.perfectRoutePlanner;
 
         File odFile = new File(Storage.OD_PAIR_PATH + "pair_" + count + ".txt");
-        odPair = SerializationUtils.readODPairFromGson(odFile);
+        Location[] odPair = SerializationUtils.readODPairFromGson(odFile);
 
-        perfectCarPath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.CAR);
-        perfectTransitPath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.TRANSIT);
-        perfectBikePath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.BICYCLE);
-        perfectIntermodalPath = perfectPlanner.findPath(odPair[0], odPair[1]);
+        List<GraphEdge> perfectCarPath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.CAR);
+        List<GraphEdge> perfectTransitPath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.TRANSIT);
+        List<GraphEdge> perfectBikePath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.BICYCLE);
+        List<GraphEdge> perfectIntermodalPath = perfectPlanner.findPath(odPair[0], odPair[1]);
 
-
-        addToHistogram(perfectIntermodalPath
-                .stream()
-                .filter(graphEdge -> graphEdge.mode != TransportMode.WALK)
-                .collect(Collectors.toList())
-        );
+        if (perfectCarPath != null
+                && perfectTransitPath != null
+                && perfectBikePath != null
+                && perfectIntermodalPath != null) {
+            addToHistogram(perfectIntermodalPath
+                    .stream()
+                    .filter(graphEdge -> graphEdge.mode != TransportMode.WALK)
+                    .collect(Collectors.toList())
+            );
+        } else return;
 
         Long carRef = perfectPlanner.getDuration(perfectCarPath);
         Long transitRef = perfectPlanner.getDuration(perfectTransitPath);
@@ -93,9 +82,9 @@ public class PlannerStatistics {
 
         Storage.INTERMODAL_AVG_DURATION += interRef;
 
-        if (carRef < transitRef && carRef < interRef) {//&& carRef < bikeRef) {
+        if (carRef < transitRef && carRef < interRef && carRef < bikeRef) {
             Storage.CAR_PATH_COUNT++;
-        } else if (interRef < transitRef && interRef < carRef) {//&& interRef < bikeRef) {
+        } else if (interRef < transitRef && interRef < carRef && interRef < bikeRef) {
             Storage.INTERMODAL_PATH_COUNT++;
         } else if (bikeRef < transitRef && bikeRef < carRef && bikeRef < interRef) {
             Storage.BIKE_PATH_COUNT++;
@@ -104,7 +93,7 @@ public class PlannerStatistics {
         }
     }
 
-    private static void comparePath(PlannerInitializer plannerInitializer, PrintWriter printWriter, int count) {
+    private static void comparePath(PlannerInitializer plannerInitializer, int count) {
         Location[] odPair = null;
         List<GraphEdge> perfectCarPath = null;
         List<GraphEdge> perfectTransitPath = null;
@@ -141,12 +130,12 @@ public class PlannerStatistics {
 
         storeODPair(odPair, count);
 
-
         addToHistogram(perfectIntermodalPath
                 .stream()
                 .filter(graphEdge -> graphEdge.mode != TransportMode.WALK)
                 .collect(Collectors.toList())
         );
+
 
 //                Long carMeta = metaPlanner.getDuration(metaCarPath);
         Long carRef = perfectPlanner.getDuration(perfectCarPath);
@@ -161,7 +150,7 @@ public class PlannerStatistics {
         Long bikeRef = perfectPlanner.getDuration(perfectBikePath);
 
 //                String interDescriptionMeta = getIntermodalDescription(metaIntermodalPath);
-        String interDescriptionRef = getIntermodalDescription(perfectIntermodalPath);
+//        String interDescriptionRef = getIntermodalDescription(perfectIntermodalPath);
                 /*
                 printWriter.println(count + ": "
                         + carMeta + ", " + carRef + ", "
@@ -172,15 +161,15 @@ public class PlannerStatistics {
                         + interDescriptionRef
                 );
                 */
-        printWriter.println(count + ": " + carRef + ", " + transitRef + ", " + bikeRef
-                + ", " + interRef + ", " + interDescriptionRef
-        );
-        printWriter.println();
+//        printWriter.println(count + ": " + carRef + ", " + transitRef + ", " + bikeRef
+//                + ", " + interRef + ", " + interDescriptionRef
+//        );
+//        printWriter.println();
 
-        if (carRef < transitRef && carRef < interRef) {//&& carRef < bikeRef) {
-            Storage.CAR_PATH_COUNT++;
-        } else if (interRef < transitRef && interRef < carRef) {//&& interRef < bikeRef) {
+        if (interRef < transitRef && interRef < carRef && interRef < bikeRef) {
             Storage.INTERMODAL_PATH_COUNT++;
+        } else if (carRef < transitRef && carRef < interRef && carRef < bikeRef) {
+            Storage.CAR_PATH_COUNT++;
         } else if (bikeRef < transitRef && bikeRef < carRef && bikeRef < interRef) {
             Storage.BIKE_PATH_COUNT++;
         } else {

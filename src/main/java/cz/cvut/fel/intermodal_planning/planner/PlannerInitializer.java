@@ -1,7 +1,10 @@
 package cz.cvut.fel.intermodal_planning.planner;
 
 import com.umotional.basestructures.Graph;
+import com.umotional.basestructures.Node;
 import cz.cvut.fel.intermodal_planning.general.Storage;
+import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
+import cz.cvut.fel.intermodal_planning.model.planner.TransportMode;
 import cz.cvut.fel.intermodal_planning.utils.SerializationUtils;
 
 import java.io.File;
@@ -25,7 +28,7 @@ public class PlannerInitializer {
             File perfectGraphFile = Paths.get(Storage.GRAPH_RESOURCE.toURI()).toFile();
 //            File metaGraphFile = Paths.get(Storage.METAGRAPH_RESOURCE.toURI()).toFile();
 
-            Graph perfectGraph = SerializationUtils.readGraphFromGeoJSON(perfectGraphFile);
+            Graph<Node,GraphEdge> perfectGraph = (Graph<Node,GraphEdge>) SerializationUtils.readObjectFromFile(perfectGraphFile);
 //            Graph metaGraph = SerializationUtils.readGraphFromGeoJSON(metaGraphFile);
 
             perfectGraphMaker = new GraphMaker();
@@ -35,6 +38,7 @@ public class PlannerInitializer {
 //            metaRoutePlanner = new RoutePlanner(metaGraphMaker);
 
             if (perfectGraph == null) {
+//                perfectRoutePlanner.expandGraph(500, TransportMode.CAR);
                 perfectRoutePlanner.expandGraphFromKnownRequests(10000);
                 SerializationUtils.writeObjectToFile(perfectRoutePlanner.getGraph(), perfectGraphFile);
             } else {
