@@ -10,10 +10,10 @@ import java.nio.file.Paths;
 
 public class PlannerInitializer {
     public GraphMaker perfectGraphMaker;
-    public GraphMaker metaGraphMaker;
+//    public GraphMaker metaGraphMaker;
 
     public RoutePlanner perfectRoutePlanner;
-    public RoutePlanner metaRoutePlanner;
+//    public RoutePlanner metaRoutePlanner;
 
     public PlannerInitializer() {
         initGraph();
@@ -23,27 +23,31 @@ public class PlannerInitializer {
     private void initGraph() {
         try {
             File perfectGraphFile = Paths.get(Storage.GRAPH_RESOURCE.toURI()).toFile();
-            File metaGraphFile = Paths.get(Storage.METAGRAPH_RESOURCE.toURI()).toFile();
+//            File metaGraphFile = Paths.get(Storage.METAGRAPH_RESOURCE.toURI()).toFile();
 
             Graph perfectGraph = SerializationUtils.readGraphFromGeoJSON(perfectGraphFile);
-            Graph metaGraph = SerializationUtils.readGraphFromGeoJSON(metaGraphFile);
+//            Graph metaGraph = SerializationUtils.readGraphFromGeoJSON(metaGraphFile);
 
             perfectGraphMaker = new GraphMaker();
-            metaGraphMaker = new GraphMaker();
-
-            if (perfectGraph == null) {
-                perfectGraphMaker.setGraph(perfectGraph);
-            } else {
-                perfectRoutePlanner.expandGraphFromKnownRequests(10000);
-            }
-            if (metaGraph == null) {
-                metaGraphMaker.setGraph(metaGraph);
-            } else {
-                metaRoutePlanner.expandGraphFromKnownRequests(2000);
-            }
+//            metaGraphMaker = new GraphMaker();
 
             perfectRoutePlanner = new RoutePlanner(perfectGraphMaker);
-            metaRoutePlanner = new RoutePlanner(metaGraphMaker);
+//            metaRoutePlanner = new RoutePlanner(metaGraphMaker);
+
+            if (perfectGraph == null) {
+                perfectRoutePlanner.expandGraphFromKnownRequests(10000);
+                SerializationUtils.writeObjectToFile(perfectRoutePlanner.getGraph(), perfectGraphFile);
+            } else {
+                perfectGraphMaker.setGraph(perfectGraph);
+            }
+            /*
+            if (metaGraph == null) {
+                metaRoutePlanner.expandGraphFromKnownRequests(2000);
+                SerializationUtils.writeObjectToFile(metaRoutePlanner.getGraph(), metaGraphFile);
+            } else {
+                metaGraphMaker.setGraph(metaGraph);
+            }
+            */
 
         } catch (URISyntaxException e) {
             e.printStackTrace();
@@ -52,6 +56,6 @@ public class PlannerInitializer {
 
     private void createKdTrees() {
         perfectGraphMaker.createKDTree();
-        metaGraphMaker.createKDTree();
+//        metaGraphMaker.createKDTree();
     }
 }

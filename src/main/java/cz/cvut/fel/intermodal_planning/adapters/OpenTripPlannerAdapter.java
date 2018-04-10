@@ -9,7 +9,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class OpenTripPlannerAdapter extends PlannerAdapter {
+public class OpenTripPlannerAdapter implements PlannerAdapter {
     private static OpenTripPlannerAdapter sharedInstance;
 
     public static OpenTripPlannerAdapter getInstance() {

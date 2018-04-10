@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class GMapsPlannerAdapter extends PlannerAdapter {
+public class GMapsPlannerAdapter implements PlannerAdapter {
     private static GMapsPlannerAdapter sharedInstance;
 
     public static GMapsPlannerAdapter getInstance() {

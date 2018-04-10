@@ -3,17 +3,20 @@ package cz.cvut.fel.intermodal_planning.general;
 import java.net.URL;
 
 public final class Storage {
+    public static long INTERMODAL_AVG_DURATION = 0;
     public static URL GRAPH_RESOURCE = Storage.class.getResource("/graph.json");
     public static URL METAGRAPH_RESOURCE = Storage.class.getResource("/metagraph.json");
 
     private static final String ROOT_PATH = "/Users/ondrejprenek/Documents/CVUT/Bachelor_thesis/Intermodal_planning/";
 
     public static String DATA_PATH = ROOT_PATH + "Data/";
-    public static String STATISTICS_PATH = ROOT_PATH + "Statistics/";
+    public static String STATISTICS_PATH = DATA_PATH + "statistics/";
+    public static String REQUEST_PATH = DATA_PATH + "requests/";
+    public static String OD_PAIR_PATH = DATA_PATH + "odpairs/";
 
     public static final String OTP_ENDPOINT = "http://127.0.0.1:8080/otp/routers/default/plan";
-    public static final String GMAPS_REQUEST_STORAGE = "/Users/ondrejprenek/Documents/CVUT/Bachelor_thesis/Intermodal_planning/Data/requests/gmaps/";
-    public static final String OTP_REQUEST_STORAGE = "/Users/ondrejprenek/Documents/CVUT/Bachelor_thesis/Intermodal_planning/Data/requests/otp/";
+    public static final String GMAPS_REQUEST_STORAGE = REQUEST_PATH + "gmaps/";
+    public static final String OTP_REQUEST_STORAGE = REQUEST_PATH + "otp/";
 
     public static String DESCRIPTION_HEADER = "count: car ref, transit ref, bike ref," +
             " intermodal ref,intermodal description ref" +

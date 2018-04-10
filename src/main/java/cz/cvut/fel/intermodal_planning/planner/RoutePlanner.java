@@ -247,12 +247,12 @@ public class RoutePlanner {
             originList = getNearestNodes(origin, 5);
             destinationList = getNearestNodes(destination, 5);
 
-            return astar.plan(origin, originList, destinationList);
+            return astar.plan(origin,destination, originList, destinationList);
         } else {
             originList = getNearestNodes(origin, availableModes, true, 5);
             destinationList = getNearestNodes(destination, availableModes, false, 5);
 
-            return astar.plan(origin, originList, destinationList, availableModes);
+            return astar.plan(origin, destination, originList, destinationList, availableModes);
         }
 
 //        if (plan == null) return plan;
@@ -276,9 +276,9 @@ public class RoutePlanner {
     private List<Node> getNearestNodes(Location location, int count) {
         Object[] nodeIdArr = graphMaker.getKdTree().nearest(location.toDoubleArray(), count);
 
-        return Arrays
-                .stream(((Integer[]) nodeIdArr))
-                .map(nodeid -> graphMaker.getGraph().getNode(nodeid))
+        return Arrays.stream(nodeIdArr)
+                .map(object-> (int) object)
+                .map(nodeId -> graphMaker.getGraph().getNode(nodeId))
                 .collect(Collectors.toList());
     }
 
@@ -295,8 +295,8 @@ public class RoutePlanner {
         Object[] nodeIdArr = graphMaker.getKdTreeForMode(modeArr[idx], isIngoingMode).nearest(location.toDoubleArray(), count);
 
         return Arrays
-                .stream(((Integer[]) nodeIdArr))
-                .map(nodeid -> graphMaker.getGraph().getNode(nodeid))
+                .stream(nodeIdArr)
+                .map(nodeid -> graphMaker.getGraph().getNode((int) nodeid))
                 .collect(Collectors.toList());
     }
 
@@ -347,5 +347,9 @@ public class RoutePlanner {
             default:
                 return 0;
         }
+    }
+
+    public Graph<Node,GraphEdge> getGraph() {
+        return graphMaker.getGraph();
     }
 }

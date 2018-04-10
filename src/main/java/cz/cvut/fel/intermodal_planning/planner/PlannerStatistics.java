@@ -32,6 +32,8 @@ public class PlannerStatistics {
 
             for (int i = 0; i < 1000; i++) {
                 comparePath(plannerInitializer, printWriter, i + 1);
+//                compareKnownPath(plannerInitializer, i + 1);
+//                System.out.println(i);
             }
 
             SerializationUtils.writeObjectToFile(stringify(histogramMap),
@@ -42,6 +44,7 @@ public class PlannerStatistics {
             logger.info("Transit count: " + Storage.TRANSIT_PATH_COUNT);
             logger.info("Bike count: " + Storage.BIKE_PATH_COUNT);
             logger.info("Intermodal count: " + Storage.INTERMODAL_PATH_COUNT);
+            logger.info("Intermodal avg duration: " + Storage.INTERMODAL_AVG_DURATION / 1000);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
@@ -59,8 +62,50 @@ public class PlannerStatistics {
         return result[0];
     }
 
+    private static void compareKnownPath(PlannerInitializer plannerInitializer, int count) {
+        Location[] odPair = null;
+        List<GraphEdge> perfectCarPath = null;
+        List<GraphEdge> perfectTransitPath = null;
+        List<GraphEdge> perfectBikePath = null;
+        List<GraphEdge> perfectIntermodalPath = null;
+
+        RoutePlanner perfectPlanner = plannerInitializer.perfectRoutePlanner;
+
+        File odFile = new File(Storage.OD_PAIR_PATH + "pair_" + count + ".txt");
+        odPair = SerializationUtils.readODPairFromGson(odFile);
+
+        perfectCarPath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.CAR);
+        perfectTransitPath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.TRANSIT);
+        perfectBikePath = perfectPlanner.findPath(odPair[0], odPair[1], TransportMode.BICYCLE);
+        perfectIntermodalPath = perfectPlanner.findPath(odPair[0], odPair[1]);
+
+
+        addToHistogram(perfectIntermodalPath
+                .stream()
+                .filter(graphEdge -> graphEdge.mode != TransportMode.WALK)
+                .collect(Collectors.toList())
+        );
+
+        Long carRef = perfectPlanner.getDuration(perfectCarPath);
+        Long transitRef = perfectPlanner.getDuration(perfectTransitPath);
+        Long interRef = perfectPlanner.getDuration(perfectIntermodalPath);
+        Long bikeRef = perfectPlanner.getDuration(perfectBikePath);
+
+        Storage.INTERMODAL_AVG_DURATION += interRef;
+
+        if (carRef < transitRef && carRef < interRef) {//&& carRef < bikeRef) {
+            Storage.CAR_PATH_COUNT++;
+        } else if (interRef < transitRef && interRef < carRef) {//&& interRef < bikeRef) {
+            Storage.INTERMODAL_PATH_COUNT++;
+        } else if (bikeRef < transitRef && bikeRef < carRef && bikeRef < interRef) {
+            Storage.BIKE_PATH_COUNT++;
+        } else {
+            Storage.TRANSIT_PATH_COUNT++;
+        }
+    }
+
     private static void comparePath(PlannerInitializer plannerInitializer, PrintWriter printWriter, int count) {
-        Location[] odPair;
+        Location[] odPair = null;
         List<GraphEdge> perfectCarPath = null;
         List<GraphEdge> perfectTransitPath = null;
         List<GraphEdge> perfectBikePath = null;
@@ -93,6 +138,9 @@ public class PlannerStatistics {
 //                    perfectBikePath, metaBikePath,
 //                    perfectIntermodalPath, metaIntermodalPath)) {
         }
+
+        storeODPair(odPair, count);
+
 
         addToHistogram(perfectIntermodalPath
                 .stream()
@@ -138,6 +186,12 @@ public class PlannerStatistics {
         } else {
             Storage.TRANSIT_PATH_COUNT++;
         }
+    }
+
+    private static void storeODPair(Location[] pair, int count) {
+        File file = new File(Storage.OD_PAIR_PATH + "pair_" + count + ".txt");
+
+        SerializationUtils.writeRequestToGson(pair, file);
     }
 
     private static void addToHistogram(List<GraphEdge> path) {

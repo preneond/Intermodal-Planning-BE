@@ -6,10 +6,12 @@ import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.LatLng;
 import com.google.maps.model.TravelMode;
 import cz.cvut.fel.intermodal_planning.general.Storage;
+import org.apache.commons.lang3.ArrayUtils;
 import org.joda.time.DateTime;
 import cz.cvut.fel.intermodal_planning.utils.SerializationUtils;
 
 import java.io.File;
+import java.lang.reflect.Array;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class GMapsApiClient {
@@ -79,12 +81,30 @@ public class GMapsApiClient {
 
     public DirectionsResult getKnownRequest(int count, TravelMode mode) throws NullPointerException {
         File file = new File(Storage.GMAPS_REQUEST_STORAGE + mode.toString() + "/request_" + count + ".txt");
-
         DirectionsResult request = SerializationUtils.readDirectionsResultFromGson(file);
+
+        if (mode == TravelMode.DRIVING) {
+            File inPragueFile = new File(Storage.GMAPS_REQUEST_STORAGE + "driving_prague/request_" + count + ".txt");
+            DirectionsResult request2 = SerializationUtils.readDirectionsResultFromGson(inPragueFile);
+            request.routes = concatenate(request.routes, request2.routes);
+        }
 
         if (request == null) throw new NullPointerException("Unable to read request");
 
         return request;
     }
+
+    public <T> T[] concatenate(T[] a, T[] b) {
+        int aLen = a.length;
+        int bLen = b.length;
+
+        @SuppressWarnings("unchecked")
+        T[] c = (T[]) Array.newInstance(a.getClass().getComponentType(), aLen + bLen);
+        System.arraycopy(a, 0, c, 0, aLen);
+        System.arraycopy(b, 0, c, aLen, bLen);
+
+        return c;
+    }
+
 }
 

@@ -52,21 +52,7 @@ public class SerializationUtils {
     }
 
     public static void writeStringToFile(String text, File file) throws IOException {
-        FileUtils.writeStringToFile(file,text);
-    }
-
-
-    public static File writeGraphToGeoJSONFile(Graph<Node, GraphEdge> graph, File file) throws IOException {
-        return GeoJSONBuilder.getInstance().buildGeoJSONFile(graph, file);
-    }
-
-    public static File writeGraphToGeoJSONFile(Graph<Node, GraphEdge> graph, TransportMode mode,
-                                               File file) throws IOException {
-        return GeoJSONBuilder.getInstance().buildGeoJSONFile(graph, mode, file);
-    }
-
-    public static String writeGraphToGeoJSONString(Graph<Node, GraphEdge> graph) {
-        return GeoJSONBuilder.getInstance().buildGeoJSONString(graph);
+        FileUtils.writeStringToFile(file, text);
     }
 
     public static Graph readGraphFromGeoJSON(File file) {
@@ -114,21 +100,41 @@ public class SerializationUtils {
         return new Location(latLng.getLatitude(), latLng.getLongitude());
     }
 
-    public static void writeRequestToFile(String request, File file) {
+    public static void writeODPairToGson(Object odPair, File file) {
+        Gson gson = new Gson();
+        String requestJson = gson.toJson(odPair);
+
         try {
-            FileWriter fileWriter = new FileWriter(file);
-            fileWriter.write(request);
-            fileWriter.close();
-        } catch (IOException ex) {
-            ex.printStackTrace();
+            writeStringToFile(requestJson, file);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
+
+    public static Location[] readODPairFromGson(File file) {
+        Gson gson = new Gson();
+        try {
+            JsonReader reader = new JsonReader(new FileReader(file));
+            Location[] data = gson.fromJson(reader, Location[].class);
+
+            return data;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
 
     public static void writeRequestToGson(Object request, File file) {
         Gson gson = new Gson();
         String requestJson = gson.toJson(request);
 
-        writeRequestToFile(requestJson, file);
+        try {
+            writeStringToFile(requestJson, file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static JSONObject readJSONObjectFromFile(File file) {
