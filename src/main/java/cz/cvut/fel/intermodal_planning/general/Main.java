@@ -18,8 +18,7 @@ public class Main {
     public static boolean EXTENDED = true;
 
     public static void main(String[] args) {
-        PlannerInitializer plannerInitializer = new PlannerInitializer();
-        PlannerStatistics.doComparision(plannerInitializer);
-
+//        PlannerInitializer plannerInitializer = PlannerInitializer.getInstance();
+//        PlannerStatistics.doComparision(plannerInitializer);
     }
 }

@@ -46,7 +46,7 @@ public class GeoJSONBuilder {
         }
     }
 
-    private void addPolyline(Graph<Node, GraphEdge> graph, List<Location> path) {
+    private void addPolyline(List<Location> path) {
         featureCollection = new FeatureCollection();
         Feature feature = new Feature();
         LngLatAlt[] pointsArr = new LngLatAlt[path.size()];
@@ -95,8 +95,8 @@ public class GeoJSONBuilder {
     }
 
 
-    private String buildGeoJSONString(Graph<Node, GraphEdge> graph, List<Location> path) {
-        addPolyline(graph, path);
+    public String buildGeoJSONString(List<Location> path) {
+        addPolyline(path);
 
         try {
             return objectMapper.writeValueAsString(featureCollection);
@@ -118,10 +118,10 @@ public class GeoJSONBuilder {
         }
     }
 
-    public File buildGeoJSONFile(Graph<Node, GraphEdge> graph, List<Location> path, File file) {
+    public File buildGeoJSONFile(List<Location> path, File file) {
         try {
             FileWriter writer = new FileWriter(file, false);
-            writer.write(buildGeoJSONString(graph, path));
+            writer.write(buildGeoJSONString(path));
             writer.close();
             logger.debug("GeoJSON has been written into file successfully");
         } catch (IOException e) {

@@ -5,23 +5,37 @@ import com.umotional.basestructures.Node;
 import cz.cvut.fel.intermodal_planning.general.Main;
 import cz.cvut.fel.intermodal_planning.general.Storage;
 import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
-import cz.cvut.fel.intermodal_planning.model.planner.TransportMode;
 import cz.cvut.fel.intermodal_planning.utils.SerializationUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
 
 public class PlannerInitializer {
+    private static PlannerInitializer sharedInstance;
+    private static final Logger logger = LogManager.getLogger(PlannerInitializer.class);
+
+
     public GraphMaker perfectGraphMaker;
     public GraphMaker extendedGraphMaker;
 
     public RoutePlanner perfectRoutePlanner;
     public RoutePlanner extendedRoutePlanner;
 
-    public PlannerInitializer() {
+    private PlannerInitializer() {
+        logger.info("Created instance of PlannerInitializer");
         initGraph();
         createKdTrees();
+        logger.info("PlannerInitializer instance created");
+    }
+
+    public static PlannerInitializer getInstance() {
+        if (sharedInstance == null) {
+            sharedInstance = new PlannerInitializer();
+        }
+        return sharedInstance;
     }
 
     private void initGraph() {
