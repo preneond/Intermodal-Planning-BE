@@ -87,6 +87,7 @@ public class SerializationUtils {
             route.legList.add(leg);
             List<Route> routeList = new ArrayList<>();
             routeList.add(route);
+            fileIn.close();
 
             return new GraphMaker().createGraph(routeList);
         } catch (IOException e) {
@@ -116,9 +117,10 @@ public class SerializationUtils {
         try {
             JsonReader reader = new JsonReader(new FileReader(file));
             Location[] data = gson.fromJson(reader, Location[].class);
+            reader.close();
 
             return data;
-        } catch (FileNotFoundException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
@@ -141,6 +143,7 @@ public class SerializationUtils {
         try {
             InputStream is = new FileInputStream(file);
             String jsonTxt = IOUtils.toString(is);
+            is.close();
 
             return new JSONObject(jsonTxt);
         } catch (IOException e) {
@@ -154,11 +157,13 @@ public class SerializationUtils {
         try {
             JsonReader reader = new JsonReader(new FileReader(file));
             DirectionsResult data = gson.fromJson(reader, DirectionsResult.class);
+            reader.close();
 
             return data;
-        } catch (FileNotFoundException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
+
         return null;
     }
 }

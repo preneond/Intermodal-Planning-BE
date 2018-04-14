@@ -3,6 +3,7 @@ package cz.cvut.fel.intermodal_planning.client;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
+import cz.cvut.fel.intermodal_planning.general.Main;
 import cz.cvut.fel.intermodal_planning.general.Storage;
 import cz.cvut.fel.intermodal_planning.model.planner.Location;
 import cz.cvut.fel.intermodal_planning.model.planner.TransportMode;
@@ -60,12 +61,12 @@ public class OTPApiClient {
                 throw new RuntimeException("Failed : HTTP error code : "
                         + response.getStatus());
             }
-            Storage.TOTAL_REQUEST_COUNT++;
-            int tmpCount = mode == TransportMode.TRANSIT ?  ++Storage.TRANSIT_REQUEST_COUNT: ++Storage.BIKE_REQUEST_COUNT;
+            int tmpCount = (mode == TransportMode.TRANSIT) ? ++Storage.TRANSIT_REQUEST_COUNT : ++Storage.BIKE_REQUEST_COUNT;
 
             logger.info("Request: " + webResource.getURI());
 
-            File file = new File(Storage.OTP_REQUEST_STORAGE + mode.toString() + "/request_" + tmpCount + ".txt");
+            String reqStorage = Main.EXTENDED ? Storage.OTP_EXT_REQUEST_STORAGE : Storage.OTP_REQUEST_STORAGE;
+            File file = new File(reqStorage + mode.toString() + "/request_" + tmpCount + ".txt");
 
             String stringResponse = response.getEntity(String.class);
             SerializationUtils.writeStringToFile(stringResponse, file);
@@ -79,7 +80,8 @@ public class OTPApiClient {
     }
 
     public JSONObject getKnownRequest(int numOfRequest, TransportMode mode) throws NullPointerException {
-        File file = new File(Storage.OTP_REQUEST_STORAGE + mode.toString() + "/request_" + numOfRequest + ".txt");
+        String reqStorage = Main.EXTENDED ? Storage.OTP_EXT_REQUEST_STORAGE : Storage.OTP_REQUEST_STORAGE;
+        File file = new File(reqStorage + mode.toString() + "/request_" + numOfRequest + ".txt");
 
         JSONObject request = SerializationUtils.readJSONObjectFromFile(file);
 

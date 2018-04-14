@@ -1,6 +1,7 @@
 package cz.cvut.fel.intermodal_planning.model.planner;
 
 import com.umotional.basestructures.Node;
+import cz.cvut.fel.intermodal_planning.general.Main;
 import org.geojson.LngLatAlt;
 
 import java.io.Serializable;
@@ -47,16 +48,20 @@ public class Location implements Serializable {
     }
 
     public static Location[] generateRandomLocationsInPrague(int count) {
-        double upLat = 50.1472;
-        double bottomLat = 50.0069;
-        double leftLon = 14.2946;
-        double rightLon = 14.5898;
+        double upLat, bottomLat, leftLon, rightLon;
 
-        // + 10 km radius
-//        double upLat = 50.24;
-//        double bottomLat = 49.92;
-//        double leftLon = 14.15;
-//        double rightLon = 14.73;
+        if (Main.EXTENDED) {
+            // + 10 km radius
+            upLat = 50.25;
+            bottomLat = 49.94;
+            leftLon = 14.15;
+            rightLon = 14.69;
+        } else {
+            upLat = 50.1072;
+            bottomLat = 50.0269;
+            leftLon = 14.2946;
+            rightLon = 14.55;
+        }
 
         Location[] resultArr = new Location[count];
 

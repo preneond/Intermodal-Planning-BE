@@ -5,6 +5,7 @@ import com.google.maps.GeoApiContext;
 import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.LatLng;
 import com.google.maps.model.TravelMode;
+import cz.cvut.fel.intermodal_planning.general.Main;
 import cz.cvut.fel.intermodal_planning.general.Storage;
 import org.apache.commons.lang3.ArrayUtils;
 import org.joda.time.DateTime;
@@ -12,12 +13,12 @@ import cz.cvut.fel.intermodal_planning.utils.SerializationUtils;
 
 import java.io.File;
 import java.lang.reflect.Array;
+import java.sql.Timestamp;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class GMapsApiClient {
     private static GMapsApiClient sharedInstance;
     private GeoApiContext context;
-
 
 
     public static GMapsApiClient getInstance() {
@@ -37,7 +38,6 @@ public class GMapsApiClient {
 
         DirectionsResult directionResult = null;
         try {
-            Storage.TOTAL_REQUEST_COUNT++;
             directionResult = DirectionsApi.newRequest(context)
                     .origin(origin)
                     .destination(destination)
@@ -51,10 +51,10 @@ public class GMapsApiClient {
     }
 
     public DirectionsResult sendNewRequest(LatLng origin, LatLng destination, TravelMode mode) {
-//        Timestamp ts = new Timestamp(1523254800000l);
-//        DateTime time = new DateTime(ts);
+        Timestamp ts = new Timestamp(1523859300000l);
+        DateTime time = new DateTime(ts);
 
-        DateTime time = new DateTime(DateTime.now());
+//        DateTime time = new DateTime(DateTime.now());
         int idx = ThreadLocalRandom.current().nextInt(Storage.GMAPS_API_KEYS.length);
         context.setApiKey(Storage.GMAPS_API_KEYS[idx]);
 
@@ -66,10 +66,10 @@ public class GMapsApiClient {
                     .mode(mode)
                     .await();
 
-            Storage.TOTAL_REQUEST_COUNT++;
             int tmpCount = mode == TravelMode.DRIVING ? ++Storage.CAR_REQUEST_COUNT : ++Storage.WALK_REQUEST_COUNT;
 
-            File file = new File(Storage.GMAPS_REQUEST_STORAGE + mode.toString() + "/request_" + tmpCount + ".txt");
+            String reqStorage = Main.EXTENDED ? Storage.GMAPS_EXT_REQUEST_STORAGE : Storage.GMAPS_REQUEST_STORAGE;
+            File file = new File(reqStorage + mode.toString() + "/request_" + tmpCount + ".txt");
             SerializationUtils.writeRequestToGson(directionResult, file);
 
             return directionResult;
@@ -80,7 +80,8 @@ public class GMapsApiClient {
     }
 
     public DirectionsResult getKnownRequest(int count, TravelMode mode) throws NullPointerException {
-        File file = new File(Storage.GMAPS_REQUEST_STORAGE + mode.toString() + "/request_" + count + ".txt");
+        String reqStorage = Main.EXTENDED ? Storage.GMAPS_EXT_REQUEST_STORAGE : Storage.GMAPS_REQUEST_STORAGE;
+        File file = new File(reqStorage + mode.toString() + "/request_" + count + ".txt");
         DirectionsResult request = SerializationUtils.readDirectionsResultFromGson(file);
 
         if (request == null) throw new NullPointerException("Unable to read request");

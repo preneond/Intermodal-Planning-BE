@@ -53,7 +53,6 @@ public class AStar<TNode extends Node> {
         path.clear();
         prevNodes.clear();
 
-//        openList.enqueue(originNodes.get(0), 0);
         originNodes.stream().forEach(originNode -> openList.enqueue(originNode,
                 RoutePlanner.getDistanceDuration(TransportMode.WALK, LocationUtils.distance(Location.getLocation(originNode), origin))));
 
@@ -62,22 +61,21 @@ public class AStar<TNode extends Node> {
 
             //we find the DESTINATION NODE! Now, we have to backtrack the path
             if (destinationNodes.contains(entry_from.getValue())) {
-                long destinationPenalty = 0;
                 List<GraphEdge> path = findPath(graph, originNodes, entry_from.getValue());
                 if (!path.isEmpty()) {
                     GraphEdge lastEdge = path.get(path.size() - 1);
                     TransportMode lastMode = lastEdge.mode;
                     double distance = LocationUtils.distance(Location.getLocation(graph.getNode(lastEdge.toId)), destination);
-                    destinationPenalty = RoutePlanner.getDistanceDuration(lastMode, distance);
+                    long destinationPenalty = RoutePlanner.getDistanceDuration(lastMode, distance);
+
+                    Long duration = path.stream()
+                            .mapToLong(graphEdge -> graphEdge.durationInSeconds)
+                            .sum() + destinationPenalty;
+                    pathTreeMap.put(duration, path);
                 }
-                Long duration = path.stream()
-                        .mapToLong(graphEdge -> graphEdge.durationInSeconds)
-                        .sum() + destinationPenalty;
-                pathTreeMap.put(duration, path);
+
                 destinationNodes.remove(entry_from.getValue());
-                if (destinationNodes.isEmpty()) {
-                    return pathTreeMap.firstEntry().getValue();
-                }
+                if (destinationNodes.isEmpty()) break;
             }
 
             closedList.add(entry_from.getValue().id);
@@ -91,6 +89,11 @@ public class AStar<TNode extends Node> {
                     //if node is in closed list
                     // or is not allowed to use a specified transport mode then continue
                     // or is not transfer possible
+
+                    if (prevNodes.get(edge.fromId) != null) {
+                        prevMode = graph.getEdge(prevNodes.get(edge.fromId), edge.fromId).mode;
+                    }
+
                     if (closedList.contains(edge.toId)
                             || !availableModesList.contains(edge.mode)
                             || !RoutePlanner.isTransferPossible(prevMode, edge.mode)
@@ -99,8 +102,7 @@ public class AStar<TNode extends Node> {
                     }
                     node_to = graph.getNode(edge.toId);
 
-                    int transferPenalty = (prevMode != null && prevMode != edge.mode) ?
-                            RoutePlanner.getTransferPenalty(prevMode) : 0;
+                    int transferPenalty = (prevMode == null || prevMode == edge.mode) ? 0 : RoutePlanner.getTransferPenalty(prevMode);
 
                     // get cost of start node, we substract start-node's distance and after that we add end-node's distance
                     // and we also add edge length divided by allowed speed
@@ -112,14 +114,12 @@ public class AStar<TNode extends Node> {
                         if (entry_old.getPriority() > priority_new) {
                             openList.decreaseKey(entry_old, priority_new);
                             prevNodes.put(node_to.id, entry_from.getValue().id);
-                            prevMode = edge.mode;
                         }
                     } else {
                         //if node is not in the open list, then we have to add it there
                         prevNodes.put(node_to.id, entry_from.getValue().id);
                         // do something
                         openList.enqueue(node_to, priority_new);
-                        prevMode = edge.mode;
                     }
                 }
             } catch (NullPointerException ignored) {

@@ -2,6 +2,7 @@ package cz.cvut.fel.intermodal_planning.planner;
 
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
+import cz.cvut.fel.intermodal_planning.general.Main;
 import cz.cvut.fel.intermodal_planning.general.Storage;
 import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
 import cz.cvut.fel.intermodal_planning.model.planner.TransportMode;
@@ -13,10 +14,10 @@ import java.nio.file.Paths;
 
 public class PlannerInitializer {
     public GraphMaker perfectGraphMaker;
-//    public GraphMaker metaGraphMaker;
+    public GraphMaker extendedGraphMaker;
 
     public RoutePlanner perfectRoutePlanner;
-//    public RoutePlanner metaRoutePlanner;
+    public RoutePlanner extendedRoutePlanner;
 
     public PlannerInitializer() {
         initGraph();
@@ -26,32 +27,31 @@ public class PlannerInitializer {
     private void initGraph() {
         try {
             File perfectGraphFile = Paths.get(Storage.GRAPH_RESOURCE.toURI()).toFile();
-//            File metaGraphFile = Paths.get(Storage.METAGRAPH_RESOURCE.toURI()).toFile();
+            File extendedGraphFile = Paths.get(Storage.GRAPH_EXTENDED_RESOURCE.toURI()).toFile();
 
-            Graph<Node,GraphEdge> perfectGraph = (Graph<Node,GraphEdge>) SerializationUtils.readObjectFromFile(perfectGraphFile);
-//            Graph metaGraph = SerializationUtils.readGraphFromGeoJSON(metaGraphFile);
+            Graph<Node, GraphEdge> perfectGraph = (Graph<Node, GraphEdge>) SerializationUtils.readObjectFromFile(perfectGraphFile);
+            Graph extendedGraph = (Graph<Node, GraphEdge>) SerializationUtils.readObjectFromFile(extendedGraphFile);
 
             perfectGraphMaker = new GraphMaker();
-//            metaGraphMaker = new GraphMaker();
+            extendedGraphMaker = new GraphMaker();
 
             perfectRoutePlanner = new RoutePlanner(perfectGraphMaker);
-//            metaRoutePlanner = new RoutePlanner(metaGraphMaker);
+            extendedRoutePlanner = new RoutePlanner(extendedGraphMaker);
 
+            Main.EXTENDED = false;
             if (perfectGraph == null) {
-//                perfectRoutePlanner.expandGraph(500, TransportMode.CAR);
-                perfectRoutePlanner.expandGraphFromKnownRequests(10000);
+                perfectRoutePlanner.expandGraphFromKnownRequests(15000);
                 SerializationUtils.writeObjectToFile(perfectRoutePlanner.getGraph(), perfectGraphFile);
             } else {
                 perfectGraphMaker.setGraph(perfectGraph);
             }
-            /*
-            if (metaGraph == null) {
-                metaRoutePlanner.expandGraphFromKnownRequests(2000);
-                SerializationUtils.writeObjectToFile(metaRoutePlanner.getGraph(), metaGraphFile);
+            Main.EXTENDED = true;
+            if (extendedGraph == null) {
+                extendedRoutePlanner.expandGraphFromKnownRequests(20000);
+                SerializationUtils.writeObjectToFile(extendedRoutePlanner.getGraph(), extendedGraphFile);
             } else {
-                metaGraphMaker.setGraph(metaGraph);
+                extendedGraphMaker.setGraph(extendedGraph);
             }
-            */
 
         } catch (URISyntaxException e) {
             e.printStackTrace();
@@ -60,6 +60,6 @@ public class PlannerInitializer {
 
     private void createKdTrees() {
         perfectGraphMaker.createKDTree();
-//        metaGraphMaker.createKDTree();
+        extendedGraphMaker.createKDTree();
     }
 }

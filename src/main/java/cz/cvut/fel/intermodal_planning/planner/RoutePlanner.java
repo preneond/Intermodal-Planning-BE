@@ -1,7 +1,7 @@
 package cz.cvut.fel.intermodal_planning.planner;
 
 import cz.cvut.fel.intermodal_planning.adapters.GMapsPlannerAdapter;
-import cz.cvut.fel.intermodal_planning.adapters.OpenTripPlannerAdapter;
+import cz.cvut.fel.intermodal_planning.adapters.OTPlannerAdapter;
 import cz.cvut.fel.intermodal_planning.adapters.PlannerAdapter;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
@@ -26,18 +26,17 @@ public class RoutePlanner {
     public RoutePlanner(GraphMaker graphMaker) {
         // add more planner cz.cvut.fel.intermodal_planning.adapters if they exist
         this.graphMaker = graphMaker;
-        plannerAdapters = new PlannerAdapter[]{GMapsPlannerAdapter.getInstance(), OpenTripPlannerAdapter.getInstance()};
+        plannerAdapters = new PlannerAdapter[]{GMapsPlannerAdapter.getInstance(), OTPlannerAdapter.getInstance()};
     }
 
     public List<Route> getRoutesFromKnownRequest(int numOfRequests) {
         List<Route> resultRoutes = new ArrayList<>();
         List<Route> tmpResult;
         for (TransportMode mode : TransportMode.availableModes()) {
-            int tmpNum = mode == TransportMode.CAR ? 15000: numOfRequests;
-            for (int i = 1; i <= tmpNum; i++) {
+            for (int i = 1; i <= numOfRequests; i++) {
                 tmpResult = null;
                 if (mode == TransportMode.TRANSIT || mode == TransportMode.BICYCLE) {
-                    tmpResult = OpenTripPlannerAdapter.getInstance().findRoutesFromKnownRequests(i, mode);
+                    tmpResult = OTPlannerAdapter.getInstance().findRoutesFromKnownRequests(i, mode);
                 } else if (mode == TransportMode.CAR || mode == TransportMode.WALK) {
                     tmpResult = GMapsPlannerAdapter.getInstance().findRoutesFromKnownRequests(i, mode);
                 }
@@ -72,9 +71,8 @@ public class RoutePlanner {
     public List<Route> expandGraph(int numOfRequests, TransportMode transportMode) {
         switch (transportMode) {
             case BICYCLE:
-                return expandGraph(numOfRequests, OpenTripPlannerAdapter.getInstance(), transportMode);
             case TRANSIT:
-                return expandGraph(numOfRequests, OpenTripPlannerAdapter.getInstance());
+                return expandGraph(numOfRequests, OTPlannerAdapter.getInstance(), transportMode);
             default:
                 return expandGraph(numOfRequests, GMapsPlannerAdapter.getInstance(), transportMode);
         }
@@ -97,13 +95,12 @@ public class RoutePlanner {
     }
 
     public void expandGraph(int numOfRequests) {
-        Location[] locArray;
         List<Route> routes = new ArrayList<>();
         List<Route> routeList;
 
-        for (PlannerAdapter plannerAdapter : plannerAdapters) {
+        for (TransportMode mode : TransportMode.availableModes()) {
             // Uncomment for loop for generating more routes
-            routeList = expandGraph(numOfRequests, plannerAdapter);
+            routeList = expandGraph(numOfRequests, mode);
             routes.addAll(routeList);
         }
 
@@ -126,8 +123,8 @@ public class RoutePlanner {
 
         Location locFrom = new Location(from.getLatitude(), from.getLongitude());
         Location locTo = new Location(to.getLatitude(), to.getLongitude());
-        if (mode == TransportMode.TRANSIT) {
-            route = OpenTripPlannerAdapter.getInstance().findRoute(locFrom, locTo, TransportMode.TRANSIT);
+        if (mode == TransportMode.TRANSIT || mode == TransportMode.BICYCLE) {
+            route = OTPlannerAdapter.getInstance().findRoute(locFrom, locTo, mode);
         } else if (mode == TransportMode.CAR || mode == TransportMode.WALK) {
             route = GMapsPlannerAdapter.getInstance().findRoute(locFrom, locTo, mode);
         }
@@ -255,23 +252,6 @@ public class RoutePlanner {
 
             return astar.plan(origin, destination, originList, destinationList, availableModes);
         }
-
-//        if (plan == null) return plan;
-
-//        double distanceToOriginInMeters = LocationUtils.distance(origin, Location.getLocation(originNode));
-//        GraphEdge pathToOriginEdge = new GraphEdge(0, 0, 0);
-//        pathToOriginEdge.durationInSeconds = (long) (distanceToOriginInMeters / PlannerAdapter.WALK_SPEED_MPS);
-//        plan.add(0, pathToOriginEdge);
-//
-//  if (plan == null) logger.debug("Plan is empty");
-//            return findRandomPath();
-//        }
-
-//        logger.info("Generated random origin location" + origin);
-//        logger.info("Generated random destination location" + destination);
-//        logger.info("Founded node as origin location" + Location.getLocation(originNode));
-//        logger.info("Founded node as destination location" + Location.getLocation(destinationNode));
-
     }
 
     private List<Node> getNearestNodes(Location location, int count) {
@@ -310,7 +290,9 @@ public class RoutePlanner {
             duration += (prevMode == edge.mode) ? 0 : getTransferPenalty(prevMode);
             prevMode = edge.mode;
         }
-        if (graphPath.get(graphPath.size() - 1).mode == TransportMode.CAR) duration += 300;
+        if (graphPath.get(graphPath.size() - 1).mode == TransportMode.CAR) duration += 120;
+        if (graphPath.get(graphPath.size() - 1).mode == TransportMode.BICYCLE) duration += 60;
+
         return duration;
     }
 
@@ -320,7 +302,7 @@ public class RoutePlanner {
 
     public static int getTransferPenalty(TransportMode prevMode) {
         if (prevMode == TransportMode.CAR) {
-            return 300; //5 minutes
+            return 120;
         } else if (prevMode == TransportMode.BICYCLE) {
             return 60;
         } else {

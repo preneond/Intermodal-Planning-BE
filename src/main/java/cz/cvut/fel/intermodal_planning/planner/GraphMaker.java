@@ -142,7 +142,7 @@ public class GraphMaker extends GraphBuilder {
         double avgOutputLevel = outputLevel / (double) nodeList.size();
 
         logger.info("\n" +
-                "Number of requests: " + Storage.TOTAL_REQUEST_COUNT + "\n" +
+                "Number of requests: " + Storage.getTotalRequestCount() + "\n" +
                 "Number of edges: " + edgeList.size() + "\n" +
                 "Number of nodes: " + nodeList.size() + "\n" +
                 "Number of edges for walking: " + walkingList.size() + "\n" +

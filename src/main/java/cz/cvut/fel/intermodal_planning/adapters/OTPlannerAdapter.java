@@ -9,17 +9,17 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class OpenTripPlannerAdapter implements PlannerAdapter {
-    private static OpenTripPlannerAdapter sharedInstance;
+public class OTPlannerAdapter implements PlannerAdapter {
+    private static OTPlannerAdapter sharedInstance;
 
-    public static OpenTripPlannerAdapter getInstance() {
+    public static OTPlannerAdapter getInstance() {
         if (sharedInstance == null) {
-            sharedInstance = new OpenTripPlannerAdapter();
+            sharedInstance = new OTPlannerAdapter();
         }
         return sharedInstance;
     }
 
-    private OpenTripPlannerAdapter() {
+    private OTPlannerAdapter() {
     }
 
     @Override
@@ -32,8 +32,12 @@ public class OpenTripPlannerAdapter implements PlannerAdapter {
     @Override
     public List<Route> findRoutes(Location origin, Location destination) {
         JSONObject response = OTPApiClient.getInstance().sendNewRequest(origin, destination);
+        List<Route> routeList = getRouteList(response);
 
-        return getRouteList(response);
+        List<Route> bikeRoutes = findRoutes(origin,destination,TransportMode.BICYCLE);
+        routeList.addAll(bikeRoutes);
+
+        return routeList;
     }
 
     @Override
@@ -42,16 +46,12 @@ public class OpenTripPlannerAdapter implements PlannerAdapter {
 
         if (routeList.isEmpty()) return null;
 
-//        if (routeList.get(0).legList.size() > 1) {
-//            throw new RuntimeException("findLeg plan has more than one leg");
-//        }
-
         return routeList.get(0);
     }
 
     @Override
     public Route findRoute(Location origin, Location destination) {
-        List<Route> routeList = findRoutes(origin, destination, TransportMode.BICYCLE);
+        List<Route> routeList = findRoutes(origin, destination);
 
         if (routeList.isEmpty()) return null;
 
@@ -229,11 +229,13 @@ public class OpenTripPlannerAdapter implements PlannerAdapter {
 
         if (steps.length() == 0) return stepList;
 
+        float movingSpeed = durationInSeconds / (float) distanceInMeters;
+
         Step tmpStep = new Step();
         tmpStep.startLocation = startLocation;
         tmpStep.endLocation = getLocation(steps.getJSONObject(0));
         tmpStep.distanceInMeters = steps.getJSONObject(0).getLong("distance");
-        tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / Storage.BIKE_SPEED_MPS);
+        tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / movingSpeed);
         stepList.add(tmpStep);
 
         for (int i = 1; i < steps.length(); i++) {
@@ -241,7 +243,7 @@ public class OpenTripPlannerAdapter implements PlannerAdapter {
             tmpStep.startLocation = stepList.get(i - 1).endLocation;
             tmpStep.endLocation = getLocation(steps.getJSONObject(i));
             tmpStep.distanceInMeters = steps.getJSONObject(i).getLong("distance");
-            tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / Storage.BIKE_SPEED_MPS);
+            tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / movingSpeed);
             stepList.add(tmpStep);
         }
 
@@ -249,7 +251,7 @@ public class OpenTripPlannerAdapter implements PlannerAdapter {
         tmpStep.startLocation = stepList.get(steps.length() - 1).endLocation;
         tmpStep.endLocation = endLocation;
         tmpStep.distanceInMeters = steps.getJSONObject(steps.length() - 1).getLong("distance");
-        tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / Storage.BIKE_SPEED_MPS);
+        tmpStep.durationInSeconds = (long) (tmpStep.distanceInMeters / movingSpeed);
         stepList.add(tmpStep);
 
         return stepList;
