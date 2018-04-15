@@ -38,17 +38,20 @@ public class ApiService {
                 throw new ParseException("origin or destination length is not 2", 0);
 
             logger.info("Building a JSON response, args are valid...");
-            logger.info(originLoc.toString());
-            logger.info(destinationLoc.toString());
 
             PlannerInitializer plannerInitializer = PlannerInitializer.getInstance();
 
             Location origin = new Location(originLoc[0], originLoc[1]);
             Location destination = new Location(destinationLoc[0], destinationLoc[1]);
             List<GraphEdge> path = plannerInitializer.perfectRoutePlanner.findPath(origin, destination);
-            String responseStr = path == null ? "" : GeoJSONBuilder.getInstance().buildGeoJSONString(plannerInitializer.perfectRoutePlanner.getLocationsFromEdges(path, plannerInitializer.perfectGraphMaker.getGraph()));
+            String responseStr = path == null ?
+                    "Path is null"
+                    : GeoJSONBuilder.getInstance().buildGeoJSONString(plannerInitializer.perfectRoutePlanner.getLocationsFromEdges(path, plannerInitializer.perfectGraphMaker.getGraph()));
 
-            return Response.status(200).entity(responseStr).build();
+            return Response
+                    .status(200)
+                    .entity(responseStr)
+                    .build();
         } catch (ParseException e) {
             logger.info("Invalid input");
 
