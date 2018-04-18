@@ -7,13 +7,16 @@ import com.umotional.basestructures.Node;
 import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
 import cz.cvut.fel.intermodal_planning.model.planner.Location;
 import cz.cvut.fel.intermodal_planning.model.planner.TransportMode;
+import cz.cvut.fel.intermodal_planning.planner.PlannerStatistics;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.geojson.*;
 
+import java.awt.*;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -61,6 +64,28 @@ public class GeoJSONBuilder {
         featureCollection.add(feature);
     }
 
+    private void addPolylineFromEdgeList(Graph<Node, GraphEdge> graph, List<GraphEdge> edgeList) {
+        Feature feature;
+        GeoJsonObject geoJsonObject;
+
+        featureCollection = new FeatureCollection();
+
+        for (GraphEdge edge : edgeList) {
+            Node from = graph.getNode(edge.fromId);
+            Node to = graph.getNode(edge.toId);
+
+            LngLatAlt origin = new LngLatAlt(from.getLongitude(), from.getLatitude());
+            LngLatAlt destination = new LngLatAlt(to.getLongitude(), to.getLatitude());
+
+            feature = new Feature();
+            geoJsonObject = new LineString(origin, destination);
+            feature.setGeometry(geoJsonObject);
+            feature.setProperty("color", toHexString(edge.mode.modeColor()));
+
+            featureCollection.add(feature);
+        }
+    }
+
     private void addPolylinesFromGraph(Graph<Node, GraphEdge> graph, TransportMode mode) {
         Feature feature;
         GeoJsonObject geoJsonObject;
@@ -97,6 +122,17 @@ public class GeoJSONBuilder {
 
     public String buildGeoJSONString(List<Location> path) {
         addPolyline(path);
+
+        try {
+            return objectMapper.writeValueAsString(featureCollection);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return "{}";
+        }
+    }
+
+    public String buildGeoJSONStringForPath(Graph<Node, GraphEdge> graph, List<GraphEdge> edgeList) {
+        addPolylineFromEdgeList(graph, edgeList);
 
         try {
             return objectMapper.writeValueAsString(featureCollection);
@@ -152,6 +188,45 @@ public class GeoJSONBuilder {
             logger.error(e.getMessage());
         }
         return file;
+    }
+
+    public final static String toHexString(Color color) throws NullPointerException {
+        String hexColour = Integer.toHexString(color.getRGB() & 0xffffff);
+        if (hexColour.length() < 6) {
+            hexColour = "000000".substring(0, 6 - hexColour.length()) + hexColour;
+        }
+        return "#" + hexColour;
+    }
+
+    public String buildPathDescription(List<GraphEdge> path) {
+        String description = "";
+        if (path == null || path.isEmpty()) return description;
+
+        long curDuration = path.get(0).durationInSeconds;
+        TransportMode curMode = path.get(0).mode;
+        GraphEdge curEdge;
+        description += "{\"legs\": [";
+        for (int i = 1; i < path.size(); i++) {
+            curEdge = path.get(i);
+            if (curMode == curEdge.mode) {
+                curDuration += curEdge.durationInSeconds;
+            } else {
+                description += "{";
+                description += "\"duration\":" + curDuration + ",";
+                description += "\"mode\":\"" + curMode + "\",";
+                description += "\"color\": \"" + toHexString(curMode.modeColor()) + "\"";
+                description += "},";
+                curMode = curEdge.mode;
+                curDuration = curEdge.durationInSeconds;
+
+            }
+        }
+        description += "{";
+        description += "\"duration\":" + curDuration + ",";
+        description += "\"mode\":\"" + curMode + "\",";
+        description += "\"color\": \"" + toHexString(curMode.modeColor()) + "\"";
+        description += "}]}";
+        return description;
     }
 }
 

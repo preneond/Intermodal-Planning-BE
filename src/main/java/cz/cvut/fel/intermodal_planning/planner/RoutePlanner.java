@@ -6,6 +6,7 @@ import cz.cvut.fel.intermodal_planning.adapters.PlannerAdapter;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
 import cz.cvut.fel.intermodal_planning.general.Storage;
+import cz.cvut.fel.intermodal_planning.graph.GraphMaker;
 import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
 import cz.cvut.fel.intermodal_planning.model.planner.*;
 import org.apache.log4j.LogManager;
@@ -247,8 +248,8 @@ public class RoutePlanner {
 
             return astar.plan(origin,destination, originList, destinationList);
         } else {
-            originList = getNearestNodes(origin, availableModes, true, 1);
-            destinationList = getNearestNodes(destination, availableModes, false, 1);
+            originList = getNearestNodes(origin, availableModes, true, 5);
+            destinationList = getNearestNodes(destination, availableModes, false, 5);
 
             return astar.plan(origin, destination, originList, destinationList, availableModes);
         }

@@ -9,16 +9,16 @@ import org.apache.log4j.BasicConfigurator;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
 public class Main {
     static {
         BasicConfigurator.configure();
     }
-
     public static boolean EXTENDED = true;
 
     public static void main(String[] args) {
-//        PlannerInitializer plannerInitializer = PlannerInitializer.getInstance();
-//        PlannerStatistics.doComparision(plannerInitializer);
+        PlannerInitializer plannerInitializer = PlannerInitializer.getInstance();
+        PlannerStatistics.doComparision(plannerInitializer);
     }
 }

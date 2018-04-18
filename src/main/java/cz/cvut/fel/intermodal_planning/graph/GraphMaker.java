@@ -1,4 +1,4 @@
-package cz.cvut.fel.intermodal_planning.planner;
+package cz.cvut.fel.intermodal_planning.graph;
 
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.GraphBuilder;

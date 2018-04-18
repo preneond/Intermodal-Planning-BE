@@ -2,12 +2,12 @@ package cz.cvut.fel.intermodal_planning.planner;
 
 import cz.cvut.fel.intermodal_planning.general.Main;
 import cz.cvut.fel.intermodal_planning.general.Storage;
+import cz.cvut.fel.intermodal_planning.graph.GraphMaker;
 import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
 import cz.cvut.fel.intermodal_planning.model.planner.Location;
 import cz.cvut.fel.intermodal_planning.model.planner.Route;
 import cz.cvut.fel.intermodal_planning.model.planner.TransportMode;
 import cz.cvut.fel.intermodal_planning.utils.SerializationUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -115,15 +115,14 @@ public class PlannerStatistics {
         return getIntermodalDescription(path).replaceAll("\\d", "");
     }
 
-    private static String getIntermodalDescription(List<GraphEdge> intermodalPath) {
+    public static String getIntermodalDescription(List<GraphEdge> intermodalPath) {
         String description = "";
         if (intermodalPath == null || intermodalPath.isEmpty()) return description;
-
 
         long curDuration = intermodalPath.get(0).durationInSeconds;
         TransportMode curMode = intermodalPath.get(0).mode;
         GraphEdge curEdge;
-        for (int i = 1; i < intermodalPath.size(); i += 1) {
+        for (int i = 1; i < intermodalPath.size(); i++) {
             curEdge = intermodalPath.get(i);
             if (curMode == curEdge.mode) {
                 curDuration += curEdge.durationInSeconds;

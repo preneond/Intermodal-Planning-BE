@@ -6,10 +6,12 @@ package cz.cvut.fel.intermodal_planning.restapi;
  * All Rights Reserved.
  */
 
+import com.google.maps.model.TravelMode;
 import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
 import cz.cvut.fel.intermodal_planning.model.planner.Location;
 import cz.cvut.fel.intermodal_planning.model.planner.TransportMode;
 import cz.cvut.fel.intermodal_planning.planner.PlannerInitializer;
+import cz.cvut.fel.intermodal_planning.planner.PlannerStatistics;
 import cz.cvut.fel.intermodal_planning.utils.GeoJSONBuilder;
 import cz.cvut.fel.intermodal_planning.utils.LocationUtils;
 import org.apache.log4j.BasicConfigurator;
@@ -30,12 +32,27 @@ public class ApiService {
 
     @GET
     @Path("/getIntermodalRoute")
-    public Response getIntermodalRoute(@QueryParam("origin") String originStr, @QueryParam("destination") String destinationStr) {
+    public Response getIntermodalRoute(@QueryParam("origin") String originStr,
+                                       @QueryParam("destination") String destinationStr) {
+        return getIntermodalRoute(originStr, destinationStr, "");
+    }
+
+    @GET
+    @Path("/getIntermodalRouteWithMode")
+    public Response getIntermodalRoute(@QueryParam("origin") String originStr,
+                                       @QueryParam("destination") String destinationStr,
+                                       @QueryParam("availableModes") String availableModesStr) {
         try {
             double[] originLoc = Arrays.stream(originStr.split(",")).mapToDouble(Double::parseDouble).toArray();
             double[] destinationLoc = Arrays.stream(destinationStr.split(",")).mapToDouble(Double::parseDouble).toArray();
+            TransportMode[] availableModes = availableModesStr.isEmpty() ? new TransportMode[]{} :
+                    (TransportMode[]) Arrays
+                            .stream(availableModesStr.split(","))
+                            .map(modeStr -> TransportMode.valueOf(modeStr))
+                            .toArray();
+
             if (originLoc.length != 2 || destinationLoc.length != 2)
-                throw new ParseException("origin or destination length is not 2", 0);
+                throw new IllegalArgumentException("origin or destination length is not 2");
 
             logger.info("Building a JSON response, args are valid...");
 
@@ -43,20 +60,27 @@ public class ApiService {
 
             Location origin = new Location(originLoc[0], originLoc[1]);
             Location destination = new Location(destinationLoc[0], destinationLoc[1]);
-            List<GraphEdge> path = plannerInitializer.perfectRoutePlanner.findPath(origin, destination);
-            String responseStr = path == null ?
-                    "Path is null"
-                    : GeoJSONBuilder.getInstance().buildGeoJSONString(plannerInitializer.perfectRoutePlanner.getLocationsFromEdges(path, plannerInitializer.perfectGraphMaker.getGraph()));
+            List<GraphEdge> path = plannerInitializer.extendedRoutePlanner.findPath(origin, destination, availableModes);
+            String pathDesc = GeoJSONBuilder.getInstance().buildPathDescription(path);
+
+            String geoJSONStr = GeoJSONBuilder.getInstance().buildGeoJSONStringForPath(plannerInitializer.extendedGraphMaker.getGraph(),path);
+
+            String resultJSON = "{" +
+                    "\"description\":" + pathDesc + ","
+                    + "\"route\":" + geoJSONStr
+                    + "}";
+            String responseStr = path == null ? "Path is null" : resultJSON;
 
             return Response
                     .status(200)
                     .entity(responseStr)
                     .build();
-        } catch (ParseException e) {
-            logger.info("Invalid input");
+        } catch (Exception e) {
+            e.printStackTrace();
 
             return Response.serverError().build();
         }
+
     }
 }
 
