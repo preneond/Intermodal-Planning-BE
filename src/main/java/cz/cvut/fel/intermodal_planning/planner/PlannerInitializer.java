@@ -2,9 +2,9 @@ package cz.cvut.fel.intermodal_planning.planner;
 
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
-import cz.cvut.fel.intermodal_planning.general.Main;
 import cz.cvut.fel.intermodal_planning.general.Storage;
 import cz.cvut.fel.intermodal_planning.graph.GraphMaker;
+import cz.cvut.fel.intermodal_planning.graph.enums.GraphExpansionStrategy;
 import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
 import cz.cvut.fel.intermodal_planning.utils.SerializationUtils;
 import org.apache.log4j.LogManager;
@@ -18,19 +18,8 @@ public class PlannerInitializer {
     private static PlannerInitializer sharedInstance;
     private static final Logger logger = LogManager.getLogger(PlannerInitializer.class);
 
-
-    public GraphMaker perfectGraphMaker;
-    public GraphMaker extendedGraphMaker;
-
-    public RoutePlanner perfectRoutePlanner;
-    public RoutePlanner extendedRoutePlanner;
-
-    private PlannerInitializer() {
-        logger.info("Created instance of PlannerInitializer");
-        initGraph();
-        createKdTrees();
-        logger.info("PlannerInitializer instance created");
-    }
+    public GraphMaker graphMaker;
+    public RoutePlanner routePlanner;
 
     public static PlannerInitializer getInstance() {
         if (sharedInstance == null) {
@@ -39,53 +28,40 @@ public class PlannerInitializer {
         return sharedInstance;
     }
 
-    private void initGraph() {
-        initPerfectGraph();
-        initExtendedGraph();
+    private PlannerInitializer() {
+        initKnownGraph();
+        graphMaker.createKDTree();
     }
 
-    private void initPerfectGraph() {
+    public PlannerInitializer(GraphExpansionStrategy strategy) {
+        initGraph(strategy);
+        graphMaker.createKDTree();
+    }
+
+    private void initKnownGraph() {
         try {
-            File perfectGraphFile = Paths.get(Storage.GRAPH_RESOURCE.toURI()).toFile();
-            Graph<Node, GraphEdge> perfectGraph = (Graph<Node, GraphEdge>) SerializationUtils.readObjectFromFile(perfectGraphFile);
+            File graphFile = Paths.get(Storage.GRAPH_RESOURCE.toURI()).toFile();
+            Graph<Node, GraphEdge> graph = (Graph<Node, GraphEdge>) SerializationUtils.readObjectFromFile(graphFile);
 
-            perfectGraphMaker = new GraphMaker();
-            perfectRoutePlanner = new RoutePlanner(perfectGraphMaker);
+            graphMaker = new GraphMaker();
+            routePlanner = new RoutePlanner(graphMaker);
 
-            Main.EXTENDED = false;
-            if (perfectGraph == null) {
-                perfectRoutePlanner.expandGraphFromKnownRequests(15000);
-                SerializationUtils.writeObjectToFile(perfectRoutePlanner.getGraph(), perfectGraphFile);
-            } else {
-                perfectGraphMaker.setGraph(perfectGraph);
+            if (graph == null) {
+                graphMaker.createGraphFromKnownRequests(15000);
+                SerializationUtils.writeObjectToFile(graphMaker.getGraph(), graphFile);
             }
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
     }
 
-    private void initExtendedGraph() {
-        try {
-            File extendedGraphFile = Paths.get(Storage.GRAPH_EXTENDED_RESOURCE.toURI()).toFile();
-            Graph extendedGraph = (Graph<Node, GraphEdge>) SerializationUtils.readObjectFromFile(extendedGraphFile);
+    private void initGraph(GraphExpansionStrategy strategy) {
+        graphMaker = new GraphMaker();
+        graphMaker.createGraphFromUnknownRequests(1000, strategy);
 
-            extendedGraphMaker = new GraphMaker();
-            extendedRoutePlanner = new RoutePlanner(extendedGraphMaker);
+        routePlanner = new RoutePlanner(graphMaker);
 
-            Main.EXTENDED = true;
-            if (extendedGraph == null) {
-                extendedRoutePlanner.expandGraphFromKnownRequests(20000);
-                SerializationUtils.writeObjectToFile(extendedRoutePlanner.getGraph(), extendedGraphFile);
-            } else {
-                extendedGraphMaker.setGraph(extendedGraph);
-            }
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        }
-    }
+}
 
-    private void createKdTrees() {
-        perfectGraphMaker.createKDTree();
-        extendedGraphMaker.createKDTree();
-    }
+
 }

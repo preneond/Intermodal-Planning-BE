@@ -11,6 +11,12 @@ public class Location implements Serializable {
     public double lat;
     public double lon;
 
+
+    private final static double upLat = 50.1072;
+    private final static double bottomLat = 50.0269;
+    private final static double leftLon = 14.2946;
+    private final static double rightLon = 14.55;
+
     public Location(double lat, double lon) {
         this.lat = lat;
         this.lon = lon;
@@ -48,20 +54,6 @@ public class Location implements Serializable {
     }
 
     public static Location[] generateRandomLocationsInPrague(int count) {
-        double upLat, bottomLat, leftLon, rightLon;
-
-        if (Main.EXTENDED) {
-            // + 10 km radius
-            upLat = 50.25;
-            bottomLat = 49.94;
-            leftLon = 14.15;
-            rightLon = 14.69;
-        } else {
-            upLat = 50.1072;
-            bottomLat = 50.0269;
-            leftLon = 14.2946;
-            rightLon = 14.55;
-        }
 
         Location[] resultArr = new Location[count];
 
@@ -73,5 +65,13 @@ public class Location implements Serializable {
             resultArr[i] = new Location(lat,lon);
         }
         return resultArr;
+    }
+
+    public static Location generateRandomLocationInPrague() {
+        return generateRandomLocationsInPrague(1)[0];
+    }
+
+    public static Location[] generateRandomLocationsInPrague(int count, int minDistanceInMeters) {
+        return null;
     }
 }

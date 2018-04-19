@@ -60,10 +60,10 @@ public class ApiService {
 
             Location origin = new Location(originLoc[0], originLoc[1]);
             Location destination = new Location(destinationLoc[0], destinationLoc[1]);
-            List<GraphEdge> path = plannerInitializer.extendedRoutePlanner.findPath(origin, destination, availableModes);
-            String pathDesc = GeoJSONBuilder.getInstance().buildPathDescription(path);
+            List<GraphEdge> path = plannerInitializer.routePlanner.findPath(origin, destination, availableModes);
+            String pathDesc = ResponseBuilder.buildPathDescription(path);
 
-            String geoJSONStr = GeoJSONBuilder.getInstance().buildGeoJSONStringForPath(plannerInitializer.extendedGraphMaker.getGraph(),path);
+            String geoJSONStr = GeoJSONBuilder.getInstance().buildGeoJSONStringForPath(plannerInitializer.graphMaker.getGraph(),path);
 
             String resultJSON = "{" +
                     "\"description\":" + pathDesc + ","

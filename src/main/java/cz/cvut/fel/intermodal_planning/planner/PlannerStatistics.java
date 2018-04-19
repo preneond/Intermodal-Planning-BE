@@ -1,6 +1,5 @@
 package cz.cvut.fel.intermodal_planning.planner;
 
-import cz.cvut.fel.intermodal_planning.general.Main;
 import cz.cvut.fel.intermodal_planning.general.Storage;
 import cz.cvut.fel.intermodal_planning.graph.GraphMaker;
 import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
@@ -23,15 +22,13 @@ public class PlannerStatistics {
     private static Map<String, Integer> histogramMap;
 
     public static void doComparision(PlannerInitializer plannerInitializer) {
-
         logger.info("doComparision called");
         histogramMap = new HashMap<>();
         final int loopCount = 1000;
 
-        Main.EXTENDED = false;
         for (int i = 0; i < loopCount; i++) {
 //            comparePath(plannerInitializer.perfectRoutePlanner, i + 1);
-            compareKnownPath(plannerInitializer.perfectRoutePlanner, i + 1);
+            compareKnownPath(plannerInitializer.routePlanner, i + 1);
 //                System.out.println(i);
         }
 
@@ -39,20 +36,7 @@ public class PlannerStatistics {
 
         SerializationUtils.writeObjectToFile(stringify(histogramMap),
                 new File(Storage.STATISTICS_PATH + "/histogram.txt"));
-
-        Main.EXTENDED = true;
-        histogramMap = new HashMap<>();
-        Storage.INTERMODAL_AVG_DURATION = 0;
-        for (int i = 0; i < loopCount; i++) {
-//            comparePath(plannerInitializer.extendedRoutePlanner, i + 1);
-            compareKnownPath(plannerInitializer.extendedRoutePlanner, i + 1);
         }
-        System.out.println("Avg ext duration: " + Storage.INTERMODAL_AVG_DURATION / loopCount);
-
-        SerializationUtils.writeObjectToFile(stringify(histogramMap),
-                new File(Storage.STATISTICS_PATH + "/histogram_ext.txt"));
-
-    }
 
     private static String stringify(Map<String, Integer> map) {
         final String[] result = {""};
@@ -69,7 +53,8 @@ public class PlannerStatistics {
     }
 
     private static void compareKnownPath(RoutePlanner routePlanner, int count) {
-        String odPairPath = Main.EXTENDED ? Storage.OD_PAIR_EXT_PATH : Storage.OD_PAIR_PATH;
+//        String odPairPath = Main.EXTENDED ? Storage.OD_PAIR_EXT_PATH : Storage.OD_PAIR_PATH;
+        String odPairPath = Storage.OD_PAIR_PATH;
         File odFile = new File(odPairPath + "pair_" + count + ".txt");
         Location[] odPair = SerializationUtils.readODPairFromGson(odFile);
 
@@ -97,7 +82,8 @@ public class PlannerStatistics {
     }
 
     private static void storeODPair(Location[] pair, int count) {
-        String odPairPath = Main.EXTENDED ? Storage.OD_PAIR_EXT_PATH : Storage.OD_PAIR_PATH;
+//        String odPairPath = Main.EXTENDED ? Storage.OD_PAIR_EXT_PATH : Storage.OD_PAIR_PATH;
+        String odPairPath = Storage.OD_PAIR_PATH;
         File file = new File(odPairPath + "pair_" + count + ".txt");
 
         SerializationUtils.writeRequestToGson(pair, file);
@@ -179,5 +165,37 @@ public class PlannerStatistics {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    public static void getPathDescription(Route route, String name) {
+        if (route.legList == null || route.legList.isEmpty()) {
+            logger.error("Path is empty");
+            return;
+        }
+
+        long routeDuration = route.legList.stream().mapToLong(o -> o.durationInSeconds).sum();
+        logger.info("Duration of " + name + " path: " + routeDuration + " seconds");
+        logger.info("Number of transfers: " + route.legList.size());
+    }
+
+    public static void getPathDescription(List<GraphEdge> path, String name) {
+        if (path == null || path.isEmpty()) {
+            logger.error("Path is empty");
+            return;
+        }
+
+        int numOfTransfers = 0;
+
+        GraphEdge curEdge;
+        GraphEdge prevEdge;
+        for (int i = 1; i < path.size(); i++) {
+            prevEdge = path.get(i - 1);
+            curEdge = path.get(i);
+            numOfTransfers += (prevEdge.mode == curEdge.mode) ? 0 : 1;
+        }
+
+        long routeDuration = path.stream().mapToLong(o -> o.durationInSeconds).sum();
+        logger.info("Duration of " + name + " path: " + routeDuration + " seconds");
+        logger.info("Number of transfers: " + numOfTransfers);
+
     }
 }

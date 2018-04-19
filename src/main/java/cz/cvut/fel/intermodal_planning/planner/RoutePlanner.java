@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 
 public class RoutePlanner {
     private static final Logger logger = LogManager.getLogger(RoutePlanner.class);
+
     private GraphMaker graphMaker;
     private PlannerAdapter[] plannerAdapters;
 
@@ -30,83 +31,6 @@ public class RoutePlanner {
         plannerAdapters = new PlannerAdapter[]{GMapsPlannerAdapter.getInstance(), OTPlannerAdapter.getInstance()};
     }
 
-    public List<Route> getRoutesFromKnownRequest(int numOfRequests) {
-        List<Route> resultRoutes = new ArrayList<>();
-        List<Route> tmpResult;
-        for (TransportMode mode : TransportMode.availableModes()) {
-            for (int i = 1; i <= numOfRequests; i++) {
-                tmpResult = null;
-                if (mode == TransportMode.TRANSIT || mode == TransportMode.BICYCLE) {
-                    tmpResult = OTPlannerAdapter.getInstance().findRoutesFromKnownRequests(i, mode);
-                } else if (mode == TransportMode.CAR || mode == TransportMode.WALK) {
-                    tmpResult = GMapsPlannerAdapter.getInstance().findRoutesFromKnownRequests(i, mode);
-                }
-                if (tmpResult == null) continue;
-
-                resultRoutes.addAll(tmpResult);
-            }
-        }
-        return resultRoutes;
-    }
-
-    public void expandGraphFromKnownRequests(int numOfrequests) {
-        graphMaker.createGraph(getRoutesFromKnownRequest(numOfrequests));
-    }
-
-    public List<Route> expandGraph(int numOfRequests, PlannerAdapter plannerAdapter) {
-        Location[] locArray;
-        List<Route> routes = new ArrayList<>();
-        List<Route> routeList;
-
-        for (int i = 0; i < numOfRequests; i++) {
-            locArray = Location.generateRandomLocationsInPrague(2);
-            routeList = plannerAdapter.findRoutes(locArray[0], locArray[1]);
-            routes.addAll(routeList);
-            routeList = plannerAdapter.findRoutes(locArray[1], locArray[0]);
-            routes.addAll(routeList);
-        }
-
-        return routes;
-    }
-
-    public List<Route> expandGraph(int numOfRequests, TransportMode transportMode) {
-        switch (transportMode) {
-            case BICYCLE:
-            case TRANSIT:
-                return expandGraph(numOfRequests, OTPlannerAdapter.getInstance(), transportMode);
-            default:
-                return expandGraph(numOfRequests, GMapsPlannerAdapter.getInstance(), transportMode);
-        }
-    }
-
-    private List<Route> expandGraph(int numOfRequests, PlannerAdapter plannerAdapter, TransportMode transportMode) {
-        Location[] locArray;
-        List<Route> routes = new ArrayList<>();
-        List<Route> routeList;
-
-        for (int i = 0; i < numOfRequests; i++) {
-            locArray = Location.generateRandomLocationsInPrague(2);
-            routeList = plannerAdapter.findRoutes(locArray[0], locArray[1], transportMode);
-            routes.addAll(routeList);
-            routeList = plannerAdapter.findRoutes(locArray[1], locArray[0], transportMode);
-            routes.addAll(routeList);
-        }
-
-        return routes;
-    }
-
-    public void expandGraph(int numOfRequests) {
-        List<Route> routes = new ArrayList<>();
-        List<Route> routeList;
-
-        for (TransportMode mode : TransportMode.availableModes()) {
-            // Uncomment for loop for generating more routes
-            routeList = expandGraph(numOfRequests, mode);
-            routes.addAll(routeList);
-        }
-
-        graphMaker.createGraph(routes);
-    }
 
     public List<GraphEdge> findRandomPath() {
         Location[] locArray = Location.generateRandomLocationsInPrague(2);
@@ -199,39 +123,6 @@ public class RoutePlanner {
         return route;
     }
 
-    public void getPathDescription(Route route, String name) {
-        if (route.legList == null || route.legList.isEmpty()) {
-            logger.error("Path is empty");
-            return;
-        }
-
-        long routeDuration = route.legList.stream().mapToLong(o -> o.durationInSeconds).sum();
-        logger.info("Duration of " + name + " path: " + routeDuration + " seconds");
-        logger.info("Number of transfers: " + route.legList.size());
-    }
-
-    public void getPathDescription(List<GraphEdge> path, String name) {
-        if (path == null || path.isEmpty()) {
-            logger.error("Path is empty");
-            return;
-        }
-
-        int numOfTransfers = 0;
-
-        GraphEdge curEdge;
-        GraphEdge prevEdge;
-        for (int i = 1; i < path.size(); i++) {
-            prevEdge = path.get(i - 1);
-            curEdge = path.get(i);
-            numOfTransfers += (prevEdge.mode == curEdge.mode) ? 0 : 1;
-        }
-
-        long routeDuration = path.stream().mapToLong(o -> o.durationInSeconds).sum();
-        logger.info("Duration of " + name + " path: " + routeDuration + " seconds");
-        logger.info("Number of transfers: " + numOfTransfers);
-
-    }
-
     public List<GraphEdge> findPath(Location origin, Location destination) {
         return findPath(origin, destination, new TransportMode[]{});
     }
@@ -246,7 +137,7 @@ public class RoutePlanner {
             originList = getNearestNodes(origin, 5);
             destinationList = getNearestNodes(destination, 5);
 
-            return astar.plan(origin,destination, originList, destinationList);
+            return astar.plan(origin, destination, originList, destinationList);
         } else {
             originList = getNearestNodes(origin, availableModes, true, 5);
             destinationList = getNearestNodes(destination, availableModes, false, 5);
@@ -259,7 +150,7 @@ public class RoutePlanner {
         Object[] nodeIdArr = graphMaker.getKdTree().nearest(location.toDoubleArray(), count);
 
         return Arrays.stream(nodeIdArr)
-                .map(object-> (int) object)
+                .map(object -> (int) object)
                 .map(nodeId -> graphMaker.getGraph().getNode(nodeId))
                 .collect(Collectors.toList());
     }
@@ -333,7 +224,7 @@ public class RoutePlanner {
         }
     }
 
-    public Graph<Node,GraphEdge> getGraph() {
+    public Graph<Node, GraphEdge> getGraph() {
         return graphMaker.getGraph();
     }
 }

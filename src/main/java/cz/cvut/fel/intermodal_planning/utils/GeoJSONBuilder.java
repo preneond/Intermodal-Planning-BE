@@ -80,7 +80,7 @@ public class GeoJSONBuilder {
             feature = new Feature();
             geoJsonObject = new LineString(origin, destination);
             feature.setGeometry(geoJsonObject);
-            feature.setProperty("color", toHexString(edge.mode.modeColor()));
+            feature.setProperty("color", ColorUtils.toHexString(edge.mode.modeColor()));
 
             featureCollection.add(feature);
         }
@@ -188,45 +188,6 @@ public class GeoJSONBuilder {
             logger.error(e.getMessage());
         }
         return file;
-    }
-
-    public final static String toHexString(Color color) throws NullPointerException {
-        String hexColour = Integer.toHexString(color.getRGB() & 0xffffff);
-        if (hexColour.length() < 6) {
-            hexColour = "000000".substring(0, 6 - hexColour.length()) + hexColour;
-        }
-        return "#" + hexColour;
-    }
-
-    public String buildPathDescription(List<GraphEdge> path) {
-        String description = "";
-        if (path == null || path.isEmpty()) return description;
-
-        long curDuration = path.get(0).durationInSeconds;
-        TransportMode curMode = path.get(0).mode;
-        GraphEdge curEdge;
-        description += "{\"legs\": [";
-        for (int i = 1; i < path.size(); i++) {
-            curEdge = path.get(i);
-            if (curMode == curEdge.mode) {
-                curDuration += curEdge.durationInSeconds;
-            } else {
-                description += "{";
-                description += "\"duration\":" + curDuration + ",";
-                description += "\"mode\":\"" + curMode + "\",";
-                description += "\"color\": \"" + toHexString(curMode.modeColor()) + "\"";
-                description += "},";
-                curMode = curEdge.mode;
-                curDuration = curEdge.durationInSeconds;
-
-            }
-        }
-        description += "{";
-        description += "\"duration\":" + curDuration + ",";
-        description += "\"mode\":\"" + curMode + "\",";
-        description += "\"color\": \"" + toHexString(curMode.modeColor()) + "\"";
-        description += "}]}";
-        return description;
     }
 }
 

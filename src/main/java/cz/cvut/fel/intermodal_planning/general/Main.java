@@ -1,5 +1,6 @@
 package cz.cvut.fel.intermodal_planning.general;
 
+import cz.cvut.fel.intermodal_planning.graph.enums.GraphExpansionStrategy;
 import cz.cvut.fel.intermodal_planning.model.planner.TransportMode;
 import cz.cvut.fel.intermodal_planning.planner.PlannerInitializer;
 import cz.cvut.fel.intermodal_planning.planner.PlannerStatistics;
@@ -15,10 +16,12 @@ public class Main {
     static {
         BasicConfigurator.configure();
     }
-    public static boolean EXTENDED = true;
 
     public static void main(String[] args) {
-        PlannerInitializer plannerInitializer = PlannerInitializer.getInstance();
-        PlannerStatistics.doComparision(plannerInitializer);
+//        PlannerInitializer plannerInitializer = PlannerInitializer.getInstance();
+//        PlannerStatistics.doComparision(plannerInitializer);
+        PlannerInitializer plannerInitializer = new PlannerInitializer(GraphExpansionStrategy.RANDOM_OD);
+
+
     }
 }

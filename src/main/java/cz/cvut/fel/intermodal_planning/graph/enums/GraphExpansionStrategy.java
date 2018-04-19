@@ -1,4 +1,4 @@
-package cz.cvut.fel.intermodal_planning.planner.enums;
+package cz.cvut.fel.intermodal_planning.graph.enums;
 
 public enum GraphExpansionStrategy {
     //Uninformed strategies
