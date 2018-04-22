@@ -1,10 +1,11 @@
 package cz.cvut.fel.intermodal_planning.general;
 
+import cz.cvut.fel.intermodal_planning.model.planner.LocationArea;
+
 import java.net.URL;
 
 public final class Storage {
     public static URL GRAPH_RESOURCE = Storage.class.getResource("/graph.json");
-    public static URL GRAPH_EXTENDED_RESOURCE = Storage.class.getResource("/graph_extended.json");
 
     private static final String ROOT_PATH = "/Users/ondrejprenek/Documents/CVUT/Bachelor_thesis/Intermodal_planning/";
 
@@ -12,15 +13,14 @@ public final class Storage {
     public static String STATISTICS_PATH = DATA_PATH + "statistics/";
     public static String REQUEST_PATH = DATA_PATH + "requests/";
     public static String OD_PAIR_PATH = DATA_PATH + "odpairs/";
-    public static String OD_PAIR_EXT_PATH = DATA_PATH + "odpairs_ext/";
 
     public static final String OTP_ENDPOINT = "http://127.0.0.1:8080/otp/routers/default/plan";
     public static final String GMAPS_REQUEST_STORAGE = REQUEST_PATH + "gmaps/";
-    public static final String GMAPS_EXT_REQUEST_STORAGE = REQUEST_PATH + "gmaps_ext/";
     public static final String OTP_REQUEST_STORAGE = REQUEST_PATH + "otp/";
-    public static final String OTP_EXT_REQUEST_STORAGE = REQUEST_PATH + "otp_ext/";
 
     public static long INTERMODAL_AVG_DURATION = 0;
+
+    public static final int MIN_DISTANCE_IN_METERS_BETWEEN_OD = 500;
 
     public static int CAR_REQUEST_COUNT = 0;
     public static int TRANSIT_REQUEST_COUNT = 0;
@@ -32,9 +32,17 @@ public final class Storage {
     public static final float BIKE_SPEED_MPS = 4.16f;
     public static final float WALK_SPEED_MPS = 1.4f;
 
+    public static final int GRAPH_DISTRIBUTION_GRID_X = 30;
+    public static final int GRAPH_DISTRIBUTION_GRID_Y = 30;
+    
     // In meters
     public static final int MIN_DISTANCE_BETWEEN_OD = 500;
 
+    public static final LocationArea AREA_PRAGUE = new LocationArea(
+            50.1072,
+            50.0269,
+            14.2946,
+            14.55);
 
     public static String DESCRIPTION_HEADER = "count: car ref, transit ref, bike ref," +
             " intermodal ref,intermodal description ref" +
@@ -77,6 +85,7 @@ public final class Storage {
             "AIzaSyCIdROtkPV7yfR9diMsbr0XlSMVaMNTYzU"
     };
 
+
     public static void nullRequestCounters() {
         CAR_REQUEST_COUNT = 0;
         TRANSIT_REQUEST_COUNT = 0;
@@ -84,7 +93,8 @@ public final class Storage {
         WALK_REQUEST_COUNT = 0;
     }
 
-    private Storage() {}
+    private Storage() {
+    }
 
     public static int getTotalRequestCount() {
         return CAR_REQUEST_COUNT + TRANSIT_REQUEST_COUNT + BIKE_REQUEST_COUNT + WALK_REQUEST_COUNT;

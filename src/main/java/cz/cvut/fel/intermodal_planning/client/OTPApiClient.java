@@ -65,8 +65,7 @@ public class OTPApiClient {
 
             logger.info("Request: " + webResource.getURI());
 
-            String reqStorage = Main.EXTENDED ? Storage.OTP_EXT_REQUEST_STORAGE : Storage.OTP_REQUEST_STORAGE;
-            File file = new File(reqStorage + mode.toString() + "/request_" + tmpCount + ".txt");
+            File file = new File(Storage.OTP_REQUEST_STORAGE + mode.toString() + "/request_" + tmpCount + ".txt");
 
             String stringResponse = response.getEntity(String.class);
             SerializationUtils.writeStringToFile(stringResponse, file);
@@ -80,8 +79,7 @@ public class OTPApiClient {
     }
 
     public JSONObject getKnownRequest(int numOfRequest, TransportMode mode) throws NullPointerException {
-        String reqStorage = Main.EXTENDED ? Storage.OTP_EXT_REQUEST_STORAGE : Storage.OTP_REQUEST_STORAGE;
-        File file = new File(reqStorage + mode.toString() + "/request_" + numOfRequest + ".txt");
+        File file = new File(Storage.OTP_REQUEST_STORAGE + mode.toString() + "/request_" + numOfRequest + ".txt");
 
         JSONObject request = SerializationUtils.readJSONObjectFromFile(file);
 

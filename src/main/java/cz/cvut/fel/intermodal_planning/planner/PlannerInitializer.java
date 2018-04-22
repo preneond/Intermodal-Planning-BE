@@ -6,6 +6,7 @@ import cz.cvut.fel.intermodal_planning.general.Storage;
 import cz.cvut.fel.intermodal_planning.graph.GraphMaker;
 import cz.cvut.fel.intermodal_planning.graph.enums.GraphExpansionStrategy;
 import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
+import cz.cvut.fel.intermodal_planning.model.planner.LocationArea;
 import cz.cvut.fel.intermodal_planning.utils.SerializationUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -33,8 +34,8 @@ public class PlannerInitializer {
         graphMaker.createKDTree();
     }
 
-    public PlannerInitializer(GraphExpansionStrategy strategy) {
-        initGraph(strategy);
+    public PlannerInitializer(GraphExpansionStrategy strategy, LocationArea locationArea) {
+        initGraph(strategy,locationArea);
         graphMaker.createKDTree();
     }
 
@@ -55,9 +56,9 @@ public class PlannerInitializer {
         }
     }
 
-    private void initGraph(GraphExpansionStrategy strategy) {
+    private void initGraph(GraphExpansionStrategy strategy, LocationArea locationArea) {
         graphMaker = new GraphMaker();
-        graphMaker.createGraphFromUnknownRequests(1000, strategy);
+        graphMaker.createGraphFromUnknownRequests(1000, locationArea, strategy);
 
         routePlanner = new RoutePlanner(graphMaker);
 

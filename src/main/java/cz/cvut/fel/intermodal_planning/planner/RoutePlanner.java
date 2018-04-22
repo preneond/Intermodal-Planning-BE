@@ -32,8 +32,8 @@ public class RoutePlanner {
     }
 
 
-    public List<GraphEdge> findRandomPath() {
-        Location[] locArray = Location.generateRandomLocationsInPrague(2);
+    public List<GraphEdge> findRandomPath(LocationArea locationArea) {
+        Location[] locArray = locationArea.generateRandomLocations(2);
 
         return findPath(locArray[0], locArray[1]);
     }

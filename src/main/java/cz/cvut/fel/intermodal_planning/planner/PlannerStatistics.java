@@ -4,6 +4,7 @@ import cz.cvut.fel.intermodal_planning.general.Storage;
 import cz.cvut.fel.intermodal_planning.graph.GraphMaker;
 import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
 import cz.cvut.fel.intermodal_planning.model.planner.Location;
+import cz.cvut.fel.intermodal_planning.model.planner.LocationArea;
 import cz.cvut.fel.intermodal_planning.model.planner.Route;
 import cz.cvut.fel.intermodal_planning.model.planner.TransportMode;
 import cz.cvut.fel.intermodal_planning.utils.SerializationUtils;
@@ -66,12 +67,12 @@ public class PlannerStatistics {
         addToHistogram(perfectIntermodalPath);
     }
 
-    private static void comparePath(RoutePlanner routePlanner, int count) {
+    private static void comparePath(RoutePlanner routePlanner, LocationArea locationArea, int count) {
         Location[] odPair = null;
         List<GraphEdge> intermodalPath = null;
 
         while (intermodalPath == null) {
-            odPair = Location.generateRandomLocationsInPrague(2);
+            odPair = locationArea.generateRandomLocations(2);
             intermodalPath = routePlanner.findPath(odPair[0], odPair[1]);
         }
 
@@ -124,7 +125,7 @@ public class PlannerStatistics {
     }
 
 
-    private static void makeGraphQualityDescription(GraphMaker graphMaker) {
+    private static void makeGraphQualityDescription(GraphMaker graphMaker, LocationArea locationArea) {
         RoutePlanner routePlanner = new RoutePlanner(graphMaker);
 
         double sizeDeviation;
@@ -135,7 +136,7 @@ public class PlannerStatistics {
         long[] deviation = new long[findingPathCount];
 
         for (int j = 0; j < findingPathCount; j++) {
-            List<GraphEdge> graphPath = routePlanner.findRandomPath();
+            List<GraphEdge> graphPath = routePlanner.findRandomPath(locationArea);
             routeDuration[j] = routePlanner.getDuration(graphPath);
             Route refinementRoute = routePlanner.doRefinement(graphPath);
             refinementRouteDuration[j] = routePlanner.getDuration(refinementRoute);

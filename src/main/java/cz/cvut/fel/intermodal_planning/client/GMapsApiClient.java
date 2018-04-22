@@ -68,8 +68,7 @@ public class GMapsApiClient {
 
             int tmpCount = mode == TravelMode.DRIVING ? ++Storage.CAR_REQUEST_COUNT : ++Storage.WALK_REQUEST_COUNT;
 
-            String reqStorage = Main.EXTENDED ? Storage.GMAPS_EXT_REQUEST_STORAGE : Storage.GMAPS_REQUEST_STORAGE;
-            File file = new File(reqStorage + mode.toString() + "/request_" + tmpCount + ".txt");
+            File file = new File(Storage.GMAPS_REQUEST_STORAGE + mode.toString() + "/request_" + tmpCount + ".txt");
             SerializationUtils.writeRequestToGson(directionResult, file);
 
             return directionResult;
@@ -80,8 +79,7 @@ public class GMapsApiClient {
     }
 
     public DirectionsResult getKnownRequest(int count, TravelMode mode) throws NullPointerException {
-        String reqStorage = Main.EXTENDED ? Storage.GMAPS_EXT_REQUEST_STORAGE : Storage.GMAPS_REQUEST_STORAGE;
-        File file = new File(reqStorage + mode.toString() + "/request_" + count + ".txt");
+        File file = new File(Storage.GMAPS_REQUEST_STORAGE + mode.toString() + "/request_" + count + ".txt");
         DirectionsResult request = SerializationUtils.readDirectionsResultFromGson(file);
 
         if (request == null) throw new NullPointerException("Unable to read request");
