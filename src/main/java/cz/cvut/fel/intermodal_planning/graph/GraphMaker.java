@@ -16,6 +16,7 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by Ondrej Prenek on 27/07/2017.
@@ -379,8 +380,15 @@ public class GraphMaker extends GraphBuilder {
         while (remainingRequestsCount > 0) {
             tmpRouteList.addAll(expandGraph(500, locationArea, GraphExpansionStrategy.RANDOM_OD));
             tmpGraph = createGraph(tmpRouteList);
-            //TODO: compare ideal norm distribution and current distribution
-            //TODO: according to comparision fill "empty places"
+            List<LocationArea> invalidAreaList = checkNodesNormalDistribution(tmpGraph, locationArea);
+            List<Route> fillingRouteList = invalidAreaList
+                    .stream()
+                    .map(area -> expandGraph(200, area, GraphExpansionStrategy.RANDOM_OD))
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+            tmpRouteList.addAll(fillingRouteList);
+
+             remainingRequestsCount -= 500 + 200*invalidAreaList.size();
         }
 
         return tmpRouteList;
@@ -395,11 +403,82 @@ public class GraphMaker extends GraphBuilder {
             tmpRouteList.addAll(expandGraph(500, locationArea, GraphExpansionStrategy.RANDOM_OD));
             tmpGraph = createGraph(tmpRouteList);
             List<LocationArea> invalidAreaList = checkNodesEqualDistribution(tmpGraph, locationArea);
-            //TODO: compare ideal equal distribution and current distribution
-            //TODO: according to comparision fill "empty places"
+            List<Route> fillingRouteList = invalidAreaList
+                    .stream()
+                    .map(area -> expandGraph(200, area, GraphExpansionStrategy.RANDOM_OD))
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+            tmpRouteList.addAll(fillingRouteList);
+
+            remainingRequestsCount -= 500 + 200*invalidAreaList.size();
         }
 
         return tmpRouteList;
+    }
+
+    private List<LocationArea> getInvalidAreasFromMask(boolean[][] mask, LocationArea[][] areaGrid) {
+        List<LocationArea> invalidLocArr = new ArrayList<>();
+        for (int i = 0; i < mask.length; i++) {
+            for (int j = 0; j < mask[0].length; j++) {
+                if (mask[i][j]) invalidLocArr.add(areaGrid[i][j]);
+            }
+        }
+
+        return invalidLocArr;
+    }
+
+    /**
+     * @param tmpGraph     Graph
+     * @param locationArea area, where equal distribution is checked
+     * @return subareas, where is invalid equal distribution
+     */
+    private List<LocationArea> checkNodesEqualDistribution(Graph<Node, GraphEdge> tmpGraph, LocationArea locationArea) {
+        int gridX = Storage.GRAPH_DISTRIBUTION_GRID_X;
+        int gridY = Storage.GRAPH_DISTRIBUTION_GRID_Y;
+        LocationArea[][] areaGrid = locationArea.createGrid(gridX, gridY);
+        List<Node> nodeList = (List<Node>) tmpGraph.getAllNodes();
+
+        int[][] equalDistribution = createEqualDistributionOnGrid(areaGrid, nodeList.size());
+        int[][] currentDistribution = getNodesDistributionOnGrid(nodeList, areaGrid);
+
+        boolean[][] mask = checkIfDistributionIsValid(currentDistribution, equalDistribution);
+
+        return getInvalidAreasFromMask(mask, areaGrid);
+    }
+
+    private int[][] createEqualDistributionOnGrid(LocationArea[][] areaGrid, int numOfNodes) {
+        int gridX = areaGrid.length;
+        int gridY = areaGrid[0].length;
+        int numOfNodesPerCell = numOfNodes / gridX * gridY;
+
+        int[][] equalDistribution = new int[gridX][gridY];
+        for (int[] row : equalDistribution) {
+            Arrays.fill(row, numOfNodesPerCell);
+        }
+
+        return equalDistribution;
+    }
+
+    /**
+     * @param tmpGraph     Graph
+     * @param locationArea area, where normal distribution is checked
+     * @return subareas, where is invalid normal distribution
+     */
+    private List<LocationArea> checkNodesNormalDistribution(Graph<Node, GraphEdge> tmpGraph, LocationArea locationArea) {
+        int gridX = Storage.GRAPH_DISTRIBUTION_GRID_X;
+        int gridY = Storage.GRAPH_DISTRIBUTION_GRID_Y;
+        List<Node> nodeList = (List<Node>) tmpGraph.getAllNodes();
+        int numOfNodes = nodeList.size();
+
+        LocationArea[][] areaGrid = locationArea.createGrid(gridX, gridY);
+
+        int[][] normDistribution = createNormalDistributionOnGrid(areaGrid, numOfNodes);
+        int[][] currentDistribution = getNodesDistributionOnGrid(nodeList, areaGrid);
+
+        boolean[][] mask = checkIfDistributionIsValid(currentDistribution, normDistribution);
+
+        return getInvalidAreasFromMask(mask, areaGrid);
+
     }
 
     private int[][] createNormalDistributionOnGrid(LocationArea[][] areaGrid, int numOfNodes) {
@@ -427,56 +506,6 @@ public class GraphMaker extends GraphBuilder {
         }
 
         return gridNormDistribution;
-    }
-
-    private List<LocationArea> getInvalidAreasFromMask(boolean[][] mask, LocationArea[][] areaGrid) {
-        List<LocationArea> invalidLocArr = new ArrayList<>();
-        for (int i = 0; i < mask.length; i++) {
-            for (int j = 0; j < mask[0].length; j++) {
-                if (mask[i][j]) invalidLocArr.add(areaGrid[i][j]);
-            }
-        }
-
-        return invalidLocArr;
-    }
-
-    private List<LocationArea> checkNodesEqualDistribution(Graph<Node, GraphEdge> tmpGraph, LocationArea locationArea) {
-
-        int gridX = Storage.GRAPH_DISTRIBUTION_GRID_X;
-        int gridY = Storage.GRAPH_DISTRIBUTION_GRID_Y;
-        List<Node> nodeList = (List<Node>) tmpGraph.getAllNodes();
-        int numOfNodes = nodeList.size();
-        int numOfNodesPerCell = numOfNodes / gridX * gridY;
-
-        LocationArea[][] areaGrid = locationArea.createGrid(gridX, gridY);
-
-        int[][] equalDistribution = new int[gridX][gridY];
-        for (int[] row : equalDistribution) {
-            Arrays.fill(row, numOfNodesPerCell);
-        }
-
-        int[][] currentDistribution = getNodesDistributionOnGrid(nodeList, areaGrid);
-
-        boolean[][] mask = checkIfDistributionIsValid(currentDistribution, equalDistribution);
-
-        return getInvalidAreasFromMask(mask, areaGrid);
-    }
-
-    private List<LocationArea> checkNodesNormalDistribution(Graph<Node, GraphEdge> tmpGraph, LocationArea locationArea) {
-        int gridX = Storage.GRAPH_DISTRIBUTION_GRID_X;
-        int gridY = Storage.GRAPH_DISTRIBUTION_GRID_Y;
-        List<Node> nodeList = (List<Node>) tmpGraph.getAllNodes();
-        int numOfNodes = nodeList.size();
-
-        LocationArea[][] areaGrid = locationArea.createGrid(gridX, gridY);
-
-        int[][] normDistribution = createNormalDistributionOnGrid(areaGrid, numOfNodes);
-        int[][] currentDistribution = getNodesDistributionOnGrid(nodeList, areaGrid);
-
-        boolean[][] mask = checkIfDistributionIsValid(currentDistribution, normDistribution);
-
-        return getInvalidAreasFromMask(mask, areaGrid);
-
     }
 
     private boolean[][] checkIfDistributionIsValid(int[][] distribution, int[][] patternDistribution) {
