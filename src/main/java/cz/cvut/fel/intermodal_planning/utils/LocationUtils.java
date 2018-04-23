@@ -39,4 +39,8 @@ public class LocationUtils {
     public static double distance(Location l1, Location l2) {
         return distance(l1.lat, l2.lat, l1.lon, l2.lon);
     }
+
+    public static Location getNodeLocation(Node node) {
+        return new Location(node.getLatitude(), node.getLongitude());
+    }
 }

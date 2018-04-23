@@ -9,6 +9,7 @@ import cz.cvut.fel.intermodal_planning.general.Storage;
 import cz.cvut.fel.intermodal_planning.graph.GraphMaker;
 import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
 import cz.cvut.fel.intermodal_planning.model.planner.*;
+import cz.cvut.fel.intermodal_planning.utils.LocationUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import cz.cvut.fel.intermodal_planning.pathfinding.AStar;
@@ -102,8 +103,8 @@ public class RoutePlanner {
         GraphEdge curEdge;
 
         Route route = new Route();
-        route.origin = Location.getLocation(graph.getNode(fromId));
-        route.destination = Location.getLocation(graph.getNode(plan.get(plan.size() - 1).toId));
+        route.origin = LocationUtils.getNodeLocation(graph.getNode(fromId));
+        route.destination = LocationUtils.getNodeLocation(graph.getNode(plan.get(plan.size() - 1).toId));
 
         for (int i = 1; i < plan.size(); i++) {
             curEdge = plan.get(i);

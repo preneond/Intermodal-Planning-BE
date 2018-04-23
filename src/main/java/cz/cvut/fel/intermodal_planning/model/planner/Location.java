@@ -45,8 +45,4 @@ public class Location implements Serializable {
     public double[] toDoubleArray() {
         return new double[]{lat, lon};
     }
-
-    public static Location getLocation(Node node) {
-        return new Location(node.getLatitude(), node.getLongitude());
-    }
 }

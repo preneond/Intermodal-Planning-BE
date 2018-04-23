@@ -2,7 +2,6 @@ package cz.cvut.fel.intermodal_planning.pathfinding;
 
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
-import cz.cvut.fel.intermodal_planning.planner.PlannerStatistics;
 import cz.cvut.fel.intermodal_planning.planner.RoutePlanner;
 import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
 import cz.cvut.fel.intermodal_planning.model.planner.Location;
@@ -13,8 +12,6 @@ import org.apache.log4j.Logger;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 
 public class AStar<TNode extends Node> {
     private static final Logger logger = LogManager.getLogger(AStar.class);
@@ -54,7 +51,7 @@ public class AStar<TNode extends Node> {
         prevNodes.clear();
 
         originNodes.stream().forEach(originNode -> openList.enqueue(originNode,
-                RoutePlanner.getDistanceDuration(TransportMode.WALK, LocationUtils.distance(Location.getLocation(originNode), origin))));
+                RoutePlanner.getDistanceDuration(TransportMode.WALK, LocationUtils.distance(LocationUtils.getNodeLocation(originNode), origin))));
 
         while (!openList.isEmpty()) {
             entry_from = openList.dequeueMin();
@@ -65,7 +62,7 @@ public class AStar<TNode extends Node> {
                 if (!path.isEmpty()) {
                     GraphEdge lastEdge = path.get(path.size() - 1);
                     TransportMode lastMode = lastEdge.mode;
-                    double distance = LocationUtils.distance(Location.getLocation(graph.getNode(lastEdge.toId)), destination);
+                    double distance = LocationUtils.distance(LocationUtils.getNodeLocation(graph.getNode(lastEdge.toId)), destination);
                     long destinationPenalty = RoutePlanner.getDistanceDuration(lastMode, distance);
 
                     Long duration = path.stream()
