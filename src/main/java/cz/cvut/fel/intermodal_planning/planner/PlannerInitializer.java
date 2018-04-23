@@ -35,7 +35,7 @@ public class PlannerInitializer {
     }
 
     public PlannerInitializer(GraphExpansionStrategy strategy, LocationArea locationArea) {
-        initGraph(strategy,locationArea);
+        initGraph(strategy, locationArea);
         graphMaker.createKDTree();
     }
 

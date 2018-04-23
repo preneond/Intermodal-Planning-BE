@@ -388,7 +388,7 @@ public class GraphMaker extends GraphBuilder {
                     .collect(Collectors.toList());
             tmpRouteList.addAll(fillingRouteList);
 
-             remainingRequestsCount -= 500 + 200*invalidAreaList.size();
+            remainingRequestsCount -= 500 + 200 * invalidAreaList.size();
         }
 
         return tmpRouteList;
@@ -410,7 +410,7 @@ public class GraphMaker extends GraphBuilder {
                     .collect(Collectors.toList());
             tmpRouteList.addAll(fillingRouteList);
 
-            remainingRequestsCount -= 500 + 200*invalidAreaList.size();
+            remainingRequestsCount -= 500 + 200 * invalidAreaList.size();
         }
 
         return tmpRouteList;
@@ -418,14 +418,63 @@ public class GraphMaker extends GraphBuilder {
 
     private List<LocationArea> getInvalidAreasFromMask(boolean[][] mask, LocationArea[][] areaGrid) {
         List<LocationArea> invalidLocArr = new ArrayList<>();
+        List<Integer> validColumns = new ArrayList<>();
+        LocationArea tmpLocationArea;
+
         for (int i = 0; i < mask.length; i++) {
             for (int j = 0; j < mask[0].length; j++) {
-                if (mask[i][j]) invalidLocArr.add(areaGrid[i][j]);
+                //We found bounding box and now we are gonna try to expand them
+                if (!mask[i][j]) {
+                    // set bounding box valid
+                    tmpLocationArea = areaGrid[i][j];
+                    validColumns.clear();
+
+                    // Try to expand columns in bounding box
+                    for (int k = j; k < mask[0].length; k++) {
+                        if (!mask[i][k]) {
+                            validColumns.add(k);
+                            mask[i][k] = true;
+                            tmpLocationArea.expandArea(areaGrid[i][k]);
+                        } else break;
+                    }
+
+                    // Try to expand rows in bounding box
+                    for (int bbRow = i + 1; bbRow < mask.length; bbRow++) {
+                        int tmpValidColumnsCount = 0;
+                        for (int bbCol = j; bbCol < j + validColumns.size(); bbCol++) {
+                            if (!mask[bbRow][bbCol]) tmpValidColumnsCount++;
+                        }
+                        // all columns are invalid -> set them valid and expand bounding box
+                        if (tmpValidColumnsCount == validColumns.size()) {
+                            for (int bbCol = j; bbCol < j + validColumns.size(); bbCol++) {
+                                mask[bbRow][bbCol] = true;
+                                tmpLocationArea.expandArea(areaGrid[bbRow][bbCol]);
+                            }
+                        }
+                        // some columns are valid -> area would be concave, if we add only some elements -> se
+                        else {
+                            invalidLocArr.add(tmpLocationArea);
+                            break;
+                        }
+                    }
+                }
             }
         }
 
+        if (!containsOnlyValidAreas(mask)) throw new RuntimeException("Invalid Area getter not implemented correctly");
+
         return invalidLocArr;
     }
+
+    private boolean containsOnlyValidAreas(boolean[][] mask) {
+        for (boolean[] row : mask) {
+            for (boolean isValidArea : row) {
+                if (!isValidArea) return false;
+            }
+        }
+        return true;
+    }
+
 
     /**
      * @param tmpGraph     Graph

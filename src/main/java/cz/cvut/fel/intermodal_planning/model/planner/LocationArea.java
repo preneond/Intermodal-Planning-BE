@@ -77,4 +77,12 @@ public class LocationArea {
 
         return  locLon > leftLon && locLon < rightLon && locLat > upLat && locLat < bottomLat;
     }
+
+    public void expandArea(LocationArea locationArea) {
+        leftLon = locationArea.leftLon < leftLon ? locationArea.leftLon : leftLon;
+        rightLon = locationArea.rightLon > rightLon ? locationArea.rightLon : rightLon;
+
+        upLat = locationArea.upLat < upLat ? locationArea.upLat : upLat;
+        bottomLat = locationArea.bottomLat > bottomLat ? locationArea.bottomLat : bottomLat;
+    }
 }
