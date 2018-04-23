@@ -380,7 +380,7 @@ public class GraphMaker extends GraphBuilder {
         while (remainingRequestsCount > 0) {
             tmpRouteList.addAll(expandGraph(500, locationArea, GraphExpansionStrategy.RANDOM_OD));
             tmpGraph = createGraph(tmpRouteList);
-            List<LocationArea> invalidAreaList = checkNodesNormalDistribution(tmpGraph, locationArea);
+            List<LocationArea> invalidAreaList = invalidAreasOfNodesNormDist(tmpGraph, locationArea);
             List<Route> fillingRouteList = invalidAreaList
                     .stream()
                     .map(area -> expandGraph(200, area, GraphExpansionStrategy.RANDOM_OD))
@@ -402,7 +402,7 @@ public class GraphMaker extends GraphBuilder {
         while (remainingRequestsCount > 0) {
             tmpRouteList.addAll(expandGraph(500, locationArea, GraphExpansionStrategy.RANDOM_OD));
             tmpGraph = createGraph(tmpRouteList);
-            List<LocationArea> invalidAreaList = checkNodesEqualDistribution(tmpGraph, locationArea);
+            List<LocationArea> invalidAreaList = invalidAreasOfNodesEqDist(tmpGraph, locationArea);
             List<Route> fillingRouteList = invalidAreaList
                     .stream()
                     .map(area -> expandGraph(200, area, GraphExpansionStrategy.RANDOM_OD))
@@ -481,7 +481,7 @@ public class GraphMaker extends GraphBuilder {
      * @param locationArea area, where equal distribution is checked
      * @return subareas, where is invalid equal distribution
      */
-    private List<LocationArea> checkNodesEqualDistribution(Graph<Node, GraphEdge> tmpGraph, LocationArea locationArea) {
+    private List<LocationArea> invalidAreasOfNodesEqDist(Graph<Node, GraphEdge> tmpGraph, LocationArea locationArea) {
         int gridX = Storage.GRAPH_DISTRIBUTION_GRID_X;
         int gridY = Storage.GRAPH_DISTRIBUTION_GRID_Y;
         LocationArea[][] areaGrid = locationArea.createGrid(gridX, gridY);
@@ -513,7 +513,7 @@ public class GraphMaker extends GraphBuilder {
      * @param locationArea area, where normal distribution is checked
      * @return subareas, where is invalid normal distribution
      */
-    private List<LocationArea> checkNodesNormalDistribution(Graph<Node, GraphEdge> tmpGraph, LocationArea locationArea) {
+    private List<LocationArea> invalidAreasOfNodesNormDist(Graph<Node, GraphEdge> tmpGraph, LocationArea locationArea) {
         int gridX = Storage.GRAPH_DISTRIBUTION_GRID_X;
         int gridY = Storage.GRAPH_DISTRIBUTION_GRID_Y;
         List<Node> nodeList = (List<Node>) tmpGraph.getAllNodes();
