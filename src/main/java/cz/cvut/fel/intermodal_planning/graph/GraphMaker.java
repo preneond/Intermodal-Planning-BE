@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
  * This code is owned by Umotional s.r.o. (IN: 03974618).
  * All Rights Reserved.
  */
-public class GraphMaker extends GraphBuilder {
+public class GraphMaker extends GraphBuilder implements GraphExpander {
     private Graph<Node, GraphEdge> graph;
     private KDTree kdTree;
 
@@ -127,26 +127,243 @@ public class GraphMaker extends GraphBuilder {
     }
 
 
-    /**
-     * Method which return id for current location and create node whether ain't exists.
-     *
-     * @param location - location which is unique for each node
-     * @return id for node on given location
-     */
-    private int getIdFor(Location location) {
-        int id;
-        Node node;
-        try {
-            id = getIntIdForSourceId(generateSourceIdFor(location));
-        } catch (NullPointerException e) {
-            id = nodeCounter;
-            node = new Node(nodeCounter, generateSourceIdFor(location), location.lat, location.lon,
-                    location.latE3(), location.lonE3(), 0);
-            addNode(node);
-            nodeCounter++;
+    public Graph<Node, GraphEdge> createGraphFromKnownRequests(int numOfRequests) {
+        return createGraph(expandGraphFromKnownRequests(numOfRequests));
+    }
+
+    public Graph<Node, GraphEdge> createGraphFromUnknownRequests(int numOfRequests, LocationArea locationArea) {
+        return createGraphFromUnknownRequests(numOfRequests, locationArea, GraphExpansionStrategy.RANDOM_OD);
+    }
+
+    public Graph<Node, GraphEdge> createGraphFromUnknownRequests(int numOfRequests, LocationArea locationArea,
+                                                                 GraphExpansionStrategy strategy) {
+        List<Route> routes = new ArrayList<>();
+        List<Route> routeList;
+
+        for (TransportMode mode : TransportMode.availableModes()) {
+            // Uncomment for loop for generating more routes
+            routeList = expandGraph(numOfRequests, locationArea, mode, strategy);
+            routes.addAll(routeList);
         }
 
-        return id;
+        return createGraph(routes);
+    }
+
+    public List<Route> expandGraphFromKnownRequests(int numOfRequests) {
+        List<Route> resultRoutes = new ArrayList<>();
+        List<Route> tmpResult;
+        for (TransportMode mode : TransportMode.availableModes()) {
+            for (int i = 1; i <= numOfRequests; i++) {
+                tmpResult = null;
+                if (mode == TransportMode.TRANSIT || mode == TransportMode.BICYCLE) {
+                    tmpResult = OTPlannerAdapter.getInstance().findRoutesFromKnownRequests(i, mode);
+                } else if (mode == TransportMode.CAR || mode == TransportMode.WALK) {
+                    tmpResult = GMapsPlannerAdapter.getInstance().findRoutesFromKnownRequests(i, mode);
+                }
+                if (tmpResult == null) continue;
+
+                resultRoutes.addAll(tmpResult);
+            }
+        }
+        return resultRoutes;
+    }
+
+    public List<Route> expandGraph(int numOfRequests, LocationArea locationArea, GraphExpansionStrategy strategy) {
+        List<Route> routeList = new ArrayList<>();
+        for (TransportMode mode : TransportMode.availableModes()) {
+            routeList.addAll(expandGraph(numOfRequests, locationArea, mode, strategy));
+        }
+        return routeList;
+    }
+
+    public List<Route> expandGraph(int numOfRequests, LocationArea locationArea,
+                                   TransportMode mode, GraphExpansionStrategy strategy) {
+        switch (mode) {
+            case BICYCLE:
+            case TRANSIT:
+                return expandGraph(numOfRequests, OTPlannerAdapter.getInstance(), mode, locationArea, strategy);
+            default:
+                return expandGraph(numOfRequests, GMapsPlannerAdapter.getInstance(), mode, locationArea, strategy);
+        }
+    }
+
+    private List<Route> expandGraph(int numOfRequests, PlannerAdapter plannerAdapter,
+                                    TransportMode mode, LocationArea locationArea, GraphExpansionStrategy strategy) {
+        switch (strategy) {
+            case RANDOM_OD:
+                return expandGraphByRandomOD(numOfRequests, plannerAdapter, mode, locationArea);
+            case CHAINING_RANDOM_OD:
+                return expandGraphByChainingRandomOD(numOfRequests, plannerAdapter, mode, locationArea);
+            case RANDOM_OD_WITH_MIN_DISTANCE_BETWEEN:
+                return expandGraphByRandomODWithMinDistanceBetween(numOfRequests, plannerAdapter, mode, locationArea);
+            case NODES_MIN_COVERAGE_EQ_DIST:
+                return expandGraphByFillingMinNodesAreaEqDist(numOfRequests, plannerAdapter, mode, locationArea);
+            case NODES_MIN_COVERAGE_NORM_DIST:
+                return expandGraphByFillingMinNodesAreaNormDist(numOfRequests, plannerAdapter, mode, locationArea);
+            case EDGES_MIN_COVERAGE_EQ_DIST:
+                return expandGraphByFillingMinEdgesAreaEqDist(numOfRequests, plannerAdapter, mode, locationArea);
+            case EDGES_MIN_COVERAGE_NORM_DIST:
+                return expandGraphByFillingMinEdgesAreaNormDist(numOfRequests, plannerAdapter, mode, locationArea);
+            case USING_KNOWN_NODES_AS_OD:
+                return expandGraphUsingKnownNodesAsOD(numOfRequests, plannerAdapter, mode, locationArea);
+            case RANDOM_OD_WITH_KNOWN_NODES_BETWEEN:
+                return expandGraphUsingKnownNodesBetweenOD(numOfRequests, plannerAdapter, mode, locationArea);
+        }
+
+        return null;
+    }
+
+    public List<Route> expandGraphByRandomOD(int numOfRequests, PlannerAdapter plannerAdapter,
+                                             TransportMode mode, LocationArea locationArea) {
+        Location[] locArray;
+        List<Route> routes = new ArrayList<>();
+        List<Route> routeList;
+
+        for (int i = 0; i < numOfRequests; i++) {
+            locArray = locationArea.generateRandomLocations(2);
+            routeList = plannerAdapter.findRoutes(locArray[0], locArray[1], mode);
+            routes.addAll(routeList);
+            routeList = plannerAdapter.findRoutes(locArray[1], locArray[0], mode);
+            routes.addAll(routeList);
+        }
+
+        return routes;
+    }
+
+    public List<Route> expandGraphByChainingRandomOD(int numOfRequests, PlannerAdapter plannerAdapter,
+                                                     TransportMode mode, LocationArea locationArea) {
+        Location locFrom, locTo;
+        List<Route> routes = new ArrayList<>();
+        List<Route> routeList;
+
+        locFrom = locationArea.generateRandomLocation();
+
+        for (int i = 0; i < numOfRequests; i++) {
+            locTo = locationArea.generateRandomLocation();
+            routeList = plannerAdapter.findRoutes(locFrom, locTo, mode);
+            routes.addAll(routeList);
+            routeList = plannerAdapter.findRoutes(locTo, locFrom, mode);
+            routes.addAll(routeList);
+
+            locFrom = locTo;
+        }
+
+        return routes;
+    }
+
+    public List<Route> expandGraphByRandomODWithMinDistanceBetween(int numOfRequests, PlannerAdapter plannerAdapter,
+                                                                   TransportMode mode, LocationArea locationArea) {
+        Location[] locArray;
+        List<Route> routes = new ArrayList<>();
+        List<Route> routeList;
+
+        for (int i = 0; i < numOfRequests; i++) {
+            locArray = locationArea.generateODWithMinimalDistanceBetween(Storage.MIN_DISTANCE_IN_METERS_BETWEEN_OD);
+            routeList = plannerAdapter.findRoutes(locArray[0], locArray[1], mode);
+            routes.addAll(routeList);
+            routeList = plannerAdapter.findRoutes(locArray[1], locArray[0], mode);
+            routes.addAll(routeList);
+        }
+
+        return routes;
+    }
+
+    public List<Route> expandGraphByFillingMinNodesAreaNormDist(int numOfRequests, PlannerAdapter plannerAdapter,
+                                                                TransportMode mode, LocationArea locationArea) {
+        int remainingRequestsCount = numOfRequests;
+        List<Route> tmpRouteList = new ArrayList<>();
+        Graph<Node, GraphEdge> tmpGraph;
+        while (remainingRequestsCount > 0) {
+            tmpRouteList.addAll(expandGraph(500, locationArea, GraphExpansionStrategy.RANDOM_OD));
+            tmpGraph = createGraph(tmpRouteList);
+            List<LocationArea> invalidAreaList = invalidAreasOfNodesNormDist(tmpGraph, locationArea);
+            List<Route> fillingRouteList = invalidAreaList
+                    .stream()
+                    .map(area -> expandGraph(200, area, GraphExpansionStrategy.RANDOM_OD))
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+            tmpRouteList.addAll(fillingRouteList);
+
+            remainingRequestsCount -= 500 + 200 * invalidAreaList.size();
+        }
+
+        return tmpRouteList;
+    }
+
+    public List<Route> expandGraphByFillingMinNodesAreaEqDist(int numOfRequests, PlannerAdapter plannerAdapter,
+                                                              TransportMode mode, LocationArea locationArea) {
+        int remainingRequestsCount = numOfRequests;
+        List<Route> tmpRouteList = new ArrayList<>();
+        Graph<Node, GraphEdge> tmpGraph;
+        while (remainingRequestsCount > 0) {
+            tmpRouteList.addAll(expandGraph(500, locationArea, GraphExpansionStrategy.RANDOM_OD));
+            tmpGraph = createGraph(tmpRouteList);
+            List<LocationArea> invalidAreaList = invalidAreasOfNodesEqDist(tmpGraph, locationArea);
+            List<Route> fillingRouteList = invalidAreaList
+                    .stream()
+                    .map(area -> expandGraph(200, area, GraphExpansionStrategy.RANDOM_OD))
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+            tmpRouteList.addAll(fillingRouteList);
+
+            remainingRequestsCount -= 500 + 200 * invalidAreaList.size();
+        }
+
+        return tmpRouteList;
+    }
+
+    public List<Route> expandGraphByFillingMinEdgesAreaEqDist(int numOfRequests, PlannerAdapter plannerAdapter,
+                                                              TransportMode mode, LocationArea locationArea) {
+        int remainingRequestsCount = numOfRequests;
+        List<Route> tmpRouteList = new ArrayList<>();
+        Graph<Node, GraphEdge> tmpGraph;
+        while (remainingRequestsCount > 0) {
+            tmpRouteList.addAll(expandGraph(500, locationArea, GraphExpansionStrategy.RANDOM_OD));
+            tmpGraph = createGraph(tmpRouteList);
+            List<LocationArea> invalidAreaList = invalidAreasOfEdgesEqDist(tmpGraph, locationArea);
+            List<Route> fillingRouteList = invalidAreaList
+                    .stream()
+                    .map(area -> expandGraph(200, area, GraphExpansionStrategy.RANDOM_OD))
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+            tmpRouteList.addAll(fillingRouteList);
+
+            remainingRequestsCount -= 500 + 200 * invalidAreaList.size();
+        }
+
+        return tmpRouteList;
+    }
+
+    public List<Route> expandGraphByFillingMinEdgesAreaNormDist(int numOfRequests, PlannerAdapter plannerAdapter,
+                                                                TransportMode mode, LocationArea locationArea) {
+        int remainingRequestsCount = numOfRequests;
+        List<Route> tmpRouteList = new ArrayList<>();
+        Graph<Node, GraphEdge> tmpGraph;
+        while (remainingRequestsCount > 0) {
+            tmpRouteList.addAll(expandGraph(500, locationArea, GraphExpansionStrategy.RANDOM_OD));
+            tmpGraph = createGraph(tmpRouteList);
+            List<LocationArea> invalidAreaList = invalidAreasOfEdgesNormDist(tmpGraph, locationArea);
+            List<Route> fillingRouteList = invalidAreaList
+                    .stream()
+                    .map(area -> expandGraph(200, area, GraphExpansionStrategy.RANDOM_OD))
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+            tmpRouteList.addAll(fillingRouteList);
+
+            remainingRequestsCount -= 500 + 200 * invalidAreaList.size();
+        }
+
+        return tmpRouteList;
+    }
+
+    public List<Route> expandGraphUsingKnownNodesAsOD(int numOfRequests, PlannerAdapter plannerAdapter,
+                                                      TransportMode mode, LocationArea locationArea) {
+        return null;
+    }
+
+    public List<Route> expandGraphUsingKnownNodesBetweenOD(int numOfRequests, PlannerAdapter plannerAdapter,
+                                                           TransportMode mode, LocationArea locationArea) {
+        return null;
     }
 
     /**
@@ -234,189 +451,26 @@ public class GraphMaker extends GraphBuilder {
     }
 
 
-    public Graph<Node, GraphEdge> createGraphFromKnownRequests(int numOfRequests) {
-        return createGraph(expandGraphFromKnownRequests(numOfRequests));
-    }
-
-    public Graph<Node, GraphEdge> createGraphFromUnknownRequests(int numOfRequests, LocationArea locationArea) {
-        return createGraphFromUnknownRequests(numOfRequests, locationArea, GraphExpansionStrategy.RANDOM_OD);
-    }
-
-    public Graph<Node, GraphEdge> createGraphFromUnknownRequests(int numOfRequests, LocationArea locationArea,
-                                                                 GraphExpansionStrategy strategy) {
-        List<Route> routes = new ArrayList<>();
-        List<Route> routeList;
-
-        for (TransportMode mode : TransportMode.availableModes()) {
-            // Uncomment for loop for generating more routes
-            routeList = expandGraph(numOfRequests, locationArea, mode, strategy);
-            routes.addAll(routeList);
+    /**
+     * Method which return id for current location and create node whether ain't exists.
+     *
+     * @param location - location which is unique for each node
+     * @return id for node on given location
+     */
+    private int getIdFor(Location location) {
+        int id;
+        Node node;
+        try {
+            id = getIntIdForSourceId(generateSourceIdFor(location));
+        } catch (NullPointerException e) {
+            id = nodeCounter;
+            node = new Node(nodeCounter, generateSourceIdFor(location), location.lat, location.lon,
+                    location.latE3(), location.lonE3(), 0);
+            addNode(node);
+            nodeCounter++;
         }
 
-        return createGraph(routes);
-    }
-
-    private List<Route> expandGraphFromKnownRequests(int numOfRequests) {
-        List<Route> resultRoutes = new ArrayList<>();
-        List<Route> tmpResult;
-        for (TransportMode mode : TransportMode.availableModes()) {
-            for (int i = 1; i <= numOfRequests; i++) {
-                tmpResult = null;
-                if (mode == TransportMode.TRANSIT || mode == TransportMode.BICYCLE) {
-                    tmpResult = OTPlannerAdapter.getInstance().findRoutesFromKnownRequests(i, mode);
-                } else if (mode == TransportMode.CAR || mode == TransportMode.WALK) {
-                    tmpResult = GMapsPlannerAdapter.getInstance().findRoutesFromKnownRequests(i, mode);
-                }
-                if (tmpResult == null) continue;
-
-                resultRoutes.addAll(tmpResult);
-            }
-        }
-        return resultRoutes;
-    }
-
-    private List<Route> expandGraph(int numOfRequests, LocationArea locationArea, GraphExpansionStrategy strategy) {
-        List<Route> routeList = new ArrayList<>();
-        for (TransportMode mode : TransportMode.availableModes()) {
-            routeList.addAll(expandGraph(numOfRequests, locationArea, mode, strategy));
-        }
-        return routeList;
-    }
-
-    private List<Route> expandGraph(int numOfRequests, LocationArea locationArea,
-                                    TransportMode mode, GraphExpansionStrategy strategy) {
-        switch (mode) {
-            case BICYCLE:
-            case TRANSIT:
-                return expandGraph(numOfRequests, OTPlannerAdapter.getInstance(), mode, locationArea, strategy);
-            default:
-                return expandGraph(numOfRequests, GMapsPlannerAdapter.getInstance(), mode, locationArea, strategy);
-        }
-    }
-
-    private List<Route> expandGraph(int numOfRequests, PlannerAdapter plannerAdapter,
-                                    TransportMode mode, LocationArea locationArea, GraphExpansionStrategy strategy) {
-        switch (strategy) {
-            case RANDOM_OD:
-                return expandGraphByRandomOD(numOfRequests, plannerAdapter, mode, locationArea);
-            case CHAINING_RANDOM_OD:
-                return expandGraphByChainingRandomOD(numOfRequests, plannerAdapter, mode, locationArea);
-            case RANDOM_OD_WITH_MIN_DISTANCE_BETWEEN:
-                return expandGraphByRandomODWithMinDistanceBetween(numOfRequests, plannerAdapter, mode, locationArea);
-            case NODES_MIN_COVERAGE_EQ_DIST:
-                return expandGraphByFillingMinNodesAreaEqDist(numOfRequests, plannerAdapter, mode, locationArea);
-            case NODES_MIN_COVERAGE_NORM_DIST:
-                return expandGraphByFillingMinNodesAreaNormDist(numOfRequests, plannerAdapter, mode, locationArea);
-            case EDGES_MIN_COVERAGE_EQ_DIST:
-                return expandGraphByFillingMinEdgesAreaEqDist(numOfRequests, plannerAdapter, mode, locationArea);
-            case EDGES_MIN_COVERAGE_NORM_DIST:
-                return expandGraphByFillingMinEdgesAreaNormDist(numOfRequests, plannerAdapter, mode, locationArea);
-            case USING_KNOWN_NODES_AS_OD:
-                return expandGraphUsingKnownNodesAsOD(numOfRequests, plannerAdapter, mode, locationArea);
-            case RANDOM_OD_WITH_KNOWN_NODES_BETWEEN:
-                return expandGraphUsingKnownNodesBetweenOD(numOfRequests, plannerAdapter, mode, locationArea);
-        }
-
-        return null;
-    }
-
-    private List<Route> expandGraphByRandomOD(int numOfRequests, PlannerAdapter plannerAdapter,
-                                              TransportMode mode, LocationArea locationArea) {
-        Location[] locArray;
-        List<Route> routes = new ArrayList<>();
-        List<Route> routeList;
-
-        for (int i = 0; i < numOfRequests; i++) {
-            locArray = locationArea.generateRandomLocations(2);
-            routeList = plannerAdapter.findRoutes(locArray[0], locArray[1], mode);
-            routes.addAll(routeList);
-            routeList = plannerAdapter.findRoutes(locArray[1], locArray[0], mode);
-            routes.addAll(routeList);
-        }
-
-        return routes;
-    }
-
-    private List<Route> expandGraphByChainingRandomOD(int numOfRequests, PlannerAdapter plannerAdapter,
-                                                      TransportMode mode, LocationArea locationArea) {
-        Location locFrom, locTo;
-        List<Route> routes = new ArrayList<>();
-        List<Route> routeList;
-
-        locFrom = locationArea.generateRandomLocation();
-
-        for (int i = 0; i < numOfRequests; i++) {
-            locTo = locationArea.generateRandomLocation();
-            routeList = plannerAdapter.findRoutes(locFrom, locTo, mode);
-            routes.addAll(routeList);
-            routeList = plannerAdapter.findRoutes(locTo, locFrom, mode);
-            routes.addAll(routeList);
-
-            locFrom = locTo;
-        }
-
-        return routes;
-    }
-
-    private List<Route> expandGraphByRandomODWithMinDistanceBetween(int numOfRequests, PlannerAdapter plannerAdapter,
-                                                                    TransportMode mode, LocationArea locationArea) {
-        Location[] locArray;
-        List<Route> routes = new ArrayList<>();
-        List<Route> routeList;
-
-        for (int i = 0; i < numOfRequests; i++) {
-            locArray = locationArea.generateODWithMinimalDistanceBetween(Storage.MIN_DISTANCE_IN_METERS_BETWEEN_OD);
-            routeList = plannerAdapter.findRoutes(locArray[0], locArray[1], mode);
-            routes.addAll(routeList);
-            routeList = plannerAdapter.findRoutes(locArray[1], locArray[0], mode);
-            routes.addAll(routeList);
-        }
-
-        return routes;
-    }
-
-    private List<Route> expandGraphByFillingMinNodesAreaNormDist(int numOfRequests, PlannerAdapter plannerAdapter,
-                                                                 TransportMode mode, LocationArea locationArea) {
-        int remainingRequestsCount = numOfRequests;
-        List<Route> tmpRouteList = new ArrayList<>();
-        Graph<Node, GraphEdge> tmpGraph;
-        while (remainingRequestsCount > 0) {
-            tmpRouteList.addAll(expandGraph(500, locationArea, GraphExpansionStrategy.RANDOM_OD));
-            tmpGraph = createGraph(tmpRouteList);
-            List<LocationArea> invalidAreaList = invalidAreasOfNodesNormDist(tmpGraph, locationArea);
-            List<Route> fillingRouteList = invalidAreaList
-                    .stream()
-                    .map(area -> expandGraph(200, area, GraphExpansionStrategy.RANDOM_OD))
-                    .flatMap(List::stream)
-                    .collect(Collectors.toList());
-            tmpRouteList.addAll(fillingRouteList);
-
-            remainingRequestsCount -= 500 + 200 * invalidAreaList.size();
-        }
-
-        return tmpRouteList;
-    }
-
-    private List<Route> expandGraphByFillingMinNodesAreaEqDist(int numOfRequests, PlannerAdapter plannerAdapter,
-                                                               TransportMode mode, LocationArea locationArea) {
-        int remainingRequestsCount = numOfRequests;
-        List<Route> tmpRouteList = new ArrayList<>();
-        Graph<Node, GraphEdge> tmpGraph;
-        while (remainingRequestsCount > 0) {
-            tmpRouteList.addAll(expandGraph(500, locationArea, GraphExpansionStrategy.RANDOM_OD));
-            tmpGraph = createGraph(tmpRouteList);
-            List<LocationArea> invalidAreaList = invalidAreasOfNodesEqDist(tmpGraph, locationArea);
-            List<Route> fillingRouteList = invalidAreaList
-                    .stream()
-                    .map(area -> expandGraph(200, area, GraphExpansionStrategy.RANDOM_OD))
-                    .flatMap(List::stream)
-                    .collect(Collectors.toList());
-            tmpRouteList.addAll(fillingRouteList);
-
-            remainingRequestsCount -= 500 + 200 * invalidAreaList.size();
-        }
-
-        return tmpRouteList;
+        return id;
     }
 
     private List<LocationArea> getInvalidAreasFromMask(boolean[][] mask, LocationArea[][] areaGrid) {
@@ -581,10 +635,10 @@ public class GraphMaker extends GraphBuilder {
             Arrays.fill(row, 0);
         }
 
-        for(GraphEdge edge: edgeList) {
+        for (GraphEdge edge : edgeList) {
             for (int i = 0; i < areaGrid.length; i++) {
                 for (int j = 0; j < areaGrid[0].length; j++) {
-                    if (isEdgeIntersectArea(edge,areaGrid[i][j])) edgeDistribution[i][j]++;
+                    if (isEdgeIntersectArea(edge, areaGrid[i][j])) edgeDistribution[i][j]++;
                 }
             }
         }
@@ -622,28 +676,6 @@ public class GraphMaker extends GraphBuilder {
             }
         }
         return nodeDistribution;
-    }
-
-    private List<Route> expandGraphByFillingMinEdgesAreaEqDist(int numOfRequests, PlannerAdapter plannerAdapter,
-                                                               TransportMode mode, LocationArea locationArea) {
-        int remainingRequestsCount = numOfRequests;
-        List<Route> tmpRouteList = new ArrayList<>();
-        Graph<Node, GraphEdge> tmpGraph;
-        while (remainingRequestsCount > 0) {
-            tmpRouteList.addAll(expandGraph(500, locationArea, GraphExpansionStrategy.RANDOM_OD));
-            tmpGraph = createGraph(tmpRouteList);
-            List<LocationArea> invalidAreaList = invalidAreasOfEdgesEqDist(tmpGraph, locationArea);
-            List<Route> fillingRouteList = invalidAreaList
-                    .stream()
-                    .map(area -> expandGraph(200, area, GraphExpansionStrategy.RANDOM_OD))
-                    .flatMap(List::stream)
-                    .collect(Collectors.toList());
-            tmpRouteList.addAll(fillingRouteList);
-
-            remainingRequestsCount -= 500 + 200 * invalidAreaList.size();
-        }
-
-        return tmpRouteList;
     }
 
     private List<LocationArea> invalidAreasOfEdgesNormDist(Graph<Node, GraphEdge> graph, LocationArea locationArea) {
@@ -687,37 +719,5 @@ public class GraphMaker extends GraphBuilder {
         Line2D l1 = new Line2D.Double(locFrom.lon, locFrom.lat, locTo.lon, locTo.lat);
 
         return l1.intersects(r1);
-    }
-
-    private List<Route> expandGraphByFillingMinEdgesAreaNormDist(int numOfRequests, PlannerAdapter plannerAdapter,
-                                                                 TransportMode mode, LocationArea locationArea) {
-        int remainingRequestsCount = numOfRequests;
-        List<Route> tmpRouteList = new ArrayList<>();
-        Graph<Node, GraphEdge> tmpGraph;
-        while (remainingRequestsCount > 0) {
-            tmpRouteList.addAll(expandGraph(500, locationArea, GraphExpansionStrategy.RANDOM_OD));
-            tmpGraph = createGraph(tmpRouteList);
-            List<LocationArea> invalidAreaList = invalidAreasOfEdgesNormDist(tmpGraph, locationArea);
-            List<Route> fillingRouteList = invalidAreaList
-                    .stream()
-                    .map(area -> expandGraph(200, area, GraphExpansionStrategy.RANDOM_OD))
-                    .flatMap(List::stream)
-                    .collect(Collectors.toList());
-            tmpRouteList.addAll(fillingRouteList);
-
-            remainingRequestsCount -= 500 + 200 * invalidAreaList.size();
-        }
-
-        return tmpRouteList;
-    }
-
-    private List<Route> expandGraphUsingKnownNodesAsOD(int numOfRequests, PlannerAdapter plannerAdapter,
-                                                       TransportMode mode, LocationArea locationArea) {
-        return null;
-    }
-
-    private List<Route> expandGraphUsingKnownNodesBetweenOD(int numOfRequests, PlannerAdapter plannerAdapter,
-                                                            TransportMode mode, LocationArea locationArea) {
-        return null;
     }
 }
