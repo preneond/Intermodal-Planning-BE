@@ -44,13 +44,17 @@ public class PlannerQualityEvaluator {
                 deviation = new long[findingPathCount];
 
                 for (int i = 0; i < findingPathCount; i++) {
-                    Location[] locArray = plannerInitializer.locationArea.generateRandomLocations(2);
-                    List<GraphEdge> plannerRoute = plannerInitializer.routePlanner.findPath(locArray[0], locArray[1]);
-                    Route subplannerRoute = plannerInitializer.routePlanner.findRouteBySubplanner(locArray[0], locArray[1], transportMode);
+                    List<GraphEdge> plannerRoute = null;
+                    Route subplannerRoute = null;
+
+                    while (plannerRoute == null || subplannerRoute == null) {
+                        Location[] locArray = plannerInitializer.locationArea.generateRandomLocations(2);
+                        plannerRoute = plannerInitializer.routePlanner.findPath(locArray[0], locArray[1]);
+                        subplannerRoute = plannerInitializer.routePlanner.findRouteBySubplanner(locArray[0], locArray[1], transportMode);
+                    }
 
                     routeDuration[i] = plannerInitializer.routePlanner.getDuration(plannerRoute);
                     subplannerRouteDuration[i] = plannerInitializer.routePlanner.getDuration(subplannerRoute);
-
                     deviation[i] = routeDuration[i] - subplannerRouteDuration[i];
                 }
                 sizeDeviation = Arrays.stream(deviation).average().orElse(0);
@@ -74,7 +78,12 @@ public class PlannerQualityEvaluator {
         LocationArea locationArea = plannerInitializer.locationArea;
 
         for (int i = 0; i < findingPathCount; i++) {
-            List<GraphEdge> graphPath = plannerInitializer.routePlanner.findRandomPath(locationArea);
+            List<GraphEdge> graphPath = null;
+
+            while (graphPath == null) {
+                graphPath = plannerInitializer.routePlanner.findRandomPath(locationArea);
+            }
+
             routeDuration[i] = plannerInitializer.routePlanner.getDuration(graphPath);
             Route refinementRoute = plannerInitializer.routePlanner.doRefinement(graphPath);
             refinementRouteDuration[i] = plannerInitializer.routePlanner.getDuration(refinementRoute);

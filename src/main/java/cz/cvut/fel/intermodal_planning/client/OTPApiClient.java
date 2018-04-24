@@ -61,14 +61,13 @@ public class OTPApiClient {
                 throw new RuntimeException("Failed : HTTP error code : "
                         + response.getStatus());
             }
-            int tmpCount = (mode == TransportMode.TRANSIT) ? ++Storage.TRANSIT_REQUEST_COUNT : ++Storage.BIKE_REQUEST_COUNT;
 
             logger.info("Request: " + webResource.getURI());
-
-            File file = new File(Storage.OTP_REQUEST_STORAGE + mode.toString() + "/request_" + tmpCount + ".txt");
-
             String stringResponse = response.getEntity(String.class);
-            SerializationUtils.writeStringToFile(stringResponse, file);
+
+//            int tmpCount = (mode == TransportMode.TRANSIT) ? ++Storage.TRANSIT_REQUEST_COUNT : ++Storage.BIKE_REQUEST_COUNT;
+//            File file = new File(Storage.OTP_REQUEST_STORAGE + mode.toString() + "/request_" + tmpCount + ".txt");
+//            SerializationUtils.writeStringToFile(stringResponse, file);
 
             return new JSONObject(stringResponse);
 

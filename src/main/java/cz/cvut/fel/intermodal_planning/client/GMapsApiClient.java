@@ -51,9 +51,6 @@ public class GMapsApiClient {
     }
 
     public DirectionsResult sendNewRequest(LatLng origin, LatLng destination, TravelMode mode) {
-//        Timestamp ts = new Timestamp(1523859300000l);
-//        DateTime time = new DateTime(ts);
-
         DateTime time = new DateTime(DateTime.now());
         int idx = ThreadLocalRandom.current().nextInt(Storage.GMAPS_API_KEYS.length);
         context.setApiKey(Storage.GMAPS_API_KEYS[idx]);
@@ -66,10 +63,10 @@ public class GMapsApiClient {
                     .mode(mode)
                     .await();
 
-            int tmpCount = mode == TravelMode.DRIVING ? ++Storage.CAR_REQUEST_COUNT : ++Storage.WALK_REQUEST_COUNT;
+//            int tmpCount = mode == TravelMode.DRIVING ? ++Storage.CAR_REQUEST_COUNT : ++Storage.WALK_REQUEST_COUNT;
 
-            File file = new File(Storage.GMAPS_REQUEST_STORAGE + mode.toString() + "/request_" + tmpCount + ".txt");
-            SerializationUtils.writeRequestToGson(directionResult, file);
+//            File file = new File(Storage.GMAPS_REQUEST_STORAGE + mode.toString() + "/request_" + tmpCount + ".txt");
+//            SerializationUtils.writeRequestToGson(directionResult, file);
 
             return directionResult;
         } catch (Exception e) {

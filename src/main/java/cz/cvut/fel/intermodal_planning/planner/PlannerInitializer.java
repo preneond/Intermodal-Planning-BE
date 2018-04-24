@@ -59,6 +59,7 @@ public class PlannerInitializer {
             int numOfRequest = requestCount - routeList.size();
             List<Route> graphExpansionList = graphMaker.expandGraph(numOfRequest, locationArea, expansionStrategy);
             routeList.addAll(graphExpansionList);
+            graphMaker.createGraph(routeList);
         } else {
             graphMaker.createGraph(routeList.subList(0, requestCount));
         }

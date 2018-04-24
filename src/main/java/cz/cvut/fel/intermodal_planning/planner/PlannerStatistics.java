@@ -25,7 +25,7 @@ public class PlannerStatistics {
 
     public static void doExpansionStrategyComparision(LocationArea area) {
         PlannerInitializer plannerInitializer;
-        int[] requestCountArr = new int[]{1000, 2500, 5000, 7500, 10000};
+        int[] requestCountArr = new int[]{500, 1000, 2500, 5000, 7500, 10000};
 
         for (GraphExpansionStrategy expansionStrategy : GraphExpansionStrategy.values()) {
             plannerInitializer = new PlannerInitializer(expansionStrategy, area);
@@ -36,7 +36,6 @@ public class PlannerStatistics {
                 }
             }
         }
-
     }
 
     public static void createPlannerStatistics(PlannerInitializer plannerInitializer) {

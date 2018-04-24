@@ -43,8 +43,6 @@ public class RoutePlanner {
             route = GMapsPlannerAdapter.getInstance().findRoute(locFrom, locTo, mode);
         }
 
-        if (route == null) route = new Route();
-
         return route;
     }
 
@@ -57,7 +55,11 @@ public class RoutePlanner {
         Location locFrom = LocationUtils.getNodeLocation(from);
         Location locTo = LocationUtils.getNodeLocation(to);
 
-        return findRouteBySubplanner(locFrom,locTo,mode);
+        Route route = findRouteBySubplanner(locFrom, locTo, mode);
+
+        if (route == null) route = new Route();
+
+        return route;
 
     }
 
