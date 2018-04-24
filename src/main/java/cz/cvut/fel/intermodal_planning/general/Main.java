@@ -1,5 +1,6 @@
 package cz.cvut.fel.intermodal_planning.general;
 
+import cz.cvut.fel.intermodal_planning.planner.PlannerStatistics;
 import org.apache.log4j.BasicConfigurator;
 
 public class Main {
@@ -8,8 +9,8 @@ public class Main {
     }
 
     public static void main(String[] args) {
-//        PlannerInitializer plannerInitializer = PlannerInitializer.getInstance();
-//        PlannerStatistics.doComparision(plannerInitializer);
-//        PlannerInitializer plannerInitializer = new PlannerInitializer(GraphExpansionStrategy.RANDOM_OD, Storage.AREA_PRAGUE);
+        PlannerStatistics.doExpansionStrategyComparision(Storage.AREA_PRAGUE);
+
+//        PlannerStatistics.createPlannerStatistics(plannerInitializer);
     }
 }

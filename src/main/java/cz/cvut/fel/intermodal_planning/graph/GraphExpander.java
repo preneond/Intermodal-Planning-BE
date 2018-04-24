@@ -13,29 +13,27 @@ public interface GraphExpander {
 
     //Uninformed strategies
     List<Route> expandGraphByRandomOD(int numOfRequests, PlannerAdapter plannerAdapter,
-                                      TransportMode mode, LocationArea locationArea);
+                                      LocationArea locationArea, TransportMode mode);
 
     List<Route> expandGraphByChainingRandomOD(int numOfRequests, PlannerAdapter plannerAdapter,
-                                              TransportMode mode, LocationArea locationArea);
+                                              LocationArea locationArea, TransportMode mode);
 
     List<Route> expandGraphByRandomODWithMinDistanceBetween(int numOfRequests, PlannerAdapter plannerAdapter,
-                                                            TransportMode mode, LocationArea locationArea);
+                                                            LocationArea locationArea, TransportMode mode);
 
     //Informed strategies
     List<Route> expandGraphByFillingMinNodesAreaNormDist(int numOfRequests, PlannerAdapter plannerAdapter,
-                                                         TransportMode mode, LocationArea locationArea);
+                                                         LocationArea locationArea);
 
     List<Route> expandGraphByFillingMinNodesAreaEqDist(int numOfRequests, PlannerAdapter plannerAdapter,
-                                                       TransportMode mode, LocationArea locationArea);
+                                                       LocationArea locationArea);
 
-    List<Route> expandGraphByFillingMinEdgesAreaEqDist(int numOfRequests, PlannerAdapter plannerAdapter,
-                                                       TransportMode mode, LocationArea locationArea);
+    List<Route> expandGraphByFillingMinEdgesAreaEqDist(int numOfRequests, LocationArea locationArea, TransportMode mode);
 
-    List<Route> expandGraphByFillingMinEdgesAreaNormDist(int numOfRequests, PlannerAdapter plannerAdapter,
-                                                         TransportMode mode, LocationArea locationArea);
+    List<Route> expandGraphByFillingMinEdgesAreaNormDist(int numOfRequests, LocationArea locationArea, TransportMode mode);
     //Supervised strategies
 
     List<Route> expandGraphUsingKnownNodesAsOD(int numOfRequests, PlannerAdapter plannerAdapter,
-                                               TransportMode mode, LocationArea locationArea);
+                                               LocationArea locationArea, TransportMode mode);
 
 }
