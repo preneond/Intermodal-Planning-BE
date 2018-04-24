@@ -16,6 +16,8 @@ import org.apache.commons.math3.distribution.MultivariateNormalDistribution;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
+import java.awt.geom.Line2D;
+import java.awt.geom.Rectangle2D;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -681,24 +683,10 @@ public class GraphMaker extends GraphBuilder {
         Location locFrom = LocationUtils.getNodeLocation(nodeFrom);
         Location locTo = LocationUtils.getNodeLocation(nodeTo);
 
-        // x is lon
-        double nX = locTo.lon - locFrom.lon;
-        // y is lat
-        double nY = locTo.lat - locFrom.lat;
-        double nLength = Math.sqrt(nX*nX + nY*nY);
+        Rectangle2D r1 = new Rectangle2D.Double(area.leftLon, area.bottomLat, area.rightLon - area.leftLon, area.upLat - area.bottomLat);
+        Line2D l1 = new Line2D.Double(locFrom.lon, locFrom.lat, locTo.lon, locTo.lat);
 
-        //normalize it
-        nX /= nLength;
-        nY /= nLength;
-
-        // point locFrom -> x = locFrom.lon;  y = locFrom.lat
-        double lowerLimitX = (area.leftLon - locFrom.lon) / nX;
-        double upperLimitX = (area.rightLon - locFrom.lon) / nX;
-
-        double upperLimitY =  (area.bottomLat - locFrom.lat) / nY;
-        double lowerLimitY  = (area.upLat - locFrom.lat) / nY;
-
-        return Math.max(lowerLimitX, lowerLimitY) <= Math.min(upperLimitX, upperLimitY);
+        return l1.intersects(r1);
     }
 
     private List<Route> expandGraphByFillingMinEdgesAreaNormDist(int numOfRequests, PlannerAdapter plannerAdapter,
