@@ -1,5 +1,6 @@
 package cz.cvut.fel.intermodal_planning.general;
 
+import cz.cvut.fel.intermodal_planning.model.planner.Location;
 import cz.cvut.fel.intermodal_planning.model.planner.LocationArea;
 
 import java.net.URL;
@@ -43,6 +44,23 @@ public final class Storage {
             50.0269,
             14.2946,
             14.55);
+
+    public static final Location[] IMPORTANT_PLACES_PRAGUE = new Location[]{
+            // Kulatak
+            new Location(50.100174, 14.39562),
+            // Vaclavak
+            new Location(50.081747, 14.427189),
+            // Karlak
+            new Location(50.075739, 14.420056),
+            // Cerny most
+            new Location(50.106449, 14.574448),
+            // Jizni Spojka
+            new Location(50.051460, 14.478884),
+            //IP
+            new Location(50.075358, 14.4299780),
+            //Florenc
+            new Location(50.091170, 14.438711)
+    };
 
     public static String DESCRIPTION_HEADER = "count: car ref, transit ref, bike ref," +
             " intermodal ref,intermodal description ref" +
