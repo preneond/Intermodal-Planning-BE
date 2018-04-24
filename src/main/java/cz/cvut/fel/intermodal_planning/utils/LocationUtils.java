@@ -1,8 +1,16 @@
 package cz.cvut.fel.intermodal_planning.utils;
 
+import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
 import cz.cvut.fel.intermodal_planning.adapters.PlannerAdapter;
+import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
+import cz.cvut.fel.intermodal_planning.model.planner.Leg;
 import cz.cvut.fel.intermodal_planning.model.planner.Location;
+import cz.cvut.fel.intermodal_planning.model.planner.Route;
+import cz.cvut.fel.intermodal_planning.model.planner.Step;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class LocationUtils {
@@ -43,4 +51,36 @@ public class LocationUtils {
     public static Location getNodeLocation(Node node) {
         return new Location(node.getLatitude(), node.getLongitude());
     }
+
+    public static List<Location> getLocationSequence(Route route) {
+        List<Location> locationList = new ArrayList<>();
+        locationList.add(route.origin);
+
+        for (Leg leg : route.legList) {
+            for (Step step : leg.steps) {
+                locationList.add(step.startLocation);
+                locationList.add(step.endLocation);
+            }
+
+        }
+        locationList.add(route.destination);
+        return locationList;
+    }
+
+
+    public static List<Location> getLocationsFromEdges(List<GraphEdge> edgeList, Graph<Node, GraphEdge> graph) {
+        if (edgeList.isEmpty()) return new ArrayList<>();
+
+        List<Location> locationList = new ArrayList<>();
+        Node nodeFrom;
+        for (GraphEdge edge : edgeList) {
+            nodeFrom = graph.getNode(edge.fromId);
+            locationList.add(new Location(nodeFrom.getLatitude(), nodeFrom.getLongitude()));
+        }
+        Node nodeTo = graph.getNode(edgeList.get(edgeList.size() - 1).toId);
+        locationList.add(new Location(nodeTo.getLatitude(), nodeTo.getLongitude()));
+
+        return locationList;
+    }
+
 }

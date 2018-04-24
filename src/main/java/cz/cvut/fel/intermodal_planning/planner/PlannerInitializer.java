@@ -27,6 +27,7 @@ public class PlannerInitializer {
 
     public GraphMaker graphMaker;
     public RoutePlanner routePlanner;
+    public int requestCount;
 
 
     PlannerInitializer(GraphExpansionStrategy expansionStrategy, LocationArea locationArea) {
@@ -38,7 +39,7 @@ public class PlannerInitializer {
     }
 
     public void initPlanner(int requestCount) {
-
+        this.requestCount = requestCount;
 
         if (requestCount > routeList.size()) {
             int numOfRequest = requestCount - routeList.size();

@@ -2,7 +2,6 @@ package cz.cvut.fel.intermodal_planning.planner;
 
 import cz.cvut.fel.intermodal_planning.adapters.GMapsPlannerAdapter;
 import cz.cvut.fel.intermodal_planning.adapters.OTPlannerAdapter;
-import cz.cvut.fel.intermodal_planning.adapters.PlannerAdapter;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
 import cz.cvut.fel.intermodal_planning.general.Storage;
@@ -14,7 +13,6 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import cz.cvut.fel.intermodal_planning.pathfinding.AStar;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -24,12 +22,9 @@ public class RoutePlanner {
     private static final Logger logger = LogManager.getLogger(RoutePlanner.class);
 
     private GraphMaker graphMaker;
-    private PlannerAdapter[] plannerAdapters;
 
     public RoutePlanner(GraphMaker graphMaker) {
-        // add more planner cz.cvut.fel.intermodal_planning.adapters if they exist
         this.graphMaker = graphMaker;
-        plannerAdapters = new PlannerAdapter[]{GMapsPlannerAdapter.getInstance(), OTPlannerAdapter.getInstance()};
     }
 
 
@@ -39,89 +34,31 @@ public class RoutePlanner {
         return findPath(locArray[0], locArray[1]);
     }
 
-    private Route findRoute(int fromId, int toId, TransportMode mode) {
-        Graph graph = graphMaker.getGraph();
-
-        Node from = graph.getNode(fromId);
-        Node to = graph.getNode(toId);
-
+    public Route findRouteBySubplanner(Location locFrom, Location locTo, TransportMode mode) {
         Route route = null;
 
-        Location locFrom = new Location(from.getLatitude(), from.getLongitude());
-        Location locTo = new Location(to.getLatitude(), to.getLongitude());
         if (mode == TransportMode.TRANSIT || mode == TransportMode.BICYCLE) {
             route = OTPlannerAdapter.getInstance().findRoute(locFrom, locTo, mode);
         } else if (mode == TransportMode.CAR || mode == TransportMode.WALK) {
             route = GMapsPlannerAdapter.getInstance().findRoute(locFrom, locTo, mode);
         }
 
-        if (route == null) return new Route();
+        if (route == null) route = new Route();
 
         return route;
     }
 
-    public List<Location> getLocationSequence(Route route) {
-        List<Location> locationList = new ArrayList<>();
-        locationList.add(route.origin);
-
-        for (Leg leg : route.legList) {
-            for (Step step : leg.steps) {
-                locationList.add(step.startLocation);
-                locationList.add(step.endLocation);
-            }
-
-        }
-        locationList.add(route.destination);
-        return locationList;
-    }
-
-
-    public List<Location> getLocationsFromEdges(List<GraphEdge> edgeList, Graph<Node, GraphEdge> graph) {
-        if (edgeList.isEmpty()) return new ArrayList<>();
-
-        List<Location> locationList = new ArrayList<>();
-        Node nodeFrom;
-        for (GraphEdge edge : edgeList) {
-            nodeFrom = graph.getNode(edge.fromId);
-            locationList.add(new Location(nodeFrom.getLatitude(), nodeFrom.getLongitude()));
-        }
-        Node nodeTo = graph.getNode(edgeList.get(edgeList.size() - 1).toId);
-        locationList.add(new Location(nodeTo.getLatitude(), nodeTo.getLongitude()));
-
-        return locationList;
-    }
-
-
-    public Route doRefinement(List<GraphEdge> plan) {
-        if (plan.isEmpty()) return null;
-
+    private Route findRouteBySubplanner(int fromId, int toId, TransportMode mode) {
         Graph graph = graphMaker.getGraph();
 
-        GraphEdge startEdge = plan.get(0);
-        int fromId = startEdge.fromId;
-        int toId = startEdge.toId;
-        GraphEdge curEdge;
+        Node from = graph.getNode(fromId);
+        Node to = graph.getNode(toId);
 
-        Route route = new Route();
-        route.origin = LocationUtils.getNodeLocation(graph.getNode(fromId));
-        route.destination = LocationUtils.getNodeLocation(graph.getNode(plan.get(plan.size() - 1).toId));
+        Location locFrom = LocationUtils.getNodeLocation(from);
+        Location locTo = LocationUtils.getNodeLocation(to);
 
-        for (int i = 1; i < plan.size(); i++) {
-            curEdge = plan.get(i);
-            if (startEdge.mode != curEdge.mode) {
-                Route tmpRoute = findRoute(fromId, toId, startEdge.mode);
-                route.legList.addAll(tmpRoute.legList);
-                startEdge = curEdge;
-                fromId = startEdge.fromId;
-                toId = startEdge.toId;
-            } else {
-                toId = curEdge.toId;
-            }
-        }
-        Route tmpRoute = findRoute(fromId, toId, startEdge.mode);
-        route.legList.addAll(tmpRoute.legList);
+        return findRouteBySubplanner(locFrom,locTo,mode);
 
-        return route;
     }
 
     public List<GraphEdge> findPath(Location origin, Location destination) {
@@ -147,6 +84,38 @@ public class RoutePlanner {
         }
     }
 
+    public Route doRefinement(List<GraphEdge> plan) {
+        if (plan.isEmpty()) return null;
+
+        Graph graph = graphMaker.getGraph();
+
+        GraphEdge startEdge = plan.get(0);
+        int fromId = startEdge.fromId;
+        int toId = startEdge.toId;
+        GraphEdge curEdge;
+
+        Route route = new Route();
+        route.origin = LocationUtils.getNodeLocation(graph.getNode(fromId));
+        route.destination = LocationUtils.getNodeLocation(graph.getNode(plan.get(plan.size() - 1).toId));
+
+        for (int i = 1; i < plan.size(); i++) {
+            curEdge = plan.get(i);
+            if (startEdge.mode != curEdge.mode) {
+                Route tmpRoute = findRouteBySubplanner(fromId, toId, startEdge.mode);
+                route.legList.addAll(tmpRoute.legList);
+                startEdge = curEdge;
+                fromId = startEdge.fromId;
+                toId = startEdge.toId;
+            } else {
+                toId = curEdge.toId;
+            }
+        }
+        Route tmpRoute = findRouteBySubplanner(fromId, toId, startEdge.mode);
+        route.legList.addAll(tmpRoute.legList);
+
+        return route;
+    }
+
     private List<Node> getNearestNodes(Location location, int count) {
         Object[] nodeIdArr = graphMaker.getKdTree().nearest(location.toDoubleArray(), count);
 
@@ -154,14 +123,6 @@ public class RoutePlanner {
                 .map(object -> (int) object)
                 .map(nodeId -> graphMaker.getGraph().getNode(nodeId))
                 .collect(Collectors.toList());
-    }
-
-    private Node getNearestNode(Location location) {
-        return getNearestNodes(location, 1).get(0);
-    }
-
-    private Node getNearestNode(Location location, TransportMode[] mode, boolean isIngoingMode) {
-        return getNearestNodes(location, mode, isIngoingMode, 1).get(0);
     }
 
     private List<Node> getNearestNodes(Location location, TransportMode[] modeArr, boolean isIngoingMode, int count) {
@@ -172,6 +133,14 @@ public class RoutePlanner {
                 .stream(nodeIdArr)
                 .map(nodeid -> graphMaker.getGraph().getNode((int) nodeid))
                 .collect(Collectors.toList());
+    }
+
+    private Node getNearestNode(Location location) {
+        return getNearestNodes(location, 1).get(0);
+    }
+
+    private Node getNearestNode(Location location, TransportMode[] mode, boolean isIngoingMode) {
+        return getNearestNodes(location, mode, isIngoingMode, 1).get(0);
     }
 
     public long getDuration(List<GraphEdge> graphPath) {
