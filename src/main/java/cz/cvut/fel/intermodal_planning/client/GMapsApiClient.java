@@ -51,10 +51,10 @@ public class GMapsApiClient {
     }
 
     public DirectionsResult sendNewRequest(LatLng origin, LatLng destination, TravelMode mode) {
-        Timestamp ts = new Timestamp(1523859300000l);
-        DateTime time = new DateTime(ts);
+//        Timestamp ts = new Timestamp(1523859300000l);
+//        DateTime time = new DateTime(ts);
 
-//        DateTime time = new DateTime(DateTime.now());
+        DateTime time = new DateTime(DateTime.now());
         int idx = ThreadLocalRandom.current().nextInt(Storage.GMAPS_API_KEYS.length);
         context.setApiKey(Storage.GMAPS_API_KEYS[idx]);
 

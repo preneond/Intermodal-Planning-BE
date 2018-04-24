@@ -13,7 +13,6 @@ import org.apache.log4j.Logger;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -21,7 +20,7 @@ public class PlannerQualityEvaluator {
     private static final Logger logger = LogManager.getLogger(PlannerInitializer.class);
 
     static void evaluatePlannerQuality(PlannerInitializer plannerInitializer, GraphQualityMetric qualityMetric) {
-        logger.info("Checking planner quality using " + plannerInitializer.expansionStrategy);
+        logger.info("Checking planner using " + plannerInitializer.expansionStrategy.name() + " strategy by " + qualityMetric.name() + "quality metrix");
         switch (qualityMetric) {
             case REFINEMENT:
                 evaluatePlannerQualityUsingRefinement(plannerInitializer);

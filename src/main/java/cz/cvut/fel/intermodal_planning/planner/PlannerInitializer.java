@@ -20,9 +20,10 @@ import java.util.List;
 
 public class PlannerInitializer {
     private static final Logger logger = LogManager.getLogger(PlannerInitializer.class);
+    private static PlannerInitializer sharedInstance;
 
-    public final GraphExpansionStrategy expansionStrategy;
-    public final LocationArea locationArea;
+    public GraphExpansionStrategy expansionStrategy;
+    public LocationArea locationArea;
     private List<Route> routeList;
 
     public GraphMaker graphMaker;
@@ -36,6 +37,19 @@ public class PlannerInitializer {
 
         graphMaker = new GraphMaker();
         routeList = new ArrayList<>();
+    }
+
+
+    public static PlannerInitializer getInstance() {
+        if (sharedInstance == null) {
+            sharedInstance = new PlannerInitializer();
+        }
+        return sharedInstance;
+    }
+
+    private PlannerInitializer() {
+        initPlannerUsingKnownGraph();
+        graphMaker.createKDTree();
     }
 
     public void initPlanner(int requestCount) {

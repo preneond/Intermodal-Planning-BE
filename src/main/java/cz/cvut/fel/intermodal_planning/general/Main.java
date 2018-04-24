@@ -11,6 +11,5 @@ public class Main {
     public static void main(String[] args) {
         PlannerStatistics.doExpansionStrategyComparision(Storage.AREA_PRAGUE);
 
-//        PlannerStatistics.createPlannerStatistics(plannerInitializer);
     }
 }
