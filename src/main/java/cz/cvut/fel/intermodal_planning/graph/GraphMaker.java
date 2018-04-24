@@ -206,8 +206,6 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
                 return expandGraphByFillingMinEdgesAreaNormDist(numOfRequests, plannerAdapter, mode, locationArea);
             case USING_KNOWN_NODES_AS_OD:
                 return expandGraphUsingKnownNodesAsOD(numOfRequests, plannerAdapter, mode, locationArea);
-            case RANDOM_OD_WITH_KNOWN_NODES_BETWEEN:
-                return expandGraphUsingKnownNodesBetweenOD(numOfRequests, plannerAdapter, mode, locationArea);
         }
 
         return null;
@@ -226,6 +224,31 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
             routeList = plannerAdapter.findRoutes(locArray[1], locArray[0], mode);
             routes.addAll(routeList);
         }
+
+        return routes;
+    }
+
+    public List<Route> expandGraphUsingKnownNodesAsOD(int numOfRequests, PlannerAdapter plannerAdapter,
+                                                      TransportMode mode, LocationArea locationArea) {
+        Location[] importantPlaces = Storage.IMPORTANT_PLACES_PRAGUE;
+        List<Route> routes = new ArrayList<>();
+        List<Route> tmpRoutes;
+        Location randLoc;
+
+
+        for (Location importantPlace : importantPlaces) {
+            for (int i = 0; i < 100; i++) {
+                randLoc = locationArea.generateRandomLocation();
+                tmpRoutes = plannerAdapter.findRoutes(importantPlace, randLoc);
+                routes.addAll(tmpRoutes);
+                tmpRoutes = plannerAdapter.findRoutes(randLoc, importantPlace);
+                routes.addAll(tmpRoutes);
+            }
+            numOfRequests -= 100;
+        }
+
+        tmpRoutes = expandGraphByRandomOD(numOfRequests, plannerAdapter, mode, locationArea);
+        routes.addAll(tmpRoutes);
 
         return routes;
     }
@@ -354,16 +377,6 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         }
 
         return tmpRouteList;
-    }
-
-    public List<Route> expandGraphUsingKnownNodesAsOD(int numOfRequests, PlannerAdapter plannerAdapter,
-                                                      TransportMode mode, LocationArea locationArea) {
-        return null;
-    }
-
-    public List<Route> expandGraphUsingKnownNodesBetweenOD(int numOfRequests, PlannerAdapter plannerAdapter,
-                                                           TransportMode mode, LocationArea locationArea) {
-        return null;
     }
 
     /**

@@ -38,6 +38,4 @@ public interface GraphExpander {
     List<Route> expandGraphUsingKnownNodesAsOD(int numOfRequests, PlannerAdapter plannerAdapter,
                                                TransportMode mode, LocationArea locationArea);
 
-    List<Route> expandGraphUsingKnownNodesBetweenOD(int numOfRequests, PlannerAdapter plannerAdapter,
-                                                    TransportMode mode, LocationArea locationArea);
 }

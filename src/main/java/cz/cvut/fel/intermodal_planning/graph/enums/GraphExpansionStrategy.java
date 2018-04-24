@@ -9,7 +9,7 @@ public enum GraphExpansionStrategy {
     EDGES_MIN_COVERAGE_EQ_DIST, EDGES_MIN_COVERAGE_NORM_DIST,
 
     //Supervised strategies
-    USING_KNOWN_NODES_AS_OD, RANDOM_OD_WITH_KNOWN_NODES_BETWEEN;
+    USING_KNOWN_NODES_AS_OD;
 
 
     public static GraphExpansionStrategy[] getInformedStrategies() {
@@ -22,7 +22,7 @@ public enum GraphExpansionStrategy {
     }
 
     public static GraphExpansionStrategy[] getSupervisedStrategies() {
-        return new GraphExpansionStrategy[]{USING_KNOWN_NODES_AS_OD, RANDOM_OD_WITH_KNOWN_NODES_BETWEEN};
+        return new GraphExpansionStrategy[]{USING_KNOWN_NODES_AS_OD};
     }
 
 }
