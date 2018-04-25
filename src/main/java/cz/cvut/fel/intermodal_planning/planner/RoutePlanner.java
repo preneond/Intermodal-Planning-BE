@@ -64,23 +64,25 @@ public class RoutePlanner {
     }
 
     public List<GraphEdge> findPath(Location origin, Location destination) {
-        return findPath(origin, destination, new TransportMode[]{});
+        return findPath(origin, destination, null);
     }
 
-    public List<GraphEdge> findPath(Location origin, Location destination, TransportMode... availableModes) {
+    public List<GraphEdge> findPath(Location origin, Location destination, TransportMode availableMode) {
         AStar astar = new AStar<>(graphMaker.getGraph());
 
         List<Node> originList;
         List<Node> destinationList;
 
-        if (availableModes.length == 0) {
+        if (availableMode == null) {
             originList = getNearestNodes(origin, 5);
             destinationList = getNearestNodes(destination, 5);
 
             return astar.plan(origin, destination, originList, destinationList);
         } else {
-            originList = getNearestNodes(origin, availableModes, true, 5);
-            destinationList = getNearestNodes(destination, availableModes, false, 5);
+            TransportMode[] availableModes = new TransportMode[]{availableMode, TransportMode.WALK};
+
+            originList = getNearestNodes(origin, availableModes, true, 1);
+            destinationList = getNearestNodes(destination, availableModes, false, 1);
 
             return astar.plan(origin, destination, originList, destinationList, availableModes);
         }

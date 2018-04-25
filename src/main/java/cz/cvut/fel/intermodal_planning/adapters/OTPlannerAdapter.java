@@ -24,7 +24,8 @@ public class OTPlannerAdapter implements PlannerAdapter {
 
     @Override
     public List<Route> findRoutes(Location origin, Location destination, TransportMode mode) {
-        JSONObject response = OTPApiClient.getInstance().sendNewRequest(origin, destination, mode);
+        JSONObject response = (mode == TransportMode.TRANSIT) ? OTPApiClient.getInstance().sendNewRequest(origin, destination) :
+                OTPApiClient.getInstance().sendNewRequest(origin, destination, mode);
 
         return getRouteList(response);
     }
@@ -34,7 +35,7 @@ public class OTPlannerAdapter implements PlannerAdapter {
         JSONObject response = OTPApiClient.getInstance().sendNewRequest(origin, destination);
         List<Route> routeList = getRouteList(response);
 
-        List<Route> bikeRoutes = findRoutes(origin,destination,TransportMode.BICYCLE);
+        List<Route> bikeRoutes = findRoutes(origin, destination, TransportMode.BICYCLE);
         routeList.addAll(bikeRoutes);
 
         return routeList;

@@ -404,8 +404,8 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
             tmpArr[1] = graphNode.getLongitude();
             kdTree.insert(tmpArr, graphNode.id);
         }
-//        ingoingKDTreeMap = createIngoingKDTreeMap();
-//        outgoingKDTreeMap = createOutgoingKDTreeMap();
+        ingoingKDTreeMap = createIngoingKDTreeMap();
+        outgoingKDTreeMap = createOutgoingKDTreeMap();
 
         logger.info("KDTree created");
     }

@@ -7,6 +7,7 @@ import cz.cvut.fel.intermodal_planning.model.planner.Location;
 import cz.cvut.fel.intermodal_planning.model.planner.LocationArea;
 import cz.cvut.fel.intermodal_planning.model.planner.Route;
 import cz.cvut.fel.intermodal_planning.model.planner.TransportMode;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -24,20 +25,23 @@ public class PlannerQualityEvaluator {
         switch (qualityMetric) {
             case REFINEMENT:
                 evaluatePlannerQualityUsingRefinement(plannerInitializer);
+                break;
             case SINGLEMODAL:
                 evaluatePlannerQualityUsingSinglemodalQualityCheck(plannerInitializer);
+                break;
         }
     }
 
     private static void evaluatePlannerQualityUsingSinglemodalQualityCheck(PlannerInitializer plannerInitializer) {
         int findingPathCount = 100;
         long[] routeDuration, subplannerRouteDuration, deviation;
-        double sizeDeviation;
+        double[] modeDeviation = new double[TransportMode.availableModes().length];
+        File file = new File(Storage.STATISTICS_PATH + "/planner_quality_singlemodal.txt");
 
         try {
-            File file = new File(Storage.STATISTICS_PATH + "/planner_quality_singlemodal.txt");
             FileWriter writer = new FileWriter(file, true);
 
+            int modeCount =0;
             for (TransportMode transportMode : TransportMode.availableModes()) {
                 routeDuration = new long[findingPathCount];
                 subplannerRouteDuration = new long[findingPathCount];
@@ -47,9 +51,9 @@ public class PlannerQualityEvaluator {
                     List<GraphEdge> plannerRoute = null;
                     Route subplannerRoute = null;
 
-                    while (plannerRoute == null || subplannerRoute == null) {
+                    while (!ObjectUtils.allNotNull(plannerRoute, subplannerRoute)) {
                         Location[] locArray = plannerInitializer.locationArea.generateRandomLocations(2);
-                        plannerRoute = plannerInitializer.routePlanner.findPath(locArray[0], locArray[1]);
+                        plannerRoute = plannerInitializer.routePlanner.findPath(locArray[0], locArray[1], transportMode);
                         subplannerRoute = plannerInitializer.routePlanner.findRouteBySubplanner(locArray[0], locArray[1], transportMode);
                     }
 
@@ -57,9 +61,15 @@ public class PlannerQualityEvaluator {
                     subplannerRouteDuration[i] = plannerInitializer.routePlanner.getDuration(subplannerRoute);
                     deviation[i] = routeDuration[i] - subplannerRouteDuration[i];
                 }
-                sizeDeviation = Arrays.stream(deviation).average().orElse(0);
-                writer.write(plannerInitializer.requestCount + " requests, mode: " + transportMode.name() + ", avg deviation: " + sizeDeviation + " s\n");
+                modeDeviation[modeCount++] = Arrays.stream(deviation).average().orElse(0);
+
             }
+
+            double avgDeviation = Arrays.stream(modeDeviation).average().orElse(0);
+
+            writer.write(plannerInitializer.requestCount + " requests, " +
+                    "strategy: " + plannerInitializer.expansionStrategy.name() + "," +
+                    "avg deviation: " + avgDeviation + " s\n");
 
             writer.close();
         } catch (IOException e) {
@@ -92,22 +102,13 @@ public class PlannerQualityEvaluator {
 
         sizeDeviation = Arrays.stream(deviation).average().orElse(0);
 
-//        File file = new File(Storage.STATISTICS_PATH +
-//                "/statistics_graph_requests" + Storage.getTotalRequestCount() + ".txt");
-//        try {
-//            FileWriter writer = new FileWriter(file, false);
-//            for (int ii = 0; ii < findingPathCount; ii++) {
-//                writer.write(routeDuration[ii] + " " + refinementRouteDuration[ii] + "\n");
-//            }
-//            writer.close();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
 
         File file = new File(Storage.STATISTICS_PATH + "/planner_quality_refinement.txt");
         try {
             FileWriter writer = new FileWriter(file, true);
-            writer.write(plannerInitializer.requestCount + "requests, avg deviation: " + sizeDeviation + " s\n");
+            writer.write(plannerInitializer.requestCount + "requests," +
+                    "strategy: " + plannerInitializer.expansionStrategy.name() + "," +
+                    "avg deviation: " + sizeDeviation + " s\n");
             writer.close();
         } catch (IOException e) {
             e.printStackTrace();
