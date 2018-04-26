@@ -28,4 +28,8 @@ public enum TransportMode implements Serializable {
     public String shortcut() {
         return this.name().substring(0, 1);
     }
+
+    public static TransportMode[] singleModalModes() {
+        return new TransportMode[]{TRANSIT, CAR, BICYCLE};
+    }
 }

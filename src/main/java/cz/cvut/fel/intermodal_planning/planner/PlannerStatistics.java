@@ -4,10 +4,7 @@ import cz.cvut.fel.intermodal_planning.general.Storage;
 import cz.cvut.fel.intermodal_planning.graph.enums.GraphExpansionStrategy;
 import cz.cvut.fel.intermodal_planning.graph.enums.GraphQualityMetric;
 import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
-import cz.cvut.fel.intermodal_planning.model.planner.Location;
-import cz.cvut.fel.intermodal_planning.model.planner.LocationArea;
-import cz.cvut.fel.intermodal_planning.model.planner.Route;
-import cz.cvut.fel.intermodal_planning.model.planner.TransportMode;
+import cz.cvut.fel.intermodal_planning.model.planner.*;
 import cz.cvut.fel.intermodal_planning.utils.SerializationUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -60,27 +57,27 @@ public class PlannerStatistics {
         File odFile = new File(odPairPath + "pair_" + count + ".txt");
         Location[] odPair = SerializationUtils.readODPairFromGson(odFile);
 
-        List<GraphEdge> perfectIntermodalPath = routePlanner.findPath(odPair[0], odPair[1]);
+        Route perfectIntermodalPath = routePlanner.findRoute(odPair[0], odPair[1]);
 
         if (perfectIntermodalPath == null) return;
 
-        Storage.INTERMODAL_AVG_DURATION += routePlanner.getDuration(perfectIntermodalPath);
+        Storage.INTERMODAL_AVG_DURATION += routePlanner.getRouteDuration(perfectIntermodalPath);
         addToHistogram(perfectIntermodalPath);
     }
 
     private static void comparePath(RoutePlanner routePlanner, LocationArea locationArea, int count) {
         Location[] odPair = null;
-        List<GraphEdge> intermodalPath = null;
+        Route intermodalPath = null;
 
         while (intermodalPath == null) {
             odPair = locationArea.generateRandomLocations(2);
-            intermodalPath = routePlanner.findPath(odPair[0], odPair[1]);
+            intermodalPath = routePlanner.findRoute(odPair[0], odPair[1]);
         }
 
         storeODPair(odPair, count);
 
         addToHistogram(intermodalPath);
-        Storage.INTERMODAL_AVG_DURATION += routePlanner.getDuration(intermodalPath);
+        Storage.INTERMODAL_AVG_DURATION += routePlanner.getRouteDuration(intermodalPath);
     }
 
 
@@ -92,33 +89,35 @@ public class PlannerStatistics {
         SerializationUtils.writeRequestToGson(pair, file);
     }
 
-    private static void addToHistogram(List<GraphEdge> path) {
-        String keyDesc = getHistogramDescription(path.stream()
-                .filter(graphEdge -> graphEdge.mode != TransportMode.WALK)
-                .collect(Collectors.toList()));
+    private static void addToHistogram(Route path) {
+        path.legList = path.legList.stream()
+                .filter(leg -> leg.transportMode != TransportMode.WALK)
+                .collect(Collectors.toList());
+
+        String keyDesc = getHistogramDescription(path);
 
         histogramMap.put(keyDesc, histogramMap.containsKey(keyDesc) ? histogramMap.get(keyDesc) + 1 : 1);
     }
 
-    private static String getHistogramDescription(List<GraphEdge> path) {
+    private static String getHistogramDescription(Route path) {
         return getIntermodalDescription(path).replaceAll("\\d", "");
     }
 
-    private static String getIntermodalDescription(List<GraphEdge> intermodalPath) {
+    private static String getIntermodalDescription(Route intermodalPath) {
         StringBuilder description = new StringBuilder();
         if (intermodalPath == null || intermodalPath.isEmpty()) return description.toString();
 
-        long curDuration = intermodalPath.get(0).durationInSeconds;
-        TransportMode curMode = intermodalPath.get(0).mode;
-        GraphEdge curEdge;
-        for (int i = 1; i < intermodalPath.size(); i++) {
-            curEdge = intermodalPath.get(i);
-            if (curMode == curEdge.mode) {
-                curDuration += curEdge.durationInSeconds;
+        long curDuration = intermodalPath.legList.get(0).durationInSeconds;
+        TransportMode curMode = intermodalPath.legList.get(0).transportMode;
+        Leg curLeg;
+        for (int i = 1; i < intermodalPath.legList.size(); i++) {
+            curLeg = intermodalPath.legList.get(i);
+            if (curMode == curLeg.transportMode) {
+                curDuration += curLeg.durationInSeconds;
             } else {
                 description.append(curDuration).append(curMode.shortcut()).append("+");
-                curMode = curEdge.mode;
-                curDuration = curEdge.durationInSeconds;
+                curMode = curLeg.transportMode;
+                curDuration = curLeg.durationInSeconds;
             }
         }
         description.append(curDuration).append(curMode.shortcut());
@@ -150,7 +149,7 @@ public class PlannerStatistics {
         for (int i = 1; i < path.size(); i++) {
             prevEdge = path.get(i - 1);
             curEdge = path.get(i);
-            numOfTransfers += (prevEdge.mode == curEdge.mode) ? 0 : 1;
+            numOfTransfers += (prevEdge.transportMode == curEdge.transportMode) ? 0 : 1;
         }
 
         long routeDuration = path.stream().mapToLong(o -> o.durationInSeconds).sum();

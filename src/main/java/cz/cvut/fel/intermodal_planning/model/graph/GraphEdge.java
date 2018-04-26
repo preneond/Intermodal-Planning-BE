@@ -8,7 +8,7 @@ import java.io.Serializable;
 import java.util.List;
 
 public class GraphEdge extends Edge implements Serializable {
-    public TransportMode mode;
+    public TransportMode transportMode;
     public List<Location> polyline;
     public long durationInSeconds;
 
@@ -18,6 +18,6 @@ public class GraphEdge extends Edge implements Serializable {
 
     @Override
     public String toString() {
-        return "(" + fromId + "->" + mode.name() + "->" + toId + ')';
+        return "(" + fromId + "->" + transportMode.name() + "->" + toId + ')';
     }
 }

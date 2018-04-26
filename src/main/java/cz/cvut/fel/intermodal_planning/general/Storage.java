@@ -40,10 +40,18 @@ public final class Storage {
     public static final int MIN_DISTANCE_BETWEEN_OD = 500;
 
     public static final LocationArea AREA_PRAGUE = new LocationArea(
+//            50.1472,
+//            50.0069,
+//            14.2946,
+//            14.5898);
+//
+//    public static final LocationArea AREA_PRAGUE_EXT = new LocationArea(
             50.1072,
             50.0269,
             14.2946,
             14.55);
+
+
 
     public static final Location[] IMPORTANT_PLACES_PRAGUE = new Location[]{
             // Kulatak
@@ -102,6 +110,7 @@ public final class Storage {
             "AIzaSyBnr2a2o2wGe0GDrxpkJ4Vs893I6oejjNM",
             "AIzaSyCIdROtkPV7yfR9diMsbr0XlSMVaMNTYzU"
     };
+    public static final int FINDING_PATH_COUNT = 1000;
 
 
     public static void nullRequestCounters() {

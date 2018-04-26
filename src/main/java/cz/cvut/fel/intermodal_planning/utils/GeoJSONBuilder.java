@@ -5,18 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
 import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
-import cz.cvut.fel.intermodal_planning.model.planner.Location;
-import cz.cvut.fel.intermodal_planning.model.planner.TransportMode;
-import cz.cvut.fel.intermodal_planning.planner.PlannerStatistics;
+import cz.cvut.fel.intermodal_planning.model.planner.*;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.geojson.*;
 
-import java.awt.*;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -80,7 +76,7 @@ public class GeoJSONBuilder {
             feature = new Feature();
             geoJsonObject = new LineString(origin, destination);
             feature.setGeometry(geoJsonObject);
-            feature.setProperty("color", ColorUtils.toHexString(edge.mode.modeColor()));
+            feature.setProperty("color", ColorUtils.toHexString(edge.transportMode.modeColor()));
 
             featureCollection.add(feature);
         }
@@ -90,7 +86,7 @@ public class GeoJSONBuilder {
         Feature feature;
         GeoJsonObject geoJsonObject;
 
-        for (GraphEdge edge : graph.getAllEdges().stream().filter(graphEdge -> graphEdge.mode == mode).collect(Collectors.toList())) {
+        for (GraphEdge edge : graph.getAllEdges().stream().filter(graphEdge -> graphEdge.transportMode == mode).collect(Collectors.toList())) {
             Node from = graph.getNode(edge.fromId);
             Node to = graph.getNode(edge.toId);
             LngLatAlt origin = new LngLatAlt(from.getLongitude(), from.getLatitude());
@@ -100,11 +96,42 @@ public class GeoJSONBuilder {
             geoJsonObject = new LineString(origin, destination);
 
             feature.setGeometry(geoJsonObject);
-            feature.setProperty("mode", edge.mode.name());
+            feature.setProperty("mode", edge.transportMode.name());
             feature.setProperty("length", edge.length);
             feature.setProperty("duration", edge.durationInSeconds);
 
             featureCollection.add(feature);
+        }
+    }
+
+    private void addPolylinesFromRoute(Route route) {
+        Feature feature;
+        GeoJsonObject geoJsonObject;
+
+        featureCollection = new FeatureCollection();
+
+        for (Leg leg : route.legList) {
+            if (leg.steps == null || leg.steps.isEmpty()) {
+                Location from = leg.startLocation;
+                Location to = leg.endLocation;
+
+                feature = new Feature();
+                geoJsonObject = new LineString(from.toLngLatAlt(),  to.toLngLatAlt());
+                feature.setGeometry(geoJsonObject);
+                feature.setProperty("color", ColorUtils.toHexString(leg.transportMode.modeColor()));
+            }
+
+            for (Step step : leg.steps) {
+                Location from = step.startLocation;
+                Location to = step.endLocation;
+
+                feature = new Feature();
+                geoJsonObject = new LineString(from.toLngLatAlt(),  to.toLngLatAlt());
+                feature.setGeometry(geoJsonObject);
+                feature.setProperty("color", ColorUtils.toHexString(step.transportMode.modeColor()));
+
+                featureCollection.add(feature);
+            }
         }
     }
 
@@ -133,6 +160,17 @@ public class GeoJSONBuilder {
 
     public String buildGeoJSONStringForPath(Graph<Node, GraphEdge> graph, List<GraphEdge> edgeList) {
         addPolylineFromEdgeList(graph, edgeList);
+
+        try {
+            return objectMapper.writeValueAsString(featureCollection);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return "{}";
+        }
+    }
+
+    public String buildGeoJSONStringForRoute(Route route) {
+        addPolylinesFromRoute(route);
 
         try {
             return objectMapper.writeValueAsString(featureCollection);

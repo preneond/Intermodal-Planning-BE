@@ -49,7 +49,6 @@ public class PlannerInitializer {
 
     private PlannerInitializer() {
         initPlannerUsingKnownGraph();
-        graphMaker.createKDTree();
     }
 
     public void initPlanner(int requestCount) {
@@ -74,12 +73,16 @@ public class PlannerInitializer {
             Graph<Node, GraphEdge> graph = (Graph<Node, GraphEdge>) SerializationUtils.readObjectFromFile(graphFile);
 
             graphMaker = new GraphMaker();
-            routePlanner = new RoutePlanner(graphMaker);
 
             if (graph == null) {
                 graphMaker.createGraphFromKnownRequests(15000);
                 SerializationUtils.writeObjectToFile(graphMaker.getGraph(), graphFile);
+            } else {
+                graphMaker.setGraph(graph);
             }
+            graphMaker.createKDTree();
+            routePlanner = new RoutePlanner(graphMaker);
+
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }

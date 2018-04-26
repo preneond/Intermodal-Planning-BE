@@ -72,7 +72,7 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
                 int endId = getIdFor(leg.endLocation);
                 if (!containsEdge(startId, endId)) {
                     GraphEdge edge = new GraphEdge(startId, endId, (int) leg.durationInSeconds);
-                    edge.mode = leg.transportMode;
+                    edge.transportMode = leg.transportMode;
                     edge.durationInSeconds = leg.durationInSeconds;
                     addEdge(edge);
                 }
@@ -90,7 +90,7 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
             int endId = getIdFor(step.endLocation);
             if (!containsEdge(startId, endId)) {
                 GraphEdge edge = new GraphEdge(startId, endId, (int) step.durationInSeconds);
-                edge.mode = step.transportMode;
+                edge.transportMode = step.transportMode;
                 edge.durationInSeconds = step.durationInSeconds;
                 addEdge(edge);
             }
@@ -109,7 +109,7 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         super.addEdge(edge);
         int fromId = edge.fromId;
         int toId = edge.toId;
-        TransportMode edgeMode = edge.mode;
+        TransportMode edgeMode = edge.transportMode;
 
         Set<TransportMode> set = nodeIncomingModes.get(fromId);
         if (set == null) {
@@ -255,9 +255,9 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         for (Location importantPlace : importantPlaces) {
             for (int i = 0; i < 100; i++) {
                 randLoc = locationArea.generateRandomLocation();
-                tmpRoutes = plannerAdapter.findRoutes(importantPlace, randLoc);
+                tmpRoutes = plannerAdapter.findRoutes(importantPlace, randLoc, mode);
                 routes.addAll(tmpRoutes);
-                tmpRoutes = plannerAdapter.findRoutes(randLoc, importantPlace);
+                tmpRoutes = plannerAdapter.findRoutes(randLoc, importantPlace, mode);
                 routes.addAll(tmpRoutes);
             }
             numOfRequests -= 100;
@@ -678,7 +678,7 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
                     nodeDistribution[tmpRow][tmpColumn]++;
                     break;
                 } else {
-                    if (nodeLocation.lat < tmpCell.bottomLat) {
+                    if (nodeLocation.lat > tmpCell.bottomLat) {
                         tmpRow++;
                     }
                     if (nodeLocation.lon > tmpCell.rightLon) {
@@ -695,7 +695,7 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         int gridY = Storage.GRAPH_DISTRIBUTION_GRID_Y;
         List<GraphEdge> edgeList = graph.getAllEdges()
                 .stream()
-                .filter(e -> e.mode == mode)
+                .filter(e -> e.transportMode == mode)
                 .collect(Collectors.toList());
 
         LocationArea[][] areaGrid = locationArea.createGrid(gridX, gridY);
@@ -713,7 +713,7 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         int gridY = Storage.GRAPH_DISTRIBUTION_GRID_Y;
         List<GraphEdge> edgeList = graph.getAllEdges()
                 .stream()
-                .filter(e -> e.mode == mode)
+                .filter(e -> e.transportMode == mode)
                 .collect(Collectors.toList());
 
         LocationArea[][] areaGrid = locationArea.createGrid(gridX, gridY);

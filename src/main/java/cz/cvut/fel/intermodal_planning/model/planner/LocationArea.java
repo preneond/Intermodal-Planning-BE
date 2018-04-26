@@ -75,7 +75,7 @@ public class LocationArea {
         double locLon = location.lon;
         double locLat = location.lat;
 
-        return  locLon > leftLon && locLon < rightLon && locLat > upLat && locLat < bottomLat;
+        return  locLon >= leftLon && locLon <= rightLon && locLat >= bottomLat && locLat <= upLat;
     }
 
     public void expandArea(LocationArea locationArea) {
@@ -83,6 +83,6 @@ public class LocationArea {
         rightLon = locationArea.rightLon > rightLon ? locationArea.rightLon : rightLon;
 
         upLat = locationArea.upLat < upLat ? locationArea.upLat : upLat;
-        bottomLat = locationArea.bottomLat > bottomLat ? locationArea.bottomLat : bottomLat;
+        bottomLat = locationArea.bottomLat < bottomLat ? locationArea.bottomLat : bottomLat;
     }
 }

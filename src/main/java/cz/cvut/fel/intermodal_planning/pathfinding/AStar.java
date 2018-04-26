@@ -61,7 +61,7 @@ public class AStar<TNode extends Node> {
                 List<GraphEdge> path = findPath(graph, originNodes, entry_from.getValue());
                 if (!path.isEmpty()) {
                     GraphEdge lastEdge = path.get(path.size() - 1);
-                    TransportMode lastMode = lastEdge.mode;
+                    TransportMode lastMode = lastEdge.transportMode;
                     double distance = LocationUtils.distance(LocationUtils.getNodeLocation(graph.getNode(lastEdge.toId)), destination);
                     long destinationPenalty = RoutePlanner.getDistanceDuration(lastMode, distance);
 
@@ -84,22 +84,22 @@ public class AStar<TNode extends Node> {
                 // loop all edges from dequeued node
                 for (GraphEdge edge : list) {
                     //if node is in closed list
-                    // or is not allowed to use a specified transport mode then continue
+                    // or is not allowed to use a specified transport transportMode then continue
                     // or is not transfer possible
 
                     if (prevNodes.get(edge.fromId) != null) {
-                        prevMode = graph.getEdge(prevNodes.get(edge.fromId), edge.fromId).mode;
+                        prevMode = graph.getEdge(prevNodes.get(edge.fromId), edge.fromId).transportMode;
                     }
 
                     if (closedList.contains(edge.toId)
-                            || !availableModesList.contains(edge.mode)
-                            || !RoutePlanner.isTransferPossible(prevMode, edge.mode)
+                            || !availableModesList.contains(edge.transportMode)
+                            || !RoutePlanner.isTransferPossible(prevMode, edge.transportMode)
                             ) {
                         continue;
                     }
                     node_to = graph.getNode(edge.toId);
 
-                    int transferPenalty = (prevMode == null || prevMode == edge.mode) ? 0 : RoutePlanner.getTransferPenalty(prevMode);
+                    int transferPenalty = (prevMode == null || prevMode == edge.transportMode) ? 0 : RoutePlanner.getTransferPenalty(prevMode);
 
                     // get cost of start node, we substract start-node's distance and after that we add end-node's distance
                     // and we also add edge length divided by allowed speed

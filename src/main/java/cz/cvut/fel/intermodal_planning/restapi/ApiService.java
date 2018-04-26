@@ -6,23 +6,17 @@ package cz.cvut.fel.intermodal_planning.restapi;
  * All Rights Reserved.
  */
 
-import com.google.maps.model.TravelMode;
-import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
 import cz.cvut.fel.intermodal_planning.model.planner.Location;
+import cz.cvut.fel.intermodal_planning.model.planner.Route;
 import cz.cvut.fel.intermodal_planning.model.planner.TransportMode;
 import cz.cvut.fel.intermodal_planning.planner.PlannerInitializer;
-import cz.cvut.fel.intermodal_planning.planner.PlannerStatistics;
 import cz.cvut.fel.intermodal_planning.utils.GeoJSONBuilder;
-import cz.cvut.fel.intermodal_planning.utils.LocationUtils;
-import org.apache.log4j.BasicConfigurator;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
-import java.text.ParseException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.logging.Logger;
 
 @Path("/api")
@@ -60,16 +54,16 @@ public class ApiService {
 
             Location origin = new Location(originLoc[0], originLoc[1]);
             Location destination = new Location(destinationLoc[0], destinationLoc[1]);
-            List<GraphEdge> path = plannerInitializer.routePlanner.findPath(origin, destination, availableModes[0]);
-            String pathDesc = ResponseBuilder.buildPathDescription(path);
+            Route route = plannerInitializer.routePlanner.findRoute(origin, destination, availableModes);
+            String pathDesc = ResponseBuilder.buildRouteDescription(route);
 
-            String geoJSONStr = GeoJSONBuilder.getInstance().buildGeoJSONStringForPath(plannerInitializer.graphMaker.getGraph(),path);
+            String geoJSONStr = GeoJSONBuilder.getInstance().buildGeoJSONStringForRoute(route);
 
             String resultJSON = "{" +
                     "\"description\":" + pathDesc + ","
                     + "\"route\":" + geoJSONStr
                     + "}";
-            String responseStr = path == null ? "Path is null" : resultJSON;
+            String responseStr = route.isEmpty() ? "Route is empty" : resultJSON;
 
             return Response
                     .status(200)

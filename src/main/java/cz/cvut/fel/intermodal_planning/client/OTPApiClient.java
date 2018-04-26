@@ -65,8 +65,8 @@ public class OTPApiClient {
             logger.info("Request: " + webResource.getURI());
             String stringResponse = response.getEntity(String.class);
 
-//            int tmpCount = (mode == TransportMode.TRANSIT) ? ++Storage.TRANSIT_REQUEST_COUNT : ++Storage.BIKE_REQUEST_COUNT;
-//            File file = new File(Storage.OTP_REQUEST_STORAGE + mode.toString() + "/request_" + tmpCount + ".txt");
+//            int tmpCount = (transportMode == TransportMode.TRANSIT) ? ++Storage.TRANSIT_REQUEST_COUNT : ++Storage.BIKE_REQUEST_COUNT;
+//            File file = new File(Storage.OTP_REQUEST_STORAGE + transportMode.toString() + "/request_" + tmpCount + ".txt");
 //            SerializationUtils.writeStringToFile(stringResponse, file);
 
             return new JSONObject(stringResponse);

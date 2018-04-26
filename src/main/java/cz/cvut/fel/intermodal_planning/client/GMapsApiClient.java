@@ -63,9 +63,9 @@ public class GMapsApiClient {
                     .mode(mode)
                     .await();
 
-//            int tmpCount = mode == TravelMode.DRIVING ? ++Storage.CAR_REQUEST_COUNT : ++Storage.WALK_REQUEST_COUNT;
+//            int tmpCount = transportMode == TravelMode.DRIVING ? ++Storage.CAR_REQUEST_COUNT : ++Storage.WALK_REQUEST_COUNT;
 
-//            File file = new File(Storage.GMAPS_REQUEST_STORAGE + mode.toString() + "/request_" + tmpCount + ".txt");
+//            File file = new File(Storage.GMAPS_REQUEST_STORAGE + transportMode.toString() + "/request_" + tmpCount + ".txt");
 //            SerializationUtils.writeRequestToGson(directionResult, file);
 
             return directionResult;

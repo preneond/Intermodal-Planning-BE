@@ -28,10 +28,46 @@ public class RoutePlanner {
     }
 
 
-    public List<GraphEdge> findRandomPath(LocationArea locationArea) {
+    public Route findRandomPath(LocationArea locationArea) {
         Location[] locArray = locationArea.generateRandomLocations(2);
 
-        return findPath(locArray[0], locArray[1]);
+        Route randomPath = null;
+        while (randomPath.isEmpty()) {
+            randomPath = findRoute(locArray[0], locArray[1]);
+        }
+
+        return randomPath;
+    }
+
+    private Route createRouteFromEdgeList(List<GraphEdge> edgeList, Location origin, Location destination) {
+        Route route = new Route();
+
+        route.origin = origin;
+        route.destination = destination;
+
+        if (edgeList.isEmpty()) return route;
+
+        Leg tmpLeg = null;
+        for (GraphEdge edge : edgeList) {
+            if (tmpLeg == null) tmpLeg = new Leg();
+            if (edge.transportMode != tmpLeg.transportMode) {
+                if (tmpLeg.transportMode != null) route.legList.add(tmpLeg);
+                tmpLeg = new Leg();
+                tmpLeg.startLocation = LocationUtils.getNodeLocation(graphMaker.getGraph().getNode(edge.fromId));
+                tmpLeg.transportMode = edge.transportMode;
+            }
+
+            Step step = new Step();
+            step.startLocation = tmpLeg.startLocation;
+            step.endLocation = tmpLeg.endLocation;
+            step.transportMode = tmpLeg.transportMode;
+            step.durationInSeconds = edge.durationInSeconds;
+
+            tmpLeg.endLocation = LocationUtils.getNodeLocation(graphMaker.getGraph().getNode(edge.toId));
+            tmpLeg.durationInSeconds += step.durationInSeconds;
+            tmpLeg.steps.add(step);
+        }
+        return route;
     }
 
     public Route findRouteBySubplanner(Location locFrom, Location locTo, TransportMode mode) {
@@ -55,67 +91,46 @@ public class RoutePlanner {
         Location locFrom = LocationUtils.getNodeLocation(from);
         Location locTo = LocationUtils.getNodeLocation(to);
 
-        Route route = findRouteBySubplanner(locFrom, locTo, mode);
-
-        if (route == null) route = new Route();
-
-        return route;
+        return findRouteBySubplanner(locFrom, locTo, mode);
 
     }
 
-    public List<GraphEdge> findPath(Location origin, Location destination) {
-        return findPath(origin, destination, null);
+    public Route findRoute(Location origin, Location destination) {
+        return findRoute(origin, destination, new TransportMode[]{});
     }
 
-    public List<GraphEdge> findPath(Location origin, Location destination, TransportMode availableMode) {
+    public Route findRoute(Location origin, Location destination, TransportMode... availableModes) {
         AStar astar = new AStar<>(graphMaker.getGraph());
 
         List<Node> originList;
         List<Node> destinationList;
 
-        if (availableMode == null) {
+        List<GraphEdge> astarPlan;
+
+        if (availableModes.length == 0) {
             originList = getNearestNodes(origin, 5);
             destinationList = getNearestNodes(destination, 5);
 
-            return astar.plan(origin, destination, originList, destinationList);
+            astarPlan = astar.plan(origin, destination, originList, destinationList);
         } else {
-            TransportMode[] availableModes = new TransportMode[]{availableMode, TransportMode.WALK};
-
             originList = getNearestNodes(origin, availableModes, true, 1);
             destinationList = getNearestNodes(destination, availableModes, false, 1);
 
-            return astar.plan(origin, destination, originList, destinationList, availableModes);
+            astarPlan = astar.plan(origin, destination, originList, destinationList, availableModes);
         }
+
+        return createRouteFromEdgeList(astarPlan, origin, destination);
     }
 
-    public Route doRefinement(List<GraphEdge> plan) {
-        if (plan.isEmpty()) return null;
+    public Route doRefinement(Route route) {
+        Route refoundedRoute = new Route();
+        refoundedRoute.origin = route.origin;
+        refoundedRoute.destination = route.destination;
 
-        Graph graph = graphMaker.getGraph();
-
-        GraphEdge startEdge = plan.get(0);
-        int fromId = startEdge.fromId;
-        int toId = startEdge.toId;
-        GraphEdge curEdge;
-
-        Route route = new Route();
-        route.origin = LocationUtils.getNodeLocation(graph.getNode(fromId));
-        route.destination = LocationUtils.getNodeLocation(graph.getNode(plan.get(plan.size() - 1).toId));
-
-        for (int i = 1; i < plan.size(); i++) {
-            curEdge = plan.get(i);
-            if (startEdge.mode != curEdge.mode) {
-                Route tmpRoute = findRouteBySubplanner(fromId, toId, startEdge.mode);
-                route.legList.addAll(tmpRoute.legList);
-                startEdge = curEdge;
-                fromId = startEdge.fromId;
-                toId = startEdge.toId;
-            } else {
-                toId = curEdge.toId;
-            }
+        for (Leg leg : route.legList) {
+            Route tmpRoute = findRouteBySubplanner(leg.startLocation, leg.endLocation, leg.transportMode);
+            refoundedRoute.legList.addAll(tmpRoute.legList);
         }
-        Route tmpRoute = findRouteBySubplanner(fromId, toId, startEdge.mode);
-        route.legList.addAll(tmpRoute.legList);
 
         return route;
     }
@@ -147,23 +162,28 @@ public class RoutePlanner {
         return getNearestNodes(location, mode, isIngoingMode, 1).get(0);
     }
 
-    public long getDuration(List<GraphEdge> graphPath) {
-        if (graphPath.isEmpty()) return 0;
-        long duration = graphPath.stream().mapToLong(o -> o.durationInSeconds).sum();
-        TransportMode prevMode = graphPath.get(0).mode;
-        for (GraphEdge edge : graphPath) {
-            // penalty for transfer
-            duration += (prevMode == edge.mode) ? 0 : getTransferPenalty(prevMode);
-            prevMode = edge.mode;
+    public long getRouteDuration(Route route) {
+        if (route.isEmpty()) return 0;
+
+        long duration = route.legList.stream().mapToLong(o -> o.durationInSeconds).sum();
+
+        double originNodeDist = LocationUtils.distance(route.origin, route.legList.get(0).startLocation);
+        duration += getDistanceDuration(route.legList.get(0).transportMode, originNodeDist);
+
+        double destNodeDist = LocationUtils.distance(route.destination, route.legList.get(route.legList.size() - 1).endLocation);
+        duration += getDistanceDuration(route.legList.get(route.legList.size() - 1).transportMode, destNodeDist);
+
+
+        TransportMode prevMode = route.legList.get(0).transportMode;
+        for (Leg leg : route.legList) {
+            duration += (prevMode == leg.transportMode) ? 0 : getTransferPenalty(prevMode);
+            prevMode = leg.transportMode;
         }
-        if (graphPath.get(graphPath.size() - 1).mode == TransportMode.CAR) duration += 120;
-        if (graphPath.get(graphPath.size() - 1).mode == TransportMode.BICYCLE) duration += 60;
+
+        if (route.legList.get(route.legList.size() - 1).transportMode == TransportMode.CAR) duration += 120;
+        else if (route.legList.get(route.legList.size() - 1).transportMode == TransportMode.BICYCLE) duration += 60;
 
         return duration;
-    }
-
-    public long getDuration(Route route) {
-        return route == null ? 0 : route.legList.stream().mapToLong(o -> o.durationInSeconds).sum();
     }
 
     public static int getTransferPenalty(TransportMode prevMode) {

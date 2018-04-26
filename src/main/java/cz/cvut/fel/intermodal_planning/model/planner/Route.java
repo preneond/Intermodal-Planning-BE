@@ -21,4 +21,8 @@ public class Route {
 
         return out.toString();
     }
+
+    public boolean isEmpty() {
+        return legList.isEmpty();
+    }
 }
