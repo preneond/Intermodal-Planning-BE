@@ -24,13 +24,11 @@ public class PlannerStatistics {
         PlannerInitializer plannerInitializer;
         int[] requestCountArr = new int[]{500, 1000, 2500, 5000, 7500, 10000};
 
-        for (GraphExpansionStrategy expansionStrategy : GraphExpansionStrategy.values()) {
-            plannerInitializer = new PlannerInitializer(expansionStrategy, area);
-            for (int requestCount : requestCountArr) {
-                plannerInitializer.initPlanner(requestCount);
-                for (GraphQualityMetric qualityMetric : GraphQualityMetric.values()) {
-                    PlannerQualityEvaluator.evaluatePlannerQuality(plannerInitializer, qualityMetric);
-                }
+        for (GraphExpansionStrategy expansionStrategy : GraphExpansionStrategy.getUninformedStrategies()) {
+            plannerInitializer = new PlannerInitializer(area);
+            for (int requestCount: requestCountArr) {
+                RoutePlanner routePlanner = plannerInitializer.initPlanner(requestCount,expansionStrategy);
+                PlannerQualityEvaluator.evaluatePlannerQualityUsingRefinement(routePlanner,area,expansionStrategy,requestCount);
             }
         }
     }

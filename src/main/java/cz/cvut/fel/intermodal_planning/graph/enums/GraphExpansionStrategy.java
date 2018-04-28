@@ -12,11 +12,11 @@ public enum GraphExpansionStrategy {
     USING_KNOWN_NODES_AS_OD;
 
 
-    public static GraphExpansionStrategy[] getInformedStrategies() {
-        return new GraphExpansionStrategy[]{RANDOM_OD, RANDOM_OD_WITH_MIN_DISTANCE_BETWEEN, CHAINING_RANDOM_OD};
+    public static GraphExpansionStrategy[] getUninformedStrategies() {
+        return new GraphExpansionStrategy[]{RANDOM_OD_WITH_MIN_DISTANCE_BETWEEN, CHAINING_RANDOM_OD};
     }
 
-    public static GraphExpansionStrategy[] getUninformedStrategies() {
+    public static GraphExpansionStrategy[] getInformedStrategies() {
         return new GraphExpansionStrategy[]{NODES_MIN_COVERAGE_EQ_DIST, NODES_MIN_COVERAGE_NORM_DIST,
                 EDGES_MIN_COVERAGE_EQ_DIST, EDGES_MIN_COVERAGE_NORM_DIST};
     }

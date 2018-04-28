@@ -16,8 +16,11 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @Path("/api")
 public class ApiService {
@@ -39,11 +42,12 @@ public class ApiService {
         try {
             double[] originLoc = Arrays.stream(originStr.split(",")).mapToDouble(Double::parseDouble).toArray();
             double[] destinationLoc = Arrays.stream(destinationStr.split(",")).mapToDouble(Double::parseDouble).toArray();
-            TransportMode[] availableModes = availableModesStr.isEmpty() ? new TransportMode[]{} :
-                    (TransportMode[]) Arrays
-                            .stream(availableModesStr.split(","))
-                            .map(modeStr -> TransportMode.valueOf(modeStr))
-                            .toArray();
+            List<TransportMode> availableModesList = availableModesStr.isEmpty() ? new ArrayList<>() :
+                    Arrays.stream(availableModesStr.split(","))
+                            .map(TransportMode::valueOf)
+                            .collect(Collectors.toList());
+            TransportMode[] availableModes = new TransportMode[availableModesList.size()];
+            availableModes = availableModesList.toArray(availableModes);
 
             if (originLoc.length != 2 || destinationLoc.length != 2)
                 throw new IllegalArgumentException("origin or destination length is not 2");

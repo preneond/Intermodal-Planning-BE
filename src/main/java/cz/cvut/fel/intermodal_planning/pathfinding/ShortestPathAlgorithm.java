@@ -13,9 +13,7 @@ import org.apache.log4j.Logger;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class AStar<TNode extends Node> {
-    private static final Logger logger = LogManager.getLogger(AStar.class);
-
+public class ShortestPathAlgorithm<TNode extends Node> {
     private final Graph<TNode, GraphEdge> graph;
 
     private HashSet<Integer> closedList;
@@ -24,7 +22,7 @@ public class AStar<TNode extends Node> {
     private Map<Integer, Integer> prevNodes;
 
 
-    public AStar(Graph<TNode, GraphEdge> graph) {
+    public ShortestPathAlgorithm(Graph<TNode, GraphEdge> graph) {
         this.graph = graph;
 
         openList = new FibonacciHeap<>();
@@ -33,6 +31,16 @@ public class AStar<TNode extends Node> {
         prevNodes = new HashMap<>();
     }
 
+    /**
+     * Finding path in graph using Dijkstra's algorithm - Many to many
+     *
+     * @param origin Origin Location
+     * @param destination Destination Location
+     * @param originNodes List of Nodes, FROM which the path is searched
+     * @param destinationNodes List of Nodes, TO which the path is searched
+     * @param availableModes List of transport modes, which are allowed to use
+     * @return Edge sequence representing the graph path
+     */
     public List<GraphEdge> plan(Location origin, Location destination, List<TNode> originNodes, List<TNode> destinationNodes,
                                 TransportMode... availableModes) {
         List availableModesList = Arrays.asList(availableModes);
@@ -126,8 +134,17 @@ public class AStar<TNode extends Node> {
         return pathTreeMap.isEmpty() ? null : pathTreeMap.firstEntry().getValue();
     }
 
-    public List<GraphEdge> plan(Location origin, Location destination, List<TNode> originNode, List<TNode> destinationNode) {
-        return plan(origin, destination, originNode, destinationNode, TransportMode.availableModes());
+    /**
+     * Finding path in graph using all possible transport modes using Dijkstra's algorithm - Many to many
+     *
+     * @param origin Origin Location
+     * @param destination Destination Location
+     * @param originNodes List of Nodes, FROM which the path is searched
+     * @param destinationNodes List of Nodes, TO which the path is searched
+     * @return Edge sequence representing the graph path
+     */
+    public List<GraphEdge> plan(Location origin, Location destination, List<TNode> originNodes, List<TNode> destinationNodes) {
+        return plan(origin, destination, originNodes, destinationNodes, TransportMode.availableModes());
 
     }
 

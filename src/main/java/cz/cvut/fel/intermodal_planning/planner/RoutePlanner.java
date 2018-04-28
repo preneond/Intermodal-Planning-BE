@@ -11,8 +11,9 @@ import cz.cvut.fel.intermodal_planning.model.planner.*;
 import cz.cvut.fel.intermodal_planning.utils.LocationUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import cz.cvut.fel.intermodal_planning.pathfinding.AStar;
+import cz.cvut.fel.intermodal_planning.pathfinding.ShortestPathAlgorithm;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -28,12 +29,14 @@ public class RoutePlanner {
     }
 
 
-    public Route findRandomPath(LocationArea locationArea) {
-        Location[] locArray = locationArea.generateRandomLocations(2);
+    public Route findPathBetweenRandomNodes() {
+        List<Node> nodeList = (List<Node>) graphMaker.getGraph().getAllNodes();
+        Node from = nodeList.get(ThreadLocalRandom.current().nextInt(nodeList.size()));
+        Node to = nodeList.get(ThreadLocalRandom.current().nextInt(nodeList.size()));
 
-        Route randomPath = null;
+        Route randomPath = new Route();
         while (randomPath.isEmpty()) {
-            randomPath = findRoute(locArray[0], locArray[1]);
+            randomPath = findRoute(from, to, new TransportMode[]{});
         }
 
         return randomPath;
@@ -45,28 +48,39 @@ public class RoutePlanner {
         route.origin = origin;
         route.destination = destination;
 
-        if (edgeList.isEmpty()) return route;
+        if (edgeList == null) return route;
 
         Leg tmpLeg = null;
-        for (GraphEdge edge : edgeList) {
-            if (tmpLeg == null) tmpLeg = new Leg();
-            if (edge.transportMode != tmpLeg.transportMode) {
-                if (tmpLeg.transportMode != null) route.legList.add(tmpLeg);
-                tmpLeg = new Leg();
-                tmpLeg.startLocation = LocationUtils.getNodeLocation(graphMaker.getGraph().getNode(edge.fromId));
-                tmpLeg.transportMode = edge.transportMode;
-            }
+        GraphEdge edge;
+        for (int i = 0; i < edgeList.size(); i++) {
+            edge = edgeList.get(i);
 
             Step step = new Step();
-            step.startLocation = tmpLeg.startLocation;
-            step.endLocation = tmpLeg.endLocation;
-            step.transportMode = tmpLeg.transportMode;
+            step.startLocation = LocationUtils.getNodeLocation(graphMaker.getGraph().getNode(edge.fromId));
+            step.endLocation = LocationUtils.getNodeLocation(graphMaker.getGraph().getNode(edge.toId));
+            step.transportMode = edge.transportMode;
             step.durationInSeconds = edge.durationInSeconds;
 
-            tmpLeg.endLocation = LocationUtils.getNodeLocation(graphMaker.getGraph().getNode(edge.toId));
-            tmpLeg.durationInSeconds += step.durationInSeconds;
+            if (i == 0) {
+                tmpLeg = new Leg();
+                tmpLeg.startLocation = step.startLocation;
+                tmpLeg.durationInSeconds = step.durationInSeconds;
+                tmpLeg.transportMode = step.transportMode;
+            } else if (edge.transportMode != tmpLeg.transportMode) {
+                route.legList.add(tmpLeg);
+                tmpLeg = new Leg();
+                tmpLeg.startLocation = step.startLocation;
+                tmpLeg.durationInSeconds += edge.durationInSeconds;
+                tmpLeg.transportMode = edge.transportMode;
+            } else {
+                tmpLeg.durationInSeconds += edge.durationInSeconds;
+            }
+            tmpLeg.endLocation = step.endLocation;
             tmpLeg.steps.add(step);
+
+            if (i == edgeList.size()-1) route.legList.add(tmpLeg);
         }
+
         return route;
     }
 
@@ -99,8 +113,37 @@ public class RoutePlanner {
         return findRoute(origin, destination, new TransportMode[]{});
     }
 
+    public Route findRoute(Node nodeFrom, Node nodeTo, TransportMode... availableModes) {
+        ShortestPathAlgorithm astar = new ShortestPathAlgorithm<>(graphMaker.getGraph());
+
+        List<Node> originList = new ArrayList<>();
+        List<Node> destinationList = new ArrayList<>();
+        List<GraphEdge> astarPlan;
+
+
+        Location locFrom = LocationUtils.getNodeLocation(nodeFrom);
+        Location locTo = LocationUtils.getNodeLocation(nodeTo);
+
+        originList.add(nodeFrom);
+        destinationList.add(nodeTo);
+
+        astarPlan = astar.plan(locFrom, locTo, originList, destinationList, availableModes);
+
+        return createRouteFromEdgeList(astarPlan, locFrom, locTo);
+    }
+
+    public Route findRandomRoute(LocationArea locationArea) {
+        Location[] locArr;
+        Route route = new Route();
+        while (route.isEmpty()) {
+            locArr = locationArea.generateRandomLocations(2);
+            route = findRoute(locArr[0], locArr[1]);
+        }
+        return route;
+    }
+
     public Route findRoute(Location origin, Location destination, TransportMode... availableModes) {
-        AStar astar = new AStar<>(graphMaker.getGraph());
+        ShortestPathAlgorithm astar = new ShortestPathAlgorithm<>(graphMaker.getGraph());
 
         List<Node> originList;
         List<Node> destinationList;
@@ -113,8 +156,8 @@ public class RoutePlanner {
 
             astarPlan = astar.plan(origin, destination, originList, destinationList);
         } else {
-            originList = getNearestNodes(origin, availableModes, true, 1);
-            destinationList = getNearestNodes(destination, availableModes, false, 1);
+            originList = getNearestNodes(origin, availableModes, true, 5);
+            destinationList = getNearestNodes(destination, availableModes, false, 5);
 
             astarPlan = astar.plan(origin, destination, originList, destinationList, availableModes);
         }
@@ -126,13 +169,13 @@ public class RoutePlanner {
         Route refoundedRoute = new Route();
         refoundedRoute.origin = route.origin;
         refoundedRoute.destination = route.destination;
-
         for (Leg leg : route.legList) {
             Route tmpRoute = findRouteBySubplanner(leg.startLocation, leg.endLocation, leg.transportMode);
-            refoundedRoute.legList.addAll(tmpRoute.legList);
+            if (tmpRoute == null) refoundedRoute.legList.add(leg);
+            else refoundedRoute.legList.addAll(tmpRoute.legList);
         }
 
-        return route;
+        return refoundedRoute;
     }
 
     private List<Node> getNearestNodes(Location location, int count) {
@@ -163,15 +206,13 @@ public class RoutePlanner {
     }
 
     public long getRouteDuration(Route route) {
-        if (route.isEmpty()) return 0;
-
         long duration = route.legList.stream().mapToLong(o -> o.durationInSeconds).sum();
 
         double originNodeDist = LocationUtils.distance(route.origin, route.legList.get(0).startLocation);
-        duration += getDistanceDuration(route.legList.get(0).transportMode, originNodeDist);
+        duration += getDistanceDuration(TransportMode.WALK, originNodeDist);
 
         double destNodeDist = LocationUtils.distance(route.destination, route.legList.get(route.legList.size() - 1).endLocation);
-        duration += getDistanceDuration(route.legList.get(route.legList.size() - 1).transportMode, destNodeDist);
+        duration += getDistanceDuration(TransportMode.WALK, destNodeDist);
 
 
         TransportMode prevMode = route.legList.get(0).transportMode;

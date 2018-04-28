@@ -28,11 +28,10 @@ public class PlannerInitializer {
 
     public GraphMaker graphMaker;
     public RoutePlanner routePlanner;
-    public int requestCount;
+    public int requestCount = 0;
 
 
-    PlannerInitializer(GraphExpansionStrategy expansionStrategy, LocationArea locationArea) {
-        this.expansionStrategy = expansionStrategy;
+    public PlannerInitializer(LocationArea locationArea) {
         this.locationArea = locationArea;
 
         graphMaker = new GraphMaker();
@@ -48,14 +47,18 @@ public class PlannerInitializer {
     }
 
     private PlannerInitializer() {
+        expansionStrategy = GraphExpansionStrategy.RANDOM_OD;
+        locationArea = Storage.AREA_PRAGUE;
+        graphMaker = new GraphMaker();
+        routeList = new ArrayList<>();
+
         initPlannerUsingKnownGraph();
     }
 
-    public void initPlanner(int requestCount) {
-        this.requestCount = requestCount;
-
-        if (requestCount > routeList.size()) {
-            int numOfRequest = requestCount - routeList.size();
+    public RoutePlanner initPlanner(int requestCount, GraphExpansionStrategy expansionStrategy) {
+        if (requestCount > this.requestCount) {
+            int numOfRequest = requestCount -  this.requestCount;
+            this.requestCount = requestCount;
             List<Route> graphExpansionList = graphMaker.expandGraph(numOfRequest, locationArea, expansionStrategy);
             routeList.addAll(graphExpansionList);
             graphMaker.createGraph(routeList);
@@ -65,6 +68,8 @@ public class PlannerInitializer {
 
         graphMaker.createKDTree();
         routePlanner = new RoutePlanner(graphMaker);
+
+        return routePlanner;
     }
 
     public void initPlannerUsingKnownGraph() {
@@ -72,10 +77,8 @@ public class PlannerInitializer {
             File graphFile = Paths.get(Storage.GRAPH_RESOURCE.toURI()).toFile();
             Graph<Node, GraphEdge> graph = (Graph<Node, GraphEdge>) SerializationUtils.readObjectFromFile(graphFile);
 
-            graphMaker = new GraphMaker();
-
             if (graph == null) {
-                graphMaker.createGraphFromKnownRequests(15000);
+                graphMaker.createGraphFromKnownRequests(20000);
                 SerializationUtils.writeObjectToFile(graphMaker.getGraph(), graphFile);
             } else {
                 graphMaker.setGraph(graph);
