@@ -2,10 +2,9 @@ package cz.cvut.fel.intermodal_planning.planner;
 
 import cz.cvut.fel.intermodal_planning.general.Storage;
 import cz.cvut.fel.intermodal_planning.graph.enums.GraphExpansionStrategy;
-import cz.cvut.fel.intermodal_planning.graph.enums.GraphQualityMetric;
-import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
-import cz.cvut.fel.intermodal_planning.model.planner.*;
-import cz.cvut.fel.intermodal_planning.utils.SerializationUtils;
+import cz.cvut.fel.intermodal_planning.graph.model.GraphEdge;
+import cz.cvut.fel.intermodal_planning.planner.model.*;
+import cz.cvut.fel.intermodal_planning.general.utils.SerializationUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 

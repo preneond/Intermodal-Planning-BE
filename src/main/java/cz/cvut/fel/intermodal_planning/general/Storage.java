@@ -1,7 +1,7 @@
 package cz.cvut.fel.intermodal_planning.general;
 
-import cz.cvut.fel.intermodal_planning.model.planner.Location;
-import cz.cvut.fel.intermodal_planning.model.planner.LocationArea;
+import cz.cvut.fel.intermodal_planning.planner.model.Location;
+import cz.cvut.fel.intermodal_planning.planner.model.LocationArea;
 
 import java.net.URL;
 

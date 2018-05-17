@@ -3,15 +3,15 @@ package cz.cvut.fel.intermodal_planning.graph;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.GraphBuilder;
 import com.umotional.basestructures.Node;
-import cz.cvut.fel.intermodal_planning.adapters.GMapsPlannerAdapter;
-import cz.cvut.fel.intermodal_planning.adapters.OTPlannerAdapter;
-import cz.cvut.fel.intermodal_planning.adapters.PlannerAdapter;
+import cz.cvut.fel.intermodal_planning.planner.model.*;
+import cz.cvut.fel.intermodal_planning.subplanners.adapters.GMapsPlannerAdapter;
+import cz.cvut.fel.intermodal_planning.subplanners.adapters.OTPlannerAdapter;
+import cz.cvut.fel.intermodal_planning.subplanners.adapters.PlannerAdapter;
 import cz.cvut.fel.intermodal_planning.general.Storage;
 import cz.cvut.fel.intermodal_planning.graph.enums.GraphExpansionStrategy;
-import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
-import cz.cvut.fel.intermodal_planning.model.planner.*;
-import cz.cvut.fel.intermodal_planning.pathfinding.kdtree.KDTree;
-import cz.cvut.fel.intermodal_planning.utils.LocationUtils;
+import cz.cvut.fel.intermodal_planning.graph.model.GraphEdge;
+import cz.cvut.fel.intermodal_planning.planner.pathfinding.kdtree.KDTree;
+import cz.cvut.fel.intermodal_planning.general.utils.LocationUtils;
 import org.apache.commons.math3.distribution.MultivariateNormalDistribution;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -212,12 +212,12 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
                 return expandGraphByChainingRandomOD(numOfRequests, plannerAdapter, locationArea, mode);
             case RANDOM_OD_WITH_MIN_DISTANCE_BETWEEN:
                 return expandGraphByRandomODWithMinDistanceBetween(numOfRequests, plannerAdapter, locationArea, mode);
-            case NODES_MIN_COVERAGE_EQ_DIST:
-                return expandGraphByFillingMinNodesAreaEqDist(numOfRequests, plannerAdapter, locationArea);
+            case NODES_MIN_COVERAGE_UNIF_DIST:
+                return expandGraphByFillingMinNodesAreaUnifDist(numOfRequests, plannerAdapter, locationArea);
             case NODES_MIN_COVERAGE_NORM_DIST:
                 return expandGraphByFillingMinNodesAreaNormDist(numOfRequests, plannerAdapter, locationArea);
-            case EDGES_MIN_COVERAGE_EQ_DIST:
-                return expandGraphByFillingMinEdgesAreaEqDist(numOfRequests, locationArea, mode);
+            case EDGES_MIN_COVERAGE_UNIF_DIST:
+                return expandGraphByFillingMinEdgesAreaUnifDist(numOfRequests, locationArea, mode);
             case EDGES_MIN_COVERAGE_NORM_DIST:
                 return expandGraphByFillingMinEdgesAreaNormDist(numOfRequests, locationArea, mode);
             case USING_KNOWN_NODES_AS_OD:
@@ -307,6 +307,28 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return routes;
     }
 
+    public List<Route> expandGraphByFillingMinNodesAreaUnifDist(int numOfRequests, PlannerAdapter plannerAdapter,
+                                                                LocationArea locationArea) {
+        int remainingRequestsCount = numOfRequests;
+        List<Route> tmpRouteList = new ArrayList<>();
+        Graph<Node, GraphEdge> tmpGraph;
+        while (remainingRequestsCount > 0) {
+            tmpRouteList.addAll(expandGraph(200, locationArea, GraphExpansionStrategy.RANDOM_OD));
+            tmpGraph = createGraph(tmpRouteList);
+            List<LocationArea> invalidAreaList = invalidAreasOfNodesUniformDist(tmpGraph, locationArea);
+            List<Route> fillingRouteList = invalidAreaList
+                    .stream()
+                    .map(area -> expandGraph(50, area, GraphExpansionStrategy.RANDOM_OD))
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+            tmpRouteList.addAll(fillingRouteList);
+
+            remainingRequestsCount -= 200 + 50 * invalidAreaList.size();
+        }
+
+        return tmpRouteList;
+    }
+
     public List<Route> expandGraphByFillingMinNodesAreaNormDist(int numOfRequests, PlannerAdapter plannerAdapter,
                                                                 LocationArea locationArea) {
         int remainingRequestsCount = numOfRequests;
@@ -329,37 +351,15 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return tmpRouteList;
     }
 
-    public List<Route> expandGraphByFillingMinNodesAreaEqDist(int numOfRequests, PlannerAdapter plannerAdapter,
-                                                              LocationArea locationArea) {
-        int remainingRequestsCount = numOfRequests;
-        List<Route> tmpRouteList = new ArrayList<>();
-        Graph<Node, GraphEdge> tmpGraph;
-        while (remainingRequestsCount > 0) {
-            tmpRouteList.addAll(expandGraph(200, locationArea, GraphExpansionStrategy.RANDOM_OD));
-            tmpGraph = createGraph(tmpRouteList);
-            List<LocationArea> invalidAreaList = invalidAreasOfNodesEqDist(tmpGraph, locationArea);
-            List<Route> fillingRouteList = invalidAreaList
-                    .stream()
-                    .map(area -> expandGraph(50, area, GraphExpansionStrategy.RANDOM_OD))
-                    .flatMap(List::stream)
-                    .collect(Collectors.toList());
-            tmpRouteList.addAll(fillingRouteList);
-
-            remainingRequestsCount -= 200 + 50 * invalidAreaList.size();
-        }
-
-        return tmpRouteList;
-    }
-
-    public List<Route> expandGraphByFillingMinEdgesAreaEqDist(int numOfRequests,
-                                                              LocationArea locationArea, TransportMode mode) {
+    public List<Route> expandGraphByFillingMinEdgesAreaUnifDist(int numOfRequests,
+                                                                LocationArea locationArea, TransportMode mode) {
         int remainingRequestsCount = numOfRequests;
         List<Route> tmpRouteList = new ArrayList<>();
         Graph<Node, GraphEdge> tmpGraph;
         while (remainingRequestsCount > 0) {
             tmpRouteList.addAll(expandGraph(200, locationArea, GraphExpansionStrategy.RANDOM_OD, mode));
             tmpGraph = createGraph(tmpRouteList);
-            List<LocationArea> invalidAreaList = invalidAreasOfEdgesEqDist(tmpGraph, locationArea, mode);
+            List<LocationArea> invalidAreaList = invalidAreasOfEdgesUniformDist(tmpGraph, locationArea, mode);
             List<Route> fillingRouteList = invalidAreaList
                     .stream()
                     .map(area -> expandGraph(50, area, GraphExpansionStrategy.RANDOM_OD, mode))
@@ -547,34 +547,34 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
 
     /**
      * @param tmpGraph     Graph
-     * @param locationArea area, where equal distribution is checked
-     * @return subareas, where is invalid equal distribution
+     * @param locationArea area, where uniform distribution is checked
+     * @return subareas, where is invalid uniform distribution
      */
-    private List<LocationArea> invalidAreasOfNodesEqDist(Graph<Node, GraphEdge> tmpGraph, LocationArea locationArea) {
+    private List<LocationArea> invalidAreasOfNodesUniformDist(Graph<Node, GraphEdge> tmpGraph, LocationArea locationArea) {
         int gridX = Storage.GRAPH_DISTRIBUTION_GRID_X;
         int gridY = Storage.GRAPH_DISTRIBUTION_GRID_Y;
         LocationArea[][] areaGrid = locationArea.createGrid(gridX, gridY);
         List<Node> nodeList = (List<Node>) tmpGraph.getAllNodes();
 
-        int[][] equalDistribution = createEqualDistributionOnGrid(areaGrid, nodeList.size());
+        int[][] uniformDistribution = createUniformDistributionOnGrid(areaGrid, nodeList.size());
         int[][] currentDistribution = getNodeDistributionOnGrid(nodeList, areaGrid);
 
-        boolean[][] mask = checkIfDistributionIsValid(currentDistribution, equalDistribution);
+        boolean[][] mask = checkIfDistributionIsValid(currentDistribution, uniformDistribution);
 
         return getInvalidAreasFromMask(mask, areaGrid);
     }
 
-    private int[][] createEqualDistributionOnGrid(LocationArea[][] areaGrid, int numOfNodes) {
+    private int[][] createUniformDistributionOnGrid(LocationArea[][] areaGrid, int numOfNodes) {
         int gridX = areaGrid.length;
         int gridY = areaGrid[0].length;
         int numOfNodesPerCell = numOfNodes / gridX * gridY;
 
-        int[][] equalDistribution = new int[gridX][gridY];
-        for (int[] row : equalDistribution) {
+        int[][] uniformDistribution = new int[gridX][gridY];
+        for (int[] row : uniformDistribution) {
             Arrays.fill(row, numOfNodesPerCell);
         }
 
-        return equalDistribution;
+        return uniformDistribution;
     }
 
     /**
@@ -708,7 +708,7 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return getInvalidAreasFromMask(mask, areaGrid);
     }
 
-    private List<LocationArea> invalidAreasOfEdgesEqDist(Graph<Node, GraphEdge> graph, LocationArea locationArea, TransportMode mode) {
+    private List<LocationArea> invalidAreasOfEdgesUniformDist(Graph<Node, GraphEdge> graph, LocationArea locationArea, TransportMode mode) {
         int gridX = Storage.GRAPH_DISTRIBUTION_GRID_X;
         int gridY = Storage.GRAPH_DISTRIBUTION_GRID_Y;
         List<GraphEdge> edgeList = graph.getAllEdges()
@@ -718,10 +718,10 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
 
         LocationArea[][] areaGrid = locationArea.createGrid(gridX, gridY);
 
-        int[][] equalDistribution = createEqualDistributionOnGrid(areaGrid, edgeList.size());
+        int[][] uniformDistribution = createUniformDistributionOnGrid(areaGrid, edgeList.size());
         int[][] currentDistribution = getEdgeDistributionOnGrid(edgeList, areaGrid);
 
-        boolean[][] mask = checkIfDistributionIsValid(currentDistribution, equalDistribution);
+        boolean[][] mask = checkIfDistributionIsValid(currentDistribution, uniformDistribution);
 
         return getInvalidAreasFromMask(mask, areaGrid);
     }

@@ -1,12 +1,9 @@
 package cz.cvut.fel.intermodal_planning.restapi;
 
-import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
-import cz.cvut.fel.intermodal_planning.model.planner.Leg;
-import cz.cvut.fel.intermodal_planning.model.planner.Route;
-import cz.cvut.fel.intermodal_planning.model.planner.TransportMode;
-import cz.cvut.fel.intermodal_planning.utils.ColorUtils;
-
-import java.util.List;
+import cz.cvut.fel.intermodal_planning.planner.model.Leg;
+import cz.cvut.fel.intermodal_planning.planner.model.Route;
+import cz.cvut.fel.intermodal_planning.planner.model.TransportMode;
+import cz.cvut.fel.intermodal_planning.general.utils.ColorUtils;
 
 public class ResponseBuilder {
 

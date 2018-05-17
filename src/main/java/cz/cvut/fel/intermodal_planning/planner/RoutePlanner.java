@@ -1,17 +1,17 @@
 package cz.cvut.fel.intermodal_planning.planner;
 
-import cz.cvut.fel.intermodal_planning.adapters.GMapsPlannerAdapter;
-import cz.cvut.fel.intermodal_planning.adapters.OTPlannerAdapter;
+import cz.cvut.fel.intermodal_planning.planner.model.*;
+import cz.cvut.fel.intermodal_planning.subplanners.adapters.GMapsPlannerAdapter;
+import cz.cvut.fel.intermodal_planning.subplanners.adapters.OTPlannerAdapter;
 import com.umotional.basestructures.Graph;
 import com.umotional.basestructures.Node;
 import cz.cvut.fel.intermodal_planning.general.Storage;
 import cz.cvut.fel.intermodal_planning.graph.GraphMaker;
-import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
-import cz.cvut.fel.intermodal_planning.model.planner.*;
-import cz.cvut.fel.intermodal_planning.utils.LocationUtils;
+import cz.cvut.fel.intermodal_planning.graph.model.GraphEdge;
+import cz.cvut.fel.intermodal_planning.general.utils.LocationUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import cz.cvut.fel.intermodal_planning.pathfinding.ShortestPathAlgorithm;
+import cz.cvut.fel.intermodal_planning.planner.pathfinding.ShortestPathAlgorithm;
 
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -6,11 +6,11 @@ package cz.cvut.fel.intermodal_planning.restapi;
  * All Rights Reserved.
  */
 
-import cz.cvut.fel.intermodal_planning.model.planner.Location;
-import cz.cvut.fel.intermodal_planning.model.planner.Route;
-import cz.cvut.fel.intermodal_planning.model.planner.TransportMode;
+import cz.cvut.fel.intermodal_planning.planner.model.Location;
+import cz.cvut.fel.intermodal_planning.planner.model.Route;
+import cz.cvut.fel.intermodal_planning.planner.model.TransportMode;
 import cz.cvut.fel.intermodal_planning.planner.PlannerInitializer;
-import cz.cvut.fel.intermodal_planning.utils.GeoJSONBuilder;
+import cz.cvut.fel.intermodal_planning.general.utils.GeoJSONBuilder;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;

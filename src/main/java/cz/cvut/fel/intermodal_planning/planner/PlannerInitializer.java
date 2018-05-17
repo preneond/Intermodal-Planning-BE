@@ -5,10 +5,10 @@ import com.umotional.basestructures.Node;
 import cz.cvut.fel.intermodal_planning.general.Storage;
 import cz.cvut.fel.intermodal_planning.graph.GraphMaker;
 import cz.cvut.fel.intermodal_planning.graph.enums.GraphExpansionStrategy;
-import cz.cvut.fel.intermodal_planning.model.graph.GraphEdge;
-import cz.cvut.fel.intermodal_planning.model.planner.LocationArea;
-import cz.cvut.fel.intermodal_planning.model.planner.Route;
-import cz.cvut.fel.intermodal_planning.utils.SerializationUtils;
+import cz.cvut.fel.intermodal_planning.graph.model.GraphEdge;
+import cz.cvut.fel.intermodal_planning.planner.model.LocationArea;
+import cz.cvut.fel.intermodal_planning.planner.model.Route;
+import cz.cvut.fel.intermodal_planning.general.utils.SerializationUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -75,12 +75,15 @@ public class PlannerInitializer {
     public void initPlannerUsingKnownGraph() {
         try {
             File graphFile = Paths.get(Storage.GRAPH_RESOURCE.toURI()).toFile();
-            Graph<Node, GraphEdge> graph = (Graph<Node, GraphEdge>) SerializationUtils.readObjectFromFile(graphFile);
+            Graph<Node, GraphEdge> graph = (Graph<Node, GraphEdge>) SerializationUtils.readObjectFromResources("graph.json");
+//            Graph<Node, GraphEdge> model = (Graph<Node, GraphEdge>) SerializationUtils.readObjectFromFile(graphFile);
 
             if (graph == null) {
+                logger.error("Graph is NULL");
                 graphMaker.createGraphFromKnownRequests(20000);
                 SerializationUtils.writeObjectToFile(graphMaker.getGraph(), graphFile);
             } else {
+                logger.info("Graph is serialized successfully");
                 graphMaker.setGraph(graph);
             }
             graphMaker.createKDTree();

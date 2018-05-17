@@ -1,9 +1,9 @@
 package cz.cvut.fel.intermodal_planning.graph;
 
-import cz.cvut.fel.intermodal_planning.adapters.PlannerAdapter;
-import cz.cvut.fel.intermodal_planning.model.planner.LocationArea;
-import cz.cvut.fel.intermodal_planning.model.planner.Route;
-import cz.cvut.fel.intermodal_planning.model.planner.TransportMode;
+import cz.cvut.fel.intermodal_planning.subplanners.adapters.PlannerAdapter;
+import cz.cvut.fel.intermodal_planning.planner.model.LocationArea;
+import cz.cvut.fel.intermodal_planning.planner.model.Route;
+import cz.cvut.fel.intermodal_planning.planner.model.TransportMode;
 
 import java.util.List;
 
@@ -25,10 +25,10 @@ public interface GraphExpander {
     List<Route> expandGraphByFillingMinNodesAreaNormDist(int numOfRequests, PlannerAdapter plannerAdapter,
                                                          LocationArea locationArea);
 
-    List<Route> expandGraphByFillingMinNodesAreaEqDist(int numOfRequests, PlannerAdapter plannerAdapter,
-                                                       LocationArea locationArea);
+    List<Route> expandGraphByFillingMinNodesAreaUnifDist(int numOfRequests, PlannerAdapter plannerAdapter,
+                                                         LocationArea locationArea);
 
-    List<Route> expandGraphByFillingMinEdgesAreaEqDist(int numOfRequests, LocationArea locationArea, TransportMode mode);
+    List<Route> expandGraphByFillingMinEdgesAreaUnifDist(int numOfRequests, LocationArea locationArea, TransportMode mode);
 
     List<Route> expandGraphByFillingMinEdgesAreaNormDist(int numOfRequests, LocationArea locationArea, TransportMode mode);
     //Supervised strategies
