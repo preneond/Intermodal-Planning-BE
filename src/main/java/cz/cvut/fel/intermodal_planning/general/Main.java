@@ -1,18 +1,22 @@
 package cz.cvut.fel.intermodal_planning.general;
 
 import cz.cvut.fel.intermodal_planning.planner.PlannerInitializer;
+import cz.cvut.fel.intermodal_planning.planner.PlannerQualityEvaluator;
+import cz.cvut.fel.intermodal_planning.planner.PlannerStatistics;
+import cz.cvut.fel.intermodal_planning.planner.model.LocationArea;
 import org.apache.log4j.BasicConfigurator;
 
+/**
+ * Created by Ondrej Prenek on 27/10/2017
+ */
 public class Main {
-    static {
-        BasicConfigurator.configure();
-    }
 
+    /**
+     * Compare all strategies and compare abstraction quality created by them
+     *
+     * @param args
+     */
     public static void main(String[] args) {
-        PlannerInitializer.getInstance();
-//        PlannerStatistics.doExpansionStrategyComparision(Storage.AREA_PRAGUE);
-//        PlannerQualityEvaluator.compareNormalRefinementPaths(PlannerInitializer.getInstance());
-//        PlannerQualityEvaluator.evaluatePlannerQuality(PlannerInitializer.getInstance(), GraphQualityMetric.REFINEMENT);
-
+        PlannerQualityEvaluator.doExpansionStrategyComparision(Storage.AREA_PRAGUE);
     }
 }

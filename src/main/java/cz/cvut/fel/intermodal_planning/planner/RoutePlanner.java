@@ -19,6 +19,9 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
+/**
+ * Created by Ondrej Prenek on 27/10/2017
+ */
 public class RoutePlanner {
     private static final Logger logger = LogManager.getLogger(RoutePlanner.class);
 
@@ -29,19 +32,13 @@ public class RoutePlanner {
     }
 
 
-    public Route findPathBetweenRandomNodes() {
-        List<Node> nodeList = (List<Node>) graphMaker.getGraph().getAllNodes();
-        Node from = nodeList.get(ThreadLocalRandom.current().nextInt(nodeList.size()));
-        Node to = nodeList.get(ThreadLocalRandom.current().nextInt(nodeList.size()));
-
-        Route randomPath = new Route();
-        while (randomPath.isEmpty()) {
-            randomPath = findRoute(from, to, new TransportMode[]{});
-        }
-
-        return randomPath;
-    }
-
+    /**
+     * Creation of Route from Graph's Edge sequence
+     * @param edgeList Edge sequence
+     * @param origin Origin Location
+     * @param destination Destination Location
+     * @return Created Route
+     */
     private Route createRouteFromEdgeList(List<GraphEdge> edgeList, Location origin, Location destination) {
         Route route = new Route();
 
@@ -84,7 +81,7 @@ public class RoutePlanner {
         return route;
     }
 
-    public Route findRouteBySubplanner(Location locFrom, Location locTo, TransportMode mode) {
+    public Route searchRouteUsingSubplanner(Location locFrom, Location locTo, TransportMode mode) {
         Route route = null;
 
         if (mode == TransportMode.TRANSIT || mode == TransportMode.BICYCLE) {
@@ -96,7 +93,7 @@ public class RoutePlanner {
         return route;
     }
 
-    private Route findRouteBySubplanner(int fromId, int toId, TransportMode mode) {
+    private Route searchRouteUsingSubplanner(int fromId, int toId, TransportMode mode) {
         Graph graph = graphMaker.getGraph();
 
         Node from = graph.getNode(fromId);
@@ -105,15 +102,30 @@ public class RoutePlanner {
         Location locFrom = LocationUtils.getNodeLocation(from);
         Location locTo = LocationUtils.getNodeLocation(to);
 
-        return findRouteBySubplanner(locFrom, locTo, mode);
+        return searchRouteUsingSubplanner(locFrom, locTo, mode);
 
     }
 
-    public Route findRoute(Location origin, Location destination) {
-        return findRoute(origin, destination, new TransportMode[]{});
+    /**
+     * Route metasearch
+     *
+     * @param origin Origin Location
+     * @param destination Destination Location
+     * @return metasearched Route
+     */
+    public Route metasearchRoute(Location origin, Location destination) {
+        return metasearchRoute(origin, destination, new TransportMode[]{});
     }
 
-    public Route findRoute(Node nodeFrom, Node nodeTo, TransportMode... availableModes) {
+    /**
+     *  Route Metasearch
+     *
+     * @param nodeFrom Origin Node
+     * @param nodeTo Destination Node
+     * @param availableModes Possible Transport Modes to use
+     * @return metasearched Route
+     */
+    public Route metasearchRoute(Node nodeFrom, Node nodeTo, TransportMode... availableModes) {
         ShortestPathAlgorithm astar = new ShortestPathAlgorithm<>(graphMaker.getGraph());
 
         List<Node> originList = new ArrayList<>();
@@ -132,17 +144,16 @@ public class RoutePlanner {
         return createRouteFromEdgeList(astarPlan, locFrom, locTo);
     }
 
-    public Route findRandomRoute(LocationArea locationArea) {
-        Location[] locArr;
-        Route route = new Route();
-        while (route.isEmpty()) {
-            locArr = locationArea.generateRandomLocations(2);
-            route = findRoute(locArr[0], locArr[1]);
-        }
-        return route;
-    }
-
-    public Route findRoute(Location origin, Location destination, TransportMode... availableModes) {
+    /**
+     * Route metasearch
+     *
+     * @param origin Origin Location
+     * @param destination Destination Location
+     * @param availableModes Allowed Transport Modes to use
+     *
+     * @return Metasearched Route
+     */
+    public Route metasearchRoute(Location origin, Location destination, TransportMode... availableModes) {
         ShortestPathAlgorithm astar = new ShortestPathAlgorithm<>(graphMaker.getGraph());
 
         List<Node> originList;
@@ -165,12 +176,51 @@ public class RoutePlanner {
         return createRouteFromEdgeList(astarPlan, origin, destination);
     }
 
+    /**
+     * Random route metasearch
+     *
+     * @param locationArea Selected Test Region
+     * @return metasearched Route
+     */
+    public Route metasearchRandomRoute(LocationArea locationArea) {
+        Location[] locArr;
+        Route route = new Route();
+        while (route.isEmpty()) {
+            locArr = locationArea.generateRandomLocations(2);
+            route = metasearchRoute(locArr[0], locArr[1]);
+        }
+        return route;
+    }
+
+    /**
+     * Route between randomly selected Graph's nodes
+     *
+     * @return metasearched Route
+     */
+    public Route metaSearchRouteBetweenRandomNodes() {
+        List<Node> nodeList = (List<Node>) graphMaker.getGraph().getAllNodes();
+        Node from = nodeList.get(ThreadLocalRandom.current().nextInt(nodeList.size()));
+        Node to = nodeList.get(ThreadLocalRandom.current().nextInt(nodeList.size()));
+
+        Route randomPath = new Route();
+        while (randomPath.isEmpty()) {
+            randomPath = metasearchRoute(from, to, new TransportMode[]{});
+        }
+
+        return randomPath;
+    }
+
+    /**
+     * Route Refinement
+     * @param route Route to refine
+     * @return refined Route
+     */
     public Route doRefinement(Route route) {
         Route refoundedRoute = new Route();
         refoundedRoute.origin = route.origin;
         refoundedRoute.destination = route.destination;
         for (Leg leg : route.legList) {
-            Route tmpRoute = findRouteBySubplanner(leg.startLocation, leg.endLocation, leg.transportMode);
+            Route tmpRoute = searchRouteUsingSubplanner(leg.startLocation, leg.endLocation, leg.transportMode);
             if (tmpRoute == null) refoundedRoute.legList.add(leg);
             else refoundedRoute.legList.addAll(tmpRoute.legList);
         }
@@ -178,6 +228,12 @@ public class RoutePlanner {
         return refoundedRoute;
     }
 
+    /**
+     * Nearest nodes for given location
+     * @param location Location for which nearest nodes are searched
+     * @param count number of Nodes, which is returned
+     * @return  List of Nearest Nodes
+     */
     private List<Node> getNearestNodes(Location location, int count) {
         Object[] nodeIdArr = graphMaker.getKdTree().nearest(location.toDoubleArray(), count);
 
@@ -187,6 +243,15 @@ public class RoutePlanner {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Nearest nodes for given location where the given transport modes are possible to use
+     *
+     * @param location Location for which nearest nodes are searched
+     * @param modeArr Transport Mode Array which are a
+     * @param isIngoingMode check whether it should be looked for ingoing modes or outgoing modes
+     * @param count number of Nodes, which is returned
+     * @return List of Nearest Nodes
+     */
     private List<Node> getNearestNodes(Location location, TransportMode[] modeArr, boolean isIngoingMode, int count) {
         int idx = ThreadLocalRandom.current().nextInt(modeArr.length);
         Object[] nodeIdArr = graphMaker.getKdTreeForMode(modeArr[idx], isIngoingMode).nearest(location.toDoubleArray(), count);
@@ -205,6 +270,12 @@ public class RoutePlanner {
         return getNearestNodes(location, mode, isIngoingMode, 1).get(0);
     }
 
+    /**
+     * Route Duration with all transfer penalties
+     *
+     * @param route Route object
+     * @return Route Duration in Seconds
+     */
     public long getRouteDuration(Route route) {
         long duration = route.legList.stream().mapToLong(o -> o.durationInSeconds).sum();
 
@@ -227,6 +298,12 @@ public class RoutePlanner {
         return duration;
     }
 
+    /**
+     * Method is called when the previous and current method differ
+     *
+     * @param prevMode Previous mode
+     * @return Penalty in Seconds
+     */
     public static int getTransferPenalty(TransportMode prevMode) {
         if (prevMode == TransportMode.CAR) {
             return 120;
@@ -237,6 +314,12 @@ public class RoutePlanner {
         }
     }
 
+    /**
+     * Check whether the transfer is possible ->
+     * @param prevMode
+     * @param currentMode
+     * @return
+     */
     public static boolean isTransferPossible(TransportMode prevMode, TransportMode currentMode) {
         if (prevMode == null || prevMode == currentMode) return true;
         if (currentMode == TransportMode.CAR) return false;
@@ -244,6 +327,13 @@ public class RoutePlanner {
         return true;
     }
 
+    /**
+     * Distance duration for given transport mode
+     *
+     * @param mode Transport Mode
+     * @param distance Distance in Meters
+     * @return Duration in Seconds
+     */
     public static long getDistanceDuration(TransportMode mode, double distance) {
         switch (mode) {
             case CAR:
@@ -259,6 +349,10 @@ public class RoutePlanner {
         }
     }
 
+    /**
+     * Graph Getter
+     * @return Graph object
+     */
     public Graph<Node, GraphEdge> getGraph() {
         return graphMaker.getGraph();
     }

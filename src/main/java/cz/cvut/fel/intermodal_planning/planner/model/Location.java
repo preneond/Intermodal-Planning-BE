@@ -4,6 +4,9 @@ import org.geojson.LngLatAlt;
 
 import java.io.Serializable;
 
+/**
+ * Created by Ondrej Prenek on 27/10/2017
+ */
 public class Location implements Serializable {
     public double lat;
     public double lon;

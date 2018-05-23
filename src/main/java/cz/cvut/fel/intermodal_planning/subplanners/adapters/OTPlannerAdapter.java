@@ -9,6 +9,9 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Created by Ondrej Prenek on 27/10/2017
+ */
 public class OTPlannerAdapter implements PlannerAdapter {
     private static OTPlannerAdapter sharedInstance;
 

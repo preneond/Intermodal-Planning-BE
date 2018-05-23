@@ -1,11 +1,5 @@
 package cz.cvut.fel.intermodal_planning.restapi;
 
-/**
- * Created by Ondrej Prenek on 27/07/2017.
- * This code is owned by Umotional s.r.o. (IN: 03974618).
- * All Rights Reserved.
- */
-
 import cz.cvut.fel.intermodal_planning.planner.model.Location;
 import cz.cvut.fel.intermodal_planning.planner.model.Route;
 import cz.cvut.fel.intermodal_planning.planner.model.TransportMode;
@@ -22,6 +16,10 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+/**
+ * Created by Ondrej Prenek on 27/07/2017.
+ *
+ */
 @Path("/api")
 public class ApiService {
 
@@ -54,11 +52,11 @@ public class ApiService {
 
             logger.info("Building a JSON response, args are valid...");
 
-            PlannerInitializer plannerInitializer = PlannerInitializer.getInstance();
+            PlannerInitializer plannerInitializer = PlannerInitializer.getKnownInstance();
 
             Location origin = new Location(originLoc[0], originLoc[1]);
             Location destination = new Location(destinationLoc[0], destinationLoc[1]);
-            Route route = plannerInitializer.routePlanner.findRoute(origin, destination, availableModes);
+            Route route = plannerInitializer.routePlanner.metasearchRoute(origin, destination, availableModes);
             String pathDesc = ResponseBuilder.buildRouteDescription(route);
 
             String geoJSONStr = GeoJSONBuilder.getInstance().buildGeoJSONStringForRoute(route);

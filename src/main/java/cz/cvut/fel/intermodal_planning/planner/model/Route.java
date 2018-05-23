@@ -3,6 +3,9 @@ package cz.cvut.fel.intermodal_planning.planner.model;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Created by Ondrej Prenek on 27/10/2017
+ */
 public class Route {
     public List<Leg> legList;
     public Location origin, destination;

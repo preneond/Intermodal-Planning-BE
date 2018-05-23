@@ -4,6 +4,9 @@ import cz.cvut.fel.intermodal_planning.general.utils.LocationUtils;
 
 import java.util.concurrent.ThreadLocalRandom;
 
+/**
+ * Created by Ondrej Prenek on 27/10/2017
+ */
 public class LocationArea {
     public double upLat;
     public double bottomLat;

@@ -13,6 +13,9 @@ import java.io.File;
 import java.lang.reflect.Array;
 import java.util.concurrent.ThreadLocalRandom;
 
+/**
+ * Created by Ondrej Prenek on 27/10/2017
+ */
 public class GMapsApiClient {
     private static GMapsApiClient sharedInstance;
     private GeoApiContext context;
@@ -29,6 +32,17 @@ public class GMapsApiClient {
         context = new GeoApiContext();
     }
 
+
+    /**
+     * Retrieving stored sublanner requests
+     *
+     * @param origin Origin Location
+     * @param destination Destination Location
+     * @param mode Transport mode
+     * @param departure Departure time
+     *
+     * @return Response
+     */
     public DirectionsResult sendNewRequest(LatLng origin, LatLng destination, TravelMode mode, DateTime departure) {
         int idx = ThreadLocalRandom.current().nextInt(Storage.GMAPS_API_KEYS.length);
         context.setApiKey(Storage.GMAPS_API_KEYS[idx]);
@@ -47,6 +61,15 @@ public class GMapsApiClient {
         return directionResult;
     }
 
+    /**
+     * Subplanner request
+     *
+     * @param origin Origin Location
+     * @param destination Destination Location
+     * @param mode Transport mode
+     *
+     * @return Response
+     */
     public DirectionsResult sendNewRequest(LatLng origin, LatLng destination, TravelMode mode) {
         DateTime time = new DateTime(DateTime.now());
         int idx = ThreadLocalRandom.current().nextInt(Storage.GMAPS_API_KEYS.length);
@@ -60,11 +83,6 @@ public class GMapsApiClient {
                     .mode(mode)
                     .await();
 
-//            int tmpCount = transportMode == TravelMode.DRIVING ? ++Storage.CAR_REQUEST_COUNT : ++Storage.WALK_REQUEST_COUNT;
-
-//            File file = new File(Storage.GMAPS_REQUEST_STORAGE + transportMode.toString() + "/request_" + tmpCount + ".txt");
-//            SerializationUtils.writeRequestToGson(directionResult, file);
-
             return directionResult;
         } catch (Exception e) {
             e.printStackTrace();
@@ -72,6 +90,14 @@ public class GMapsApiClient {
         return null;
     }
 
+    /**
+     * Subplanner Stored Request
+     * @param count number of requests
+     * @param mode transport mode
+     * @return response
+     *
+     * @throws NullPointerException
+     */
     public DirectionsResult getKnownRequest(int count, TravelMode mode) throws NullPointerException {
         File file = new File(Storage.GMAPS_REQUEST_STORAGE + mode.toString() + "/request_" + count + ".txt");
         DirectionsResult request = SerializationUtils.readDirectionsResultFromGson(file);

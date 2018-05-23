@@ -8,7 +8,9 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
-
+/**
+ * Created by Ondrej Prenek on 27/10/2017
+ */
 public class GMapsPlannerAdapter implements PlannerAdapter {
     private static GMapsPlannerAdapter sharedInstance;
 
@@ -45,12 +47,10 @@ public class GMapsPlannerAdapter implements PlannerAdapter {
         DirectionsResult result = new DirectionsResult();
         DirectionsResult tmpResult;
 
-//        for (TravelMode travelMode : new TravelMode[]{TravelMode.DRIVING, TravelMode.WALKING}) {
-//            tmpResult = GMapsApiClient.getInstance().sendNewRequest(originLatLng, destinationLatLng, travelMode);
-
-//            result.routes = concatenate(result.routes, tmpResult.routes);
-        result = GMapsApiClient.getInstance().sendNewRequest(originLatLng, destinationLatLng, TravelMode.DRIVING);
-//        }
+        for (TravelMode travelMode : new TravelMode[]{TravelMode.DRIVING, TravelMode.WALKING}) {
+            tmpResult = GMapsApiClient.getInstance().sendNewRequest(originLatLng, destinationLatLng, travelMode);
+            result.routes = concatenate(result.routes, tmpResult.routes);
+        }
 
         try {
             return getRouteList(result);

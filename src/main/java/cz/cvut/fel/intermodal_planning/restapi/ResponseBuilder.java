@@ -5,6 +5,9 @@ import cz.cvut.fel.intermodal_planning.planner.model.Route;
 import cz.cvut.fel.intermodal_planning.planner.model.TransportMode;
 import cz.cvut.fel.intermodal_planning.general.utils.ColorUtils;
 
+/**
+ * Created by Ondrej Prenek on 27/10/2017
+ */
 public class ResponseBuilder {
 
     public static String buildRouteDescription(Route path) {

@@ -2,6 +2,7 @@ package cz.cvut.fel.intermodal_planning.planner;
 
 import cz.cvut.fel.intermodal_planning.general.Storage;
 import cz.cvut.fel.intermodal_planning.graph.enums.GraphExpansionStrategy;
+import cz.cvut.fel.intermodal_planning.graph.enums.GraphQualityMetric;
 import cz.cvut.fel.intermodal_planning.planner.model.Location;
 import cz.cvut.fel.intermodal_planning.planner.model.LocationArea;
 import cz.cvut.fel.intermodal_planning.planner.model.Route;
@@ -15,21 +16,58 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 
+/**
+ * Created by Ondrej Prenek on 27/10/2017
+ */
 public class PlannerQualityEvaluator {
     private static final Logger logger = LogManager.getLogger(PlannerInitializer.class);
 
-//    public static void evaluatePlannerQuality(PlannerInitializer plannerInitializer, GraphQualityMetric qualityMetric) {
-////        logger.info("Checking planner using " + plannerInitializer.expansionStrategy.name() + " strategy by " + qualityMetric.name() + "quality metrix");
-//        switch (qualityMetric) {
-//            case REFINEMENT:
-//                evaluatePlannerQualityUsingRefinement(plannerInitializer);
-//                break;
-//            case SINGLEMODAL:
-////                evaluatePlannerQualityUsingSinglemodalQualityCheck(plannerInitializer);
-//                break;
-//        }
-//    }
 
+    /**
+     * Comparison of Picking OD Pair Strategies
+     *
+     * @param area Selected Test Region
+     */
+    public static void doExpansionStrategyComparision(LocationArea area) {
+        PlannerInitializer plannerInitializer;
+        int[] requestCountArr = new int[]{500, 1000, 2500, 5000, 7500, 10000};
+
+        for (GraphExpansionStrategy expansionStrategy : GraphExpansionStrategy.getUninformedStrategies()) {
+            plannerInitializer = new PlannerInitializer(area);
+            for (int requestCount: requestCountArr) {
+                RoutePlanner routePlanner = plannerInitializer.initPlanner(requestCount,expansionStrategy);
+                evaluatePlannerQualityUsingRefinement(routePlanner,area,expansionStrategy,requestCount);
+            }
+        }
+    }
+
+    /**
+     * Evaluation of abstraction quality
+     *
+     * @param plannerInitializer PlannerInitializer
+     * @param qualityMetric Selected Abstraction quality metric
+     */
+    public static void evaluatePlannerQuality(PlannerInitializer plannerInitializer, GraphQualityMetric qualityMetric) {
+        logger.info("Checking planner using " + plannerInitializer.expansionStrategy.name()
+                + " strategy by " + qualityMetric.name() + "quality metrix");
+        switch (qualityMetric) {
+            case REFINEMENT:
+                evaluatePlannerQualityUsingRefinement(plannerInitializer.routePlanner,
+                        plannerInitializer.locationArea,
+                        plannerInitializer.expansionStrategy,
+                        plannerInitializer.requestCount);
+                break;
+            case SINGLEMODAL:
+                evaluatePlannerQualityUsingSinglemodalQualityCheck(plannerInitializer);
+                break;
+        }
+    }
+
+    /**
+     * Evaluation of abstraction quality by checking Singlemodal Quality
+     *
+     * @param plannerInitializer PlannerInitializer instance
+     */
     private static void evaluatePlannerQualityUsingSinglemodalQualityCheck(PlannerInitializer plannerInitializer) {
         int findingPathCount = Storage.FINDING_PATH_COUNT;
         long[] routeDuration, subplannerRouteDuration, deviation;
@@ -47,8 +85,8 @@ public class PlannerQualityEvaluator {
 
                 for (int i = 0; i < findingPathCount; i++) {
                     Location[] locArray = plannerInitializer.locationArea.generateRandomLocations(2);
-                    Route plannerRoute = plannerInitializer.routePlanner.findRoute(locArray[0], locArray[1], transportMode);
-                    Route subplannerRoute = plannerInitializer.routePlanner.findRouteBySubplanner(locArray[0], locArray[1], transportMode);
+                    Route plannerRoute = plannerInitializer.routePlanner.metasearchRoute(locArray[0], locArray[1], transportMode);
+                    Route subplannerRoute = plannerInitializer.routePlanner.searchRouteUsingSubplanner(locArray[0], locArray[1], transportMode);
 
                     routeDuration[i] = plannerInitializer.routePlanner.getRouteDuration(plannerRoute);
                     subplannerRouteDuration[i] = plannerInitializer.routePlanner.getRouteDuration(subplannerRoute);
@@ -70,6 +108,14 @@ public class PlannerQualityEvaluator {
         }
     }
 
+    /**
+     * Evaluation of abstraction quality using refinement
+     *
+     * @param routePlanner RoutePlanner Instance
+     * @param locationArea Selected Test Area
+     * @param expansionStrategy Picking OD Pairs strategy
+     * @param requestCount Number of Requests
+     */
     public static void evaluatePlannerQualityUsingRefinement(RoutePlanner routePlanner, LocationArea locationArea,
                                                              GraphExpansionStrategy expansionStrategy, int requestCount) {
         double sizeDeviation;
@@ -80,7 +126,7 @@ public class PlannerQualityEvaluator {
         long[] deviation = new long[findingPathCount];
 
         for (int i = 0; i < findingPathCount; i++) {
-            Route graphPath = routePlanner.findRandomRoute(locationArea);
+            Route graphPath = routePlanner.metasearchRandomRoute(locationArea);
             Route refinementRoute = routePlanner.doRefinement(graphPath);
 
             routeDuration[i] = routePlanner.getRouteDuration(graphPath);
@@ -102,14 +148,19 @@ public class PlannerQualityEvaluator {
         }
     }
 
+    /**
+     * Comparison of path before and after refinement
+     *
+     * @param plannerInitializer PlannerInitializer Instance
+     */
     public static void compareNormalRefinementPaths(PlannerInitializer plannerInitializer) {
         RoutePlanner routePlanner = plannerInitializer.routePlanner;
 
-        Route route = routePlanner.findRandomRoute(plannerInitializer.locationArea);
+        Route route = routePlanner.metasearchRandomRoute(plannerInitializer.locationArea);
         Route refoundedRoute = routePlanner.doRefinement(route);
 
-        System.out.println("Route duration: " + routePlanner.getRouteDuration(route));
-        System.out.println("Refounded route duration: " + routePlanner.getRouteDuration(refoundedRoute));
+        logger.info("Route duration: " + routePlanner.getRouteDuration(route));
+        logger.info("Refounded route duration: " + routePlanner.getRouteDuration(refoundedRoute));
 
         System.out.println(GeoJSONBuilder.getInstance().buildGeoJSONStringForRoute(route));
         System.out.println(GeoJSONBuilder.getInstance().buildGeoJSONStringForRoute(refoundedRoute));

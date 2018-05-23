@@ -18,6 +18,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Created by Ondrej Prenek on 27/10/2017
+ */
 public class PlannerInitializer {
     private static final Logger logger = LogManager.getLogger(PlannerInitializer.class);
     private static PlannerInitializer sharedInstance;
@@ -38,8 +41,12 @@ public class PlannerInitializer {
         routeList = new ArrayList<>();
     }
 
-
-    public static PlannerInitializer getInstance() {
+    /**
+     * create instance from stored requests
+     *
+     * @return PlannerInitializer instance
+     */
+    public static PlannerInitializer getKnownInstance() {
         if (sharedInstance == null) {
             sharedInstance = new PlannerInitializer();
         }
@@ -55,6 +62,12 @@ public class PlannerInitializer {
         initPlannerUsingKnownGraph();
     }
 
+    /**
+     *
+     * @param requestCount Number Of Subplanner Requests
+     * @param expansionStrategy Strategy of picking OD Pair
+     * @return RoutePlanner instance
+     */
     public RoutePlanner initPlanner(int requestCount, GraphExpansionStrategy expansionStrategy) {
         if (requestCount > this.requestCount) {
             int numOfRequest = requestCount -  this.requestCount;
@@ -72,15 +85,17 @@ public class PlannerInitializer {
         return routePlanner;
     }
 
+    /**
+     * Planner initialization, for which the known requests are used
+     */
     public void initPlannerUsingKnownGraph() {
         try {
             File graphFile = Paths.get(Storage.GRAPH_RESOURCE.toURI()).toFile();
             Graph<Node, GraphEdge> graph = (Graph<Node, GraphEdge>) SerializationUtils.readObjectFromResources("graph.json");
-//            Graph<Node, GraphEdge> model = (Graph<Node, GraphEdge>) SerializationUtils.readObjectFromFile(graphFile);
 
             if (graph == null) {
                 logger.error("Graph is NULL");
-                graphMaker.createGraphFromKnownRequests(20000);
+                graphMaker.createGraphFromKnownRequests(Storage.KNOWN_REQUEST_COUNT);
                 SerializationUtils.writeObjectToFile(graphMaker.getGraph(), graphFile);
             } else {
                 logger.info("Graph is serialized successfully");

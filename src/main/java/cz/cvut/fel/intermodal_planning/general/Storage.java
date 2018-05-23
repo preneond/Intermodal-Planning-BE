@@ -5,6 +5,9 @@ import cz.cvut.fel.intermodal_planning.planner.model.LocationArea;
 
 import java.net.URL;
 
+/**
+ * Created by Ondrej Prenek on 27/10/2017
+ */
 public final class Storage {
     public static URL GRAPH_RESOURCE = Storage.class.getResource("/graph.json");
 
@@ -21,37 +24,54 @@ public final class Storage {
 
     public static long INTERMODAL_AVG_DURATION = 0;
 
+
+    /**
+     * Minimal Distance between OD pair used in the uninformed strategy
+     */
     public static final int MIN_DISTANCE_IN_METERS_BETWEEN_OD = 500;
 
+
+    /**
+     * Request counters
+     */
     public static int CAR_REQUEST_COUNT = 0;
     public static int TRANSIT_REQUEST_COUNT = 0;
     public static int BIKE_REQUEST_COUNT = 0;
     public static int WALK_REQUEST_COUNT = 0;
 
+    /**
+     * Speed of vehicles used for determining graph's edge duration
+     */
     public static final float CAR_SPEED_MPS = 10;
     public static final float TRANSIT_SPEED_MPS = 10;
     public static final float BIKE_SPEED_MPS = 4.16f;
     public static final float WALK_SPEED_MPS = 1.4f;
 
+
+    /**
+     *  num of cells for distribution grid for informed strategies
+     */
     public static final int GRAPH_DISTRIBUTION_GRID_X = 30;
     public static final int GRAPH_DISTRIBUTION_GRID_Y = 30;
 
-    // In meters
-    public static final int MIN_DISTANCE_BETWEEN_OD = 500;
+    public static int KNOWN_REQUEST_COUNT = 20000;
 
+    public static final int FINDING_PATH_COUNT = 100;
+
+
+    /**
+     * Selected test region - Prague
+     */
     public static final LocationArea AREA_PRAGUE = new LocationArea(
-//            50.1472,
-//            50.0069,
-//            14.2946,
-//            14.5898);
-//
-//    public static final LocationArea AREA_PRAGUE_EXT = new LocationArea(
             50.1072,
             50.0269,
             14.2946,
             14.55);
 
 
+    /**
+     * Important Places for Supervised Strategies
+     */
     public static final Location[] IMPORTANT_PLACES_PRAGUE = new Location[]{
             // Kulatak
             new Location(50.100174, 14.39562),
@@ -69,10 +89,9 @@ public final class Storage {
             new Location(50.091170, 14.438711)
     };
 
-    public static String DESCRIPTION_HEADER = "count: car ref, transit ref, bike ref," +
-            " intermodal ref,intermodal description ref" +
-            "--------------------------------------------------------------------------------";
-
+    /**
+     * Auth Keys for Google Maps API
+     */
     public static String[] GMAPS_API_KEYS = new String[]{
             "AIzaSyDPlXXLGlWdjqyha8M5IWJMfgM4kf_uV4A",
             "AIzaSyBAJwyMaIhPdMptdXbDcFYGzl-86J2oyKw",
@@ -175,20 +194,4 @@ public final class Storage {
             "AIzaSyAOyCO1XDVo_ReqES7agVujAFmZRssz3a0",
             "AIzaSyCaT94Ddne03nXwi854KplqN-qfy7eRoRk"
     };
-    public static final int FINDING_PATH_COUNT = 100;
-
-
-    public static void nullRequestCounters() {
-        CAR_REQUEST_COUNT = 0;
-        TRANSIT_REQUEST_COUNT = 0;
-        BIKE_REQUEST_COUNT = 0;
-        WALK_REQUEST_COUNT = 0;
-    }
-
-    private Storage() {
-    }
-
-    public static int getTotalRequestCount() {
-        return CAR_REQUEST_COUNT + TRANSIT_REQUEST_COUNT + BIKE_REQUEST_COUNT + WALK_REQUEST_COUNT;
-    }
 }

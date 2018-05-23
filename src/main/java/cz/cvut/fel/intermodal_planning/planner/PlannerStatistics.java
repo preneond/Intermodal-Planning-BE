@@ -1,7 +1,6 @@
 package cz.cvut.fel.intermodal_planning.planner;
 
 import cz.cvut.fel.intermodal_planning.general.Storage;
-import cz.cvut.fel.intermodal_planning.graph.enums.GraphExpansionStrategy;
 import cz.cvut.fel.intermodal_planning.graph.model.GraphEdge;
 import cz.cvut.fel.intermodal_planning.planner.model.*;
 import cz.cvut.fel.intermodal_planning.general.utils.SerializationUtils;
@@ -14,26 +13,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Created by Ondrej Prenek on 27/10/2017
+ */
 public class PlannerStatistics {
     private static final Logger logger = LogManager.getLogger(PlannerStatistics.class);
     private static Map<String, Integer> histogramMap;
 
 
-    public static void doExpansionStrategyComparision(LocationArea area) {
-        PlannerInitializer plannerInitializer;
-        int[] requestCountArr = new int[]{500, 1000, 2500, 5000, 7500, 10000};
-
-        for (GraphExpansionStrategy expansionStrategy : GraphExpansionStrategy.getUninformedStrategies()) {
-            plannerInitializer = new PlannerInitializer(area);
-            for (int requestCount: requestCountArr) {
-                RoutePlanner routePlanner = plannerInitializer.initPlanner(requestCount,expansionStrategy);
-                PlannerQualityEvaluator.evaluatePlannerQualityUsingRefinement(routePlanner,area,expansionStrategy,requestCount);
-            }
-        }
-    }
-
-    public static void createPlannerStatistics(PlannerInitializer plannerInitializer) {
-        logger.info("createPlannerStatistics called");
+    /**
+     * Comparison of path found on abstracted transport network and path using subplanner
+     *
+     * @param plannerInitializer PlannerInitializer instance
+     */
+    public static void createRouteComparisonHistogram(PlannerInitializer plannerInitializer) {
         histogramMap = new HashMap<>();
         final int loopCount = 1000;
 
@@ -41,20 +34,24 @@ public class PlannerStatistics {
             compareKnownPath(plannerInitializer.routePlanner, i + 1);
         }
 
-        System.out.println("Avg duration: " + Storage.INTERMODAL_AVG_DURATION / loopCount);
+        logger.info("Avg duration: " + Storage.INTERMODAL_AVG_DURATION / loopCount);
 
         SerializationUtils.writeObjectToFile(stringify(histogramMap),
                 new File(Storage.STATISTICS_PATH + "/histogram.txt"));
     }
 
-
+    /**
+     * Comparison of path for which OD pair is stored
+     *
+     * @param routePlanner RoutePlanner instance
+     * @param count number of compared path due to its serialization
+     */
     private static void compareKnownPath(RoutePlanner routePlanner, int count) {
-//        String odPairPath = Main.EXTENDED ? Storage.OD_PAIR_EXT_PATH : Storage.OD_PAIR_PATH;
         String odPairPath = Storage.OD_PAIR_PATH;
         File odFile = new File(odPairPath + "pair_" + count + ".txt");
         Location[] odPair = SerializationUtils.readODPairFromGson(odFile);
 
-        Route perfectIntermodalPath = routePlanner.findRoute(odPair[0], odPair[1]);
+        Route perfectIntermodalPath = routePlanner.metasearchRoute(odPair[0], odPair[1]);
 
         if (perfectIntermodalPath == null) return;
 
@@ -62,44 +59,72 @@ public class PlannerStatistics {
         addToHistogram(perfectIntermodalPath);
     }
 
-    private static void comparePath(RoutePlanner routePlanner, LocationArea locationArea, int count) {
+    /**
+     * Comparison of path for which OD pair is not stored
+     *
+     * @param routePlanner RoutePlanner instance
+     * @param locationArea Selected Test Region
+     * @param pairId ODPair id for its serialization
+     */
+    private static void comparePath(RoutePlanner routePlanner, LocationArea locationArea, int pairId) {
         Location[] odPair = null;
         Route intermodalPath = null;
 
         while (intermodalPath == null) {
             odPair = locationArea.generateRandomLocations(2);
-            intermodalPath = routePlanner.findRoute(odPair[0], odPair[1]);
+            intermodalPath = routePlanner.metasearchRoute(odPair[0], odPair[1]);
         }
 
-        storeODPair(odPair, count);
+        storeODPair(odPair, pairId);
 
         addToHistogram(intermodalPath);
         Storage.INTERMODAL_AVG_DURATION += routePlanner.getRouteDuration(intermodalPath);
     }
 
-
-    private static void storeODPair(Location[] pair, int count) {
-//        String odPairPath = Main.EXTENDED ? Storage.OD_PAIR_EXT_PATH : Storage.OD_PAIR_PATH;
+    /**
+     * Storing OD Pair for further use
+     *
+     * @param pair OD pair
+     * @param id OD Pair identifier for filename
+     */
+    private static void storeODPair(Location[] pair, int id) {
         String odPairPath = Storage.OD_PAIR_PATH;
-        File file = new File(odPairPath + "pair_" + count + ".txt");
+        File file = new File(odPairPath + "pair_" + id + ".txt");
 
         SerializationUtils.writeRequestToGson(pair, file);
     }
 
-    private static void addToHistogram(Route path) {
-        path.legList = path.legList.stream()
+    /**
+     * Adding Route to Histogram
+     *
+     * @param route Route object
+     */
+    private static void addToHistogram(Route route) {
+        route.legList = route.legList.stream()
                 .filter(leg -> leg.transportMode != TransportMode.WALK)
                 .collect(Collectors.toList());
 
-        String keyDesc = getHistogramDescription(path);
+        String keyDesc = getHistogramDescription(route);
 
         histogramMap.put(keyDesc, histogramMap.containsKey(keyDesc) ? histogramMap.get(keyDesc) + 1 : 1);
     }
 
-    private static String getHistogramDescription(Route path) {
-        return getIntermodalDescription(path).replaceAll("\\d", "");
+    /**
+     * Histogram Description -> dtto as Intermodal Description with removed leg duration
+     * @param route Route object
+     * @return Stringified Histogram
+     */
+    private static String getHistogramDescription(Route route) {
+        return getIntermodalDescription(route).replaceAll("\\d", "");
     }
 
+    /**
+     * Intermodal Path Description
+     *
+     * Route Example: transit(30s) -> walk(500s) => Desciption:  30T+500W
+     * @param intermodalPath
+     * @return Description
+     */
     private static String getIntermodalDescription(Route intermodalPath) {
         StringBuilder description = new StringBuilder();
         if (intermodalPath == null || intermodalPath.isEmpty()) return description.toString();
@@ -122,18 +147,29 @@ public class PlannerStatistics {
         return description.toString();
     }
 
-    public static void getPathDescription(Route route, String name) {
+
+    /**
+     * Route Description to console output
+     * @param route  Route Object
+     * @param id Identifier
+     */
+    public static void getRouteDescription(Route route, String id) {
         if (route.legList == null || route.legList.isEmpty()) {
             logger.error("Path is empty");
             return;
         }
 
         long routeDuration = route.legList.stream().mapToLong(o -> o.durationInSeconds).sum();
-        logger.info("Duration of " + name + " path: " + routeDuration + " seconds");
+        logger.info("Duration of " + id + " path: " + routeDuration + " seconds");
         logger.info("Number of transfers: " + route.legList.size());
     }
 
-    public static void getPathDescription(List<GraphEdge> path, String name) {
+    /**
+     * Path Description to console output
+     * @param path Edge Sequence
+     * @param id Identifier
+     */
+    public static void getPathDescription(List<GraphEdge> path, String id) {
         if (path == null || path.isEmpty()) {
             logger.error("Path is empty");
             return;
@@ -150,7 +186,7 @@ public class PlannerStatistics {
         }
 
         long routeDuration = path.stream().mapToLong(o -> o.durationInSeconds).sum();
-        logger.info("Duration of " + name + " path: " + routeDuration + " seconds");
+        logger.info("Duration of " + id + " path: " + routeDuration + " seconds");
         logger.info("Number of transfers: " + numOfTransfers);
 
     }

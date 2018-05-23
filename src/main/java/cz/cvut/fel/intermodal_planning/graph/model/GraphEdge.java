@@ -7,6 +7,9 @@ import cz.cvut.fel.intermodal_planning.planner.model.TransportMode;
 import java.io.Serializable;
 import java.util.List;
 
+/**
+ * Created by Ondrej Prenek on 27/10/2017
+ */
 public class GraphEdge extends Edge implements Serializable {
     public TransportMode transportMode;
     public List<Location> polyline;

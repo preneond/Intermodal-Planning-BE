@@ -15,6 +15,9 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import java.io.File;
 
+/**
+ * Created by Ondrej Prenek on 27/10/2017
+ */
 public class OTPApiClient {
     private static OTPApiClient sharedInstance;
 
@@ -29,6 +32,14 @@ public class OTPApiClient {
         return sharedInstance;
     }
 
+    /**
+     * Subplanner Request
+     *
+     * @param origin Origin Location
+     * @param destination Destination Location
+     *
+     * @return response
+     */
     public JSONObject sendNewRequest(Location origin, Location destination) {
         Client client = ClientBuilder.newClient();
         WebTarget webTarget = client.target(Storage.OTP_ENDPOINT)
@@ -39,6 +50,15 @@ public class OTPApiClient {
         return sendNewRequest(webTarget, TransportMode.TRANSIT);
     }
 
+    /**
+     * Subplanner Request
+     *
+     * @param origin Origin Location
+     * @param destination Destination Location
+     * @param mode Transport Mode
+     *
+     * @return response
+     */
     public JSONObject sendNewRequest(Location origin, Location destination, TransportMode mode) {
         Client client = ClientBuilder.newClient();
 
@@ -51,6 +71,26 @@ public class OTPApiClient {
 
         return sendNewRequest(webResource, mode);
 
+    }
+
+    /**
+     * Retrieving stored sublanner requests
+     *
+     * @param numOfRequest number of request
+     * @param mode transport mode
+     *
+     * @return Response
+     *
+     * @throws NullPointerException
+     */
+    public JSONObject getKnownRequest(int numOfRequest, TransportMode mode) throws NullPointerException {
+        File file = new File(Storage.OTP_REQUEST_STORAGE + mode.toString() + "/request_" + numOfRequest + ".txt");
+
+        JSONObject request = SerializationUtils.readJSONObjectFromFile(file);
+
+        if (request == null) throw new NullPointerException("Unable to read request");
+
+        return request;
     }
 
     private JSONObject sendNewRequest(WebTarget webTarget, TransportMode mode) {
@@ -78,14 +118,5 @@ public class OTPApiClient {
         return null;
     }
 
-    public JSONObject getKnownRequest(int numOfRequest, TransportMode mode) throws NullPointerException {
-        File file = new File(Storage.OTP_REQUEST_STORAGE + mode.toString() + "/request_" + numOfRequest + ".txt");
-
-        JSONObject request = SerializationUtils.readJSONObjectFromFile(file);
-
-        if (request == null) throw new NullPointerException("Unable to read request");
-
-        return request;
-    }
 }
 

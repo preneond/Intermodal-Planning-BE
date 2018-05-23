@@ -23,8 +23,7 @@ import java.util.stream.Collectors;
 
 /**
  * Created by Ondrej Prenek on 27/07/2017.
- * This code is owned by Umotional s.r.o. (IN: 03974618).
- * All Rights Reserved.
+ *
  */
 public class GraphMaker extends GraphBuilder implements GraphExpander {
     private Graph<Node, GraphEdge> graph;
@@ -51,7 +50,11 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return graph;
     }
 
-
+    /**
+     * Graph setter from Given Graph's Nodes and Graph's Edges
+     *
+     * @param graph
+     */
     public void setGraph(Graph<Node, GraphEdge> graph) {
         addNodes(graph.getAllNodes());
         addEdgeCollection(graph.getAllEdges());
@@ -59,12 +62,22 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         nodeCounter = 0;
     }
 
+    /**
+     * Graph Expansion from Routes
+     *
+     * @param routes Route list
+     */
     private void addRoutes(List<Route> routes) {
         for (Route route : routes) {
             addLegs(route.legList);
         }
     }
 
+    /**
+     * Graph Expansion from Legs
+     *
+     * @param legs Leg list
+     */
     private void addLegs(List<Leg> legs) {
         for (Leg leg : legs) {
             if (leg.steps.isEmpty()) {
@@ -80,6 +93,12 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         }
     }
 
+
+    /**
+     * Graph Expansion from Steps
+     *
+     * @param steps Step list
+     */
     private void addSteps(List<Step> steps) {
         for (Step step : steps) {
             if (step.substeps != null) {
@@ -97,6 +116,11 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         }
     }
 
+    /**
+     * Graph Expansion from Edge Sequence
+     *
+     * @param edges Edge Sequence
+     */
     private void addEdgeCollection(Collection<GraphEdge> edges) {
         for (GraphEdge edge : edges) {
             if (!containsEdge(edge.fromId, edge.toId)) {
@@ -105,6 +129,11 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         }
     }
 
+    /**
+     * Graph expansion from single Edge
+     *
+     * @param edge Edge
+     */
     private void addEdge(GraphEdge edge) {
         super.addEdge(edge);
         int fromId = edge.fromId;
@@ -127,10 +156,23 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
     }
 
 
+    /**
+     * Create Graph from stored Requests
+     *
+     * @param numOfRequests
+     * @return Graph object
+     */
     public Graph<Node, GraphEdge> createGraphFromKnownRequests(int numOfRequests) {
         return createGraph(expandGraphFromKnownRequests(numOfRequests));
     }
 
+    /**
+     * Create Graph from unstored Requests
+     *
+     * @param numOfRequests
+     * @param locationArea
+     * @return Graph object
+     */
     public Graph<Node, GraphEdge> createGraphFromUnknownRequests(int numOfRequests, LocationArea locationArea) {
         return createGraphFromUnknownRequests(numOfRequests, locationArea, GraphExpansionStrategy.RANDOM_OD);
     }
@@ -171,6 +213,7 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return resultRoutes;
     }
 
+
     private Graph<Node, GraphEdge> createGraphFromUnknownRequests(int numOfRequests, LocationArea locationArea,
                                                                   GraphExpansionStrategy strategy) {
         List<Route> routes = new ArrayList<>();
@@ -185,6 +228,14 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return createGraph(routes);
     }
 
+    /**
+     * Graph Expansion
+     *
+     * @param numOfRequests number Of Request
+     * @param locationArea Selected Test Region
+     * @param strategy Picking OD Pairs strategy
+     * @return expanding route list
+     */
     public List<Route> expandGraph(int numOfRequests, LocationArea locationArea, GraphExpansionStrategy strategy) {
         List<Route> routeList = new ArrayList<>();
         for (TransportMode transportMode : TransportMode.availableModes()) {
@@ -193,6 +244,15 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return routeList;
     }
 
+    /**
+     * Graph Expansion
+     *
+     * @param numOfRequests number Of Request
+     * @param locationArea Selected Test Region
+     * @param strategy Picking OD Pairs strategy
+     * @param mode Transport Mode
+     * @return expanding route list
+     */
     private List<Route> expandGraph(int numOfRequests, LocationArea locationArea, GraphExpansionStrategy strategy, TransportMode mode) {
         switch (mode) {
             case BICYCLE:
@@ -203,6 +263,17 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         }
     }
 
+    /**
+     * Graph Expansion
+     *
+     * @param numOfRequests number Of Request
+     * @param locationArea Selected Test Region
+     * @param strategy Picking OD Pairs strategy
+     * @param mode Transport Mode
+     * @param plannerAdapter PlannerAdapter which will be used
+     * @return expanding route list
+     *
+     */
     private List<Route> expandGraph(int numOfRequests, LocationArea locationArea,
                                     GraphExpansionStrategy strategy, TransportMode mode, PlannerAdapter plannerAdapter) {
         switch (strategy) {
@@ -227,6 +298,15 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return null;
     }
 
+    /**
+     * Graph Expansion using Random OD strategy
+     *
+     * @param numOfRequests number Of Request
+     * @param locationArea Selected Test Region
+     * @param mode Transport Mode
+     * @param plannerAdapter PlannerAdapter which will be used
+     * @return expanding route list
+     */
     public List<Route> expandGraphByRandomOD(int numOfRequests, PlannerAdapter plannerAdapter, LocationArea locationArea,
                                              TransportMode mode) {
         Location[] locArray;
@@ -244,6 +324,15 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return routes;
     }
 
+    /**
+     * Graph Expansion using Known Nodes as OD strategy
+     *
+     * @param numOfRequests number Of Request
+     * @param locationArea Selected Test Region
+     * @param mode Transport Mode
+     * @param plannerAdapter PlannerAdapter which will be used
+     * @return expanding route list
+     */
     public List<Route> expandGraphUsingKnownNodesAsOD(int numOfRequests, PlannerAdapter plannerAdapter,
                                                       LocationArea locationArea, TransportMode mode) {
         Location[] importantPlaces = Storage.IMPORTANT_PLACES_PRAGUE;
@@ -269,6 +358,15 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return routes;
     }
 
+    /**
+     * Graph Expansion using Chaining Random OD strategy
+     *
+     * @param numOfRequests number Of Request
+     * @param locationArea Selected Test Region
+     * @param mode Transport Mode
+     * @param plannerAdapter PlannerAdapter which will be used
+     * @return expanding route list
+     */
     public List<Route> expandGraphByChainingRandomOD(int numOfRequests, PlannerAdapter plannerAdapter,
                                                      LocationArea locationArea, TransportMode mode) {
         Location locFrom, locTo;
@@ -290,6 +388,15 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return routes;
     }
 
+    /**
+     * Graph Expansion using Random OD With Minimal Mutual Distance strategy
+     *
+     * @param numOfRequests number Of Request
+     * @param locationArea Selected Test Region
+     * @param mode Transport Mode
+     * @param plannerAdapter PlannerAdapter which will be used
+     * @return expanding route list
+     */
     public List<Route> expandGraphByRandomODWithMinDistanceBetween(int numOfRequests, PlannerAdapter plannerAdapter,
                                                                    LocationArea locationArea, TransportMode mode) {
         Location[] locArray;
@@ -307,6 +414,14 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return routes;
     }
 
+    /**
+     * Graph Expansion using Nodes' Uniform Distribution
+     *
+     * @param numOfRequests number Of Request
+     * @param locationArea Selected Test Region
+     * @param plannerAdapter PlannerAdapter which will be used
+     * @return expanding route list
+     */
     public List<Route> expandGraphByFillingMinNodesAreaUnifDist(int numOfRequests, PlannerAdapter plannerAdapter,
                                                                 LocationArea locationArea) {
         int remainingRequestsCount = numOfRequests;
@@ -329,6 +444,14 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return tmpRouteList;
     }
 
+    /**
+     * Graph Expansion using Nodes' Normal Distribution
+     *
+     * @param numOfRequests number Of Request
+     * @param locationArea Selected Test Region
+     * @param plannerAdapter PlannerAdapter which will be used
+     * @return expanding route list
+     */
     public List<Route> expandGraphByFillingMinNodesAreaNormDist(int numOfRequests, PlannerAdapter plannerAdapter,
                                                                 LocationArea locationArea) {
         int remainingRequestsCount = numOfRequests;
@@ -351,6 +474,14 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return tmpRouteList;
     }
 
+    /**
+     * Graph Expansion using Edges' Uniform Distribution
+     *
+     * @param numOfRequests number Of Request
+     * @param locationArea Selected Test Region
+     * @param mode Transport mode
+     * @return expanding route list
+     */
     public List<Route> expandGraphByFillingMinEdgesAreaUnifDist(int numOfRequests,
                                                                 LocationArea locationArea, TransportMode mode) {
         int remainingRequestsCount = numOfRequests;
@@ -373,6 +504,14 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return tmpRouteList;
     }
 
+    /**
+     * Graph Expansion using Edges' Normal Distribution
+     *
+     * @param numOfRequests number Of Request
+     * @param locationArea Selected Test Region
+     * @param mode Transport mode
+     * @return expanding route list
+     */
     public List<Route> expandGraphByFillingMinEdgesAreaNormDist(int numOfRequests, LocationArea locationArea,
                                                                 TransportMode mode) {
         int remainingRequestsCount = numOfRequests;
@@ -395,6 +534,12 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return tmpRouteList;
     }
 
+
+    /**
+     * KD Tree creation
+     *
+     * create seperate KD trees for each transport mode and one general for all of them
+     */
     public void createKDTree() {
         logger.info("Creating KDTree...");
         double[] tmpArr = new double[2];
@@ -411,6 +556,11 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
     }
 
 
+    /**
+     * Creation of KD Trees fo all ingoing transport modes
+     * @return KDTree Map
+     */
+    @SuppressWarnings("Duplicates")
     private Map<TransportMode, KDTree> createIngoingKDTreeMap() {
         Map<TransportMode, KDTree> map = new HashMap<>();
         double[] tmpArr = new double[2];
@@ -432,6 +582,11 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return map;
     }
 
+    /**
+     * Creation of KD Trees fo all outgoing transport modes
+     * @return KDTree Map
+     */
+    @SuppressWarnings("Duplicates")
     private Map<TransportMode, KDTree> createOutgoingKDTreeMap() {
         Map<TransportMode, KDTree> map = new HashMap<>();
         double[] tmpArr = new double[2];
@@ -454,10 +609,21 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return map;
     }
 
+    /**
+     * General KD Tree getter
+     *
+     * @return general KD Tree for all modes
+     */
     public KDTree getKdTree() {
         return kdTree;
     }
 
+    /**
+     * return KD tree for given transport ingoing/outgoing transport mode
+     * @param mode transport mode
+     * @param isIngoingMode ingoing or outgoing mode
+     * @return KDTree object
+     */
     public KDTree getKdTreeForMode(TransportMode mode, boolean isIngoingMode) {
         return isIngoingMode ? ingoingKDTreeMap.get(mode) : outgoingKDTreeMap.get(mode);
     }
@@ -485,6 +651,12 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return id;
     }
 
+    /**
+     * Areas, where the mask doesn't match the distribution grid
+     * @param mask boolean mask
+     * @param areaGrid distributionGrid
+     * @return invalid Area list
+     */
     private List<LocationArea> getInvalidAreasFromMask(boolean[][] mask, LocationArea[][] areaGrid) {
         List<LocationArea> invalidLocArr = new ArrayList<>();
         List<Integer> validColumns = new ArrayList<>();
@@ -535,6 +707,12 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return invalidLocArr;
     }
 
+    /**
+     * Check if the distribution is valid on each subarea
+     *
+     * @param mask validity mask
+     * @return #true when distribution is valid, #false otherwise
+     */
     private boolean containsOnlyValidAreas(boolean[][] mask) {
         for (boolean[] row : mask) {
             for (boolean isValidArea : row) {
@@ -546,6 +724,8 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
 
 
     /**
+     * Invalid areas of Node Current Distribution compared to Node Uniform Distribution
+     *
      * @param tmpGraph     Graph
      * @param locationArea area, where uniform distribution is checked
      * @return subareas, where is invalid uniform distribution
@@ -564,21 +744,10 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return getInvalidAreasFromMask(mask, areaGrid);
     }
 
-    private int[][] createUniformDistributionOnGrid(LocationArea[][] areaGrid, int numOfNodes) {
-        int gridX = areaGrid.length;
-        int gridY = areaGrid[0].length;
-        int numOfNodesPerCell = numOfNodes / gridX * gridY;
-
-        int[][] uniformDistribution = new int[gridX][gridY];
-        for (int[] row : uniformDistribution) {
-            Arrays.fill(row, numOfNodesPerCell);
-        }
-
-        return uniformDistribution;
-    }
-
     /**
-     * @param tmpGraph     Graph
+     * Invalid areas of Node Current Distribution compared to Node Normal Distribution
+     *
+     * @param tmpGraph Graph object
      * @param locationArea area, where normal distribution is checked
      * @return subareas, where is invalid normal distribution
      */
@@ -599,7 +768,34 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
 
     }
 
-    private int[][] createNormalDistributionOnGrid(LocationArea[][] areaGrid, int numOfNodes) {
+    /**
+     * Uniform Distribution on distribution grid
+     *
+     * @param areaGrid distribution Grid
+     * @param elementCount number of elements
+     * @return uniform distribution
+     */
+    private int[][] createUniformDistributionOnGrid(LocationArea[][] areaGrid, int elementCount) {
+        int gridX = areaGrid.length;
+        int gridY = areaGrid[0].length;
+        int numOfNodesPerCell = elementCount / gridX * gridY;
+
+        int[][] uniformDistribution = new int[gridX][gridY];
+        for (int[] row : uniformDistribution) {
+            Arrays.fill(row, numOfNodesPerCell);
+        }
+
+        return uniformDistribution;
+    }
+
+    /**
+     * Normal Distribution on distribution grid
+     *
+     * @param areaGrid distribution Grid
+     * @param elementCount number of elements
+     * @return normal distribution
+     */
+    private int[][] createNormalDistributionOnGrid(LocationArea[][] areaGrid, int elementCount) {
         int gridRowsCount = areaGrid.length;
         int gridColumnsCount = areaGrid[0].length;
 
@@ -618,13 +814,19 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         for (int i = 0; i < gridRowsCount; i++, val_i += rowStepSize) {
             val_j = -2;
             for (int j = 0; j < gridColumnsCount; j++, val_j += columnStepSize) {
-                gridNormDistribution[i][j] = (int) (numOfNodes * distribution.density(new double[]{val_i, val_j}));
+                gridNormDistribution[i][j] = (int) (elementCount * distribution.density(new double[]{val_i, val_j}));
             }
         }
 
         return gridNormDistribution;
     }
 
+    /**
+     * Check whether the current distribution match the selected one
+     * @param distribution current distribution
+     * @param patternDistribution selected distribution
+     * @return bool 2d array
+     */
     private boolean[][] checkIfDistributionIsValid(int[][] distribution, int[][] patternDistribution) {
         boolean[][] mask = new boolean[distribution.length][distribution[0].length];
 
@@ -638,6 +840,13 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return mask;
     }
 
+    /**
+     * Edge Distribution of graph on Distribution Grid
+     *
+     * @param edgeList Graph's Edges
+     * @param areaGrid Distribution Grid
+     * @return edge distribution
+     */
     private int[][] getEdgeDistributionOnGrid(List<GraphEdge> edgeList, LocationArea[][] areaGrid) {
         if (areaGrid == null || areaGrid[0].length == 0) return null;
 
@@ -658,6 +867,13 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return edgeDistribution;
     }
 
+    /**
+     * Node Distribution of graph on Distribution Grid
+     *
+     * @param nodeList Graph's nodes
+     * @param areaGrid distribution grid
+     * @return node distribution
+     */
     private int[][] getNodeDistributionOnGrid(List<Node> nodeList, LocationArea[][] areaGrid) {
         if (areaGrid == null || areaGrid[0].length == 0) return null;
 
@@ -690,6 +906,16 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return nodeDistribution;
     }
 
+
+
+    /**
+     * Invalid areas of Current Distribution compared to Edge Normal Distribution
+     *
+     * @param graph Graph object
+     * @param locationArea area, where unform distribution is checked
+     * @param mode Transport mode that edges have
+     * @return subareas, where is invalid normal distribution
+     */
     private List<LocationArea> invalidAreasOfEdgesNormDist(Graph<Node, GraphEdge> graph, LocationArea locationArea, TransportMode mode) {
         int gridX = Storage.GRAPH_DISTRIBUTION_GRID_X;
         int gridY = Storage.GRAPH_DISTRIBUTION_GRID_Y;
@@ -708,6 +934,13 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return getInvalidAreasFromMask(mask, areaGrid);
     }
 
+    /**
+     * Invalid areas of Current Distribution compared to Edge Uniform Distribution
+     *
+     * @param graph Graph object
+     * @param locationArea area, where unform distribution is checked
+     * @return subareas, where is invalid normal distribution
+     */
     private List<LocationArea> invalidAreasOfEdgesUniformDist(Graph<Node, GraphEdge> graph, LocationArea locationArea, TransportMode mode) {
         int gridX = Storage.GRAPH_DISTRIBUTION_GRID_X;
         int gridY = Storage.GRAPH_DISTRIBUTION_GRID_Y;
@@ -726,6 +959,12 @@ public class GraphMaker extends GraphBuilder implements GraphExpander {
         return getInvalidAreasFromMask(mask, areaGrid);
     }
 
+    /**
+     * Check whether the Edge goes through given area
+     * @param edge Graph's Edge
+     * @param area Area
+     * @return #true when intersect, #false otherwise
+     */
     private boolean isEdgeIntersectArea(GraphEdge edge, LocationArea area) {
         Node nodeFrom = graph.getNode(edge.fromId);
         Node nodeTo = graph.getNode(edge.toId);
