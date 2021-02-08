@@ -1,3 +1,3 @@
 ## Intermodal planning BE module
 
-This projected has been created because of bachelor's thesis purpose. 
+This project was created for the purpose of the bachelor thesis. 
